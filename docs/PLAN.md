@@ -5,7 +5,7 @@ This plan tracks the staged migration from Lister to Records with a Holmes-style
 ## Decisions Locked In
 
 - Solution name: `Records.sln`
-- Bounded contexts: `Tenants`, `Users`, `Recordsets`, `Notifications`
+- Bounded contexts: `Tenants`, `Users`, `Recordsets`, `Notifications`, `Clocks`
 - Auth: ASP.NET Identity with minimal Identity API mapping
 - Tenant provisioning: Admin-created tenants (command-based)
 - Drop Lister-style OpenAI infrastructure from Core
@@ -57,10 +57,19 @@ This plan tracks the staged migration from Lister to Records with a Holmes-style
 - [ ] Create `Records.Notifications.Tests`
 - [ ] Rework notification flows around integration events
 
-## Stage 5 — Cross-Cutting
+## Stage 5 — Clocks Module (Port of Holmes SlaClocks)
+
+- [ ] Create `Records.Clocks.Domain`
+- [ ] Create `Records.Clocks.Contracts`
+- [ ] Create `Records.Clocks.Application`
+- [ ] Create `Records.Clocks.Infrastructure.Sql`
+- [ ] Create `Records.Clocks.Tests`
+- [ ] Port Holmes `SlaClocks` domain concepts into `Clocks`
+- [ ] Integrate with Records outbox + projections
+
+## Stage 6 — Cross-Cutting
 
 - [ ] Integrations: outbox, projections, SSE (as needed)
 - [ ] Enforce controller/command rules (one command per write endpoint)
 - [ ] Module integration event map
 - [ ] Read model strategy per module
-
