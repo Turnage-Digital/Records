@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "dgSpecHash": "tY6S/TM1APo=",
+  "success": true,
+  "projectFilePath": "/Users/heath/git/Records/src/Modules/Core/Records.Core.Domain/Records.Core.Domain.csproj",
+  "expectedPackageFiles": [
+    "/Users/heath/.nuget/packages/mediatr/12.5.0/mediatr.12.5.0.nupkg.sha512",
+    "/Users/heath/.nuget/packages/mediatr.contracts/2.0.1/mediatr.contracts.2.0.1.nupkg.sha512",
+    "/Users/heath/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/8.0.0/microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
+    "/Users/heath/.nuget/packages/ulid/1.4.1/ulid.1.4.1.nupkg.sha512",
+    "/Users/heath/.nuget/packages/microsoft.netcore.app.ref/9.0.11/microsoft.netcore.app.ref.9.0.11.nupkg.sha512",
+    "/Users/heath/.nuget/packages/microsoft.aspnetcore.app.ref/9.0.11/microsoft.aspnetcore.app.ref.9.0.11.nupkg.sha512"
+  ],
+  "logs": []
+}

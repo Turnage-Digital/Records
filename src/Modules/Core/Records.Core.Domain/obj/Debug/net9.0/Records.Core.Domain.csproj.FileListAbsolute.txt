@@ -1,0 +1,13 @@
+/Users/heath/git/Records/src/Modules/Core/Records.Core.Domain/bin/Debug/net9.0/Records.Core.Domain.deps.json
+/Users/heath/git/Records/src/Modules/Core/Records.Core.Domain/bin/Debug/net9.0/Records.Core.Domain.dll
+/Users/heath/git/Records/src/Modules/Core/Records.Core.Domain/bin/Debug/net9.0/Records.Core.Domain.pdb
+/Users/heath/git/Records/src/Modules/Core/Records.Core.Domain/obj/Debug/net9.0/Records.Core.Domain.csproj.AssemblyReference.cache
+/Users/heath/git/Records/src/Modules/Core/Records.Core.Domain/obj/Debug/net9.0/Records.Core.Domain.GeneratedMSBuildEditorConfig.editorconfig
+/Users/heath/git/Records/src/Modules/Core/Records.Core.Domain/obj/Debug/net9.0/Records.Core.Domain.AssemblyInfoInputs.cache
+/Users/heath/git/Records/src/Modules/Core/Records.Core.Domain/obj/Debug/net9.0/Records.Core.Domain.AssemblyInfo.cs
+/Users/heath/git/Records/src/Modules/Core/Records.Core.Domain/obj/Debug/net9.0/Records.Core.Domain.csproj.CoreCompileInputs.cache
+/Users/heath/git/Records/src/Modules/Core/Records.Core.Domain/obj/Debug/net9.0/Records.Core.Domain.sourcelink.json
+/Users/heath/git/Records/src/Modules/Core/Records.Core.Domain/obj/Debug/net9.0/Records.Core.Domain.dll
+/Users/heath/git/Records/src/Modules/Core/Records.Core.Domain/obj/Debug/net9.0/refint/Records.Core.Domain.dll
+/Users/heath/git/Records/src/Modules/Core/Records.Core.Domain/obj/Debug/net9.0/Records.Core.Domain.pdb
+/Users/heath/git/Records/src/Modules/Core/Records.Core.Domain/obj/Debug/net9.0/ref/Records.Core.Domain.dll
