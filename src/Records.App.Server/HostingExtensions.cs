@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Records.Tenants.Application.Commands.CreateTenant;
 using Records.Tenants.Application.Controllers;
@@ -27,7 +26,7 @@ internal static class HostingExtensions
             .AddApplicationPart(typeof(TenantsController).Assembly);
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("Missing DefaultConnection connection string.");
+                               ?? throw new InvalidOperationException("Missing DefaultConnection connection string.");
 
         builder.Services.AddUsersInfrastructureSql(connectionString);
         builder.Services.AddTenantsInfrastructureSql(connectionString);

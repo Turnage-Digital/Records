@@ -1,4 +1,3 @@
-using NUnit.Framework;
 using Records.Tenants.Application.Commands.DisableTenant;
 using Records.Tenants.Contracts;
 using Records.Tenants.Domain;
