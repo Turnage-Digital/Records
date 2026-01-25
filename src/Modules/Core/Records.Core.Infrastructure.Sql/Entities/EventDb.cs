@@ -1,6 +1,6 @@
 namespace Records.Core.Infrastructure.Sql.Entities;
 
-public class EventRecord
+public class EventDb
 {
     public long Position { get; set; }
     public string TenantId { get; set; } = null!;

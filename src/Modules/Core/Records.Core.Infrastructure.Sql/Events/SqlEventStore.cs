@@ -28,7 +28,7 @@ public sealed class SqlEventStore(CoreDbContext dbContext) : IEventStore
             .Where(e => e.TenantId == tenantId && e.StreamId == streamId)
             .MaxAsync(e => (long?)e.Version, cancellationToken) ?? 0;
 
-        var records = new List<EventRecord>(events.Count);
+        var records = new List<EventDb>(events.Count);
         var version = currentVersion;
         var now = DateTime.UtcNow;
 
@@ -37,7 +37,7 @@ public sealed class SqlEventStore(CoreDbContext dbContext) : IEventStore
             version++;
             var idempotencyKey = $"{streamId}:{version}:{envelope.EventId}";
 
-            records.Add(new EventRecord
+            records.Add(new EventDb
             {
                 TenantId = tenantId,
                 StreamId = streamId,
@@ -176,7 +176,7 @@ public sealed class SqlEventStore(CoreDbContext dbContext) : IEventStore
                 cancellationToken);
     }
 
-    private static StoredEvent ToStoredEvent(EventRecord record)
+    private static StoredEvent ToStoredEvent(EventDb record)
     {
         return new StoredEvent(
             record.Position,

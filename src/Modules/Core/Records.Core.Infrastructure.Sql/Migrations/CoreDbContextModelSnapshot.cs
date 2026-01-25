@@ -23,7 +23,7 @@ namespace Records.Core.Infrastructure.Sql.Migrations
             MySqlModelBuilderExtensions.HasCharSet(modelBuilder, "utf8mb4");
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
-            modelBuilder.Entity("Records.Core.Infrastructure.Sql.Entities.EventRecord", b =>
+            modelBuilder.Entity("Records.Core.Infrastructure.Sql.Entities.EventDb", b =>
                 {
                     b.Property<long>("Position")
                         .ValueGeneratedOnAdd()
@@ -110,7 +110,7 @@ namespace Records.Core.Infrastructure.Sql.Migrations
                     b.ToTable("events", (string)null);
                 });
 
-            modelBuilder.Entity("Records.Core.Infrastructure.Sql.Entities.ProjectionCheckpoint", b =>
+            modelBuilder.Entity("Records.Core.Infrastructure.Sql.Entities.ProjectionCheckpointDb", b =>
                 {
                     b.Property<string>("ProjectionName")
                         .HasMaxLength(160)
@@ -138,7 +138,7 @@ namespace Records.Core.Infrastructure.Sql.Migrations
                     b.ToTable("projection_checkpoints", (string)null);
                 });
 
-            modelBuilder.Entity("Records.Core.Infrastructure.Sql.Entities.SnapshotRecord", b =>
+            modelBuilder.Entity("Records.Core.Infrastructure.Sql.Entities.SnapshotDb", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()

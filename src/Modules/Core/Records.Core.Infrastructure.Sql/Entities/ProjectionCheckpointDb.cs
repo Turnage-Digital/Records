@@ -1,6 +1,6 @@
 namespace Records.Core.Infrastructure.Sql.Entities;
 
-public class ProjectionCheckpoint
+public class ProjectionCheckpointDb
 {
     public string ProjectionName { get; set; } = null!;
     public string TenantId { get; set; } = "*";

@@ -7,9 +7,8 @@ namespace Records.Core.Infrastructure.Sql;
 public class CoreDbContext(DbContextOptions<CoreDbContext> options)
     : DbContext(options), IDataProtectionKeyContext
 {
-    public DbSet<EventRecord> Events { get; set; } = null!;
-    public DbSet<SnapshotRecord> Snapshots { get; set; } = null!;
-    public DbSet<ProjectionCheckpoint> ProjectionCheckpoints { get; set; } = null!;
+    public DbSet<EventDb> Events { get; set; } = null!;
+    public DbSet<ProjectionCheckpointDb> ProjectionCheckpoints { get; set; } = null!;
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -20,7 +19,7 @@ public class CoreDbContext(DbContextOptions<CoreDbContext> options)
 
         modelBuilder.Entity<DataProtectionKey>(builder => { builder.ToTable("data_protection_keys"); });
 
-        modelBuilder.Entity<EventRecord>(builder =>
+        modelBuilder.Entity<EventDb>(builder =>
         {
             builder.ToTable("events");
             builder.HasKey(e => e.Position);
@@ -94,49 +93,7 @@ public class CoreDbContext(DbContextOptions<CoreDbContext> options)
                 .HasDatabaseName("IX_events_outbox");
         });
 
-        modelBuilder.Entity<SnapshotRecord>(builder =>
-        {
-            builder.ToTable("snapshots");
-            builder.HasKey(e => e.Id);
-
-            builder.Property(e => e.Id)
-                .ValueGeneratedOnAdd();
-
-            builder.Property(e => e.TenantId)
-                .HasMaxLength(64)
-                .IsRequired();
-
-            builder.Property(e => e.StreamId)
-                .HasMaxLength(64)
-                .IsRequired();
-
-            builder.Property(e => e.StreamType)
-                .HasMaxLength(128)
-                .IsRequired();
-
-            builder.Property(e => e.Version)
-                .IsRequired();
-
-            builder.Property(e => e.Payload)
-                .HasColumnType("longtext")
-                .IsRequired();
-
-            builder.Property(e => e.Metadata)
-                .HasColumnType("longtext");
-
-            builder.Property(e => e.Checksum)
-                .HasMaxLength(128);
-
-            builder.Property(e => e.CreatedAt)
-                .HasColumnType("datetime(6)")
-                .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
-
-            builder.HasIndex(e => new { e.TenantId, e.StreamId })
-                .IsUnique()
-                .HasDatabaseName("IX_snapshots_stream");
-        });
-
-        modelBuilder.Entity<ProjectionCheckpoint>(builder =>
+        modelBuilder.Entity<ProjectionCheckpointDb>(builder =>
         {
             builder.ToTable("projection_checkpoints");
             builder.HasKey(e => new { e.ProjectionName, e.TenantId });

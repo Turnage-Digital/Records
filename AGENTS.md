@@ -21,6 +21,7 @@
 - Indentation 4 spaces; one class per file; `using` directives at top.
 - Naming: PascalCase (types/methods), camelCase (locals/params), interfaces prefixed with `I`, async methods end with
   `Async`.
+- EF Core entity classes in `.Infrastructure.Sql` projects end with `Db` (tables unchanged).
 - Architecture boundaries: Domain, Application, Contracts, Infrastructure, Hosts; prefer DI/constructor injection.
 
 ## Testing Guidelines

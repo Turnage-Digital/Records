@@ -167,7 +167,7 @@ public abstract class EventProjectionRunner(
 
         if (checkpoint is null)
         {
-            checkpoint = new ProjectionCheckpoint
+            checkpoint = new ProjectionCheckpointDb
             {
                 ProjectionName = ProjectionName,
                 TenantId = "*"

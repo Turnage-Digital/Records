@@ -62,7 +62,7 @@ public abstract class UnitOfWork<TContext>(
                         // 1. Save aggregate state changes
                         retval = await dbContext.SaveChangesAsync(cancellationToken);
 
-                        // 2. Persist events to EventRecord (within transaction)
+                        // 2. Persist events to EventDb (within transaction)
                         // When deferDispatch is false, mark events as already dispatched since
                         // they will be published immediately after commit
                         await PersistEventsAsync(aggregates, !deferDispatch, cancellationToken);

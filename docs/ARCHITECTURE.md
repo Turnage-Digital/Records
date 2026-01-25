@@ -68,6 +68,11 @@ Application ──────► Contracts ◄────── Infrastructure
 
 ---
 
+## 2.1) EF Core Naming
+
+- EF Core entity classes in `.Infrastructure.Sql` projects end with `Db`.
+- Table names remain unchanged by class renames.
+
 ## 3) Bounded Contexts (Initial)
 
 - Recordsets
@@ -101,4 +106,3 @@ Application ──────► Contracts ◄────── Infrastructure
 - Aggregates emit domain events and are persisted with their `EventRecord` in one transaction.
 - Domain events are dispatched after commit via MediatR.
 - Deferred dispatch / outbox processing is the mechanism for cross-module and external integration events.
-
