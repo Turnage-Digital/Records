@@ -1,4 +1,5 @@
 using MediatR;
+using Records.Core.Domain.ValueObjects;
 using Records.Tenants.Contracts;
 using Records.Tenants.Domain.Entities;
 using Records.Tenants.Domain.Interfaces;
@@ -8,11 +9,11 @@ namespace Records.Tenants.Application.Commands.CreateTenant;
 public sealed class CreateTenantCommandHandler(
     ITenantsUnitOfWork unitOfWork,
     ITenantProjectionWriter projectionWriter
-) : IRequestHandler<CreateTenantCommand, Guid>
+) : IRequestHandler<CreateTenantCommand, UlidId>
 {
-    public async Task<Guid> Handle(CreateTenantCommand request, CancellationToken cancellationToken)
+    public async Task<UlidId> Handle(CreateTenantCommand request, CancellationToken cancellationToken)
     {
-        var tenant = new Tenant(Guid.NewGuid(), request.Name);
+        var tenant = new Tenant(UlidId.NewUlid(), request.Name);
         unitOfWork.AddTenant(tenant);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

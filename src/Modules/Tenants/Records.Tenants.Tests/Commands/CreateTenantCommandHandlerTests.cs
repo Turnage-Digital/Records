@@ -1,3 +1,4 @@
+using Records.Core.Domain.ValueObjects;
 using Records.Tenants.Application.Commands.CreateTenant;
 using Records.Tenants.Contracts;
 using Records.Tenants.Domain;
@@ -17,7 +18,7 @@ public class CreateTenantCommandHandlerTests
 
         var tenantId = await handler.Handle(new CreateTenantCommand("Acme"), CancellationToken.None);
 
-        Assert.That(tenantId, Is.Not.EqualTo(Guid.Empty));
+        Assert.That(tenantId, Is.Not.EqualTo(default(UlidId)));
         Assert.That(unitOfWork.AddedTenant, Is.Not.Null);
         Assert.That(unitOfWork.AddedTenant!.Name, Is.EqualTo("Acme"));
         Assert.That(unitOfWork.AddedTenant!.Status, Is.EqualTo(TenantStatus.Active));
@@ -34,7 +35,7 @@ public class CreateTenantCommandHandlerTests
             AddedTenant = tenant;
         }
 
-        public Task<Tenant?> GetTenantByIdAsync(Guid tenantId, CancellationToken cancellationToken)
+        public Task<Tenant?> GetTenantByIdAsync(UlidId tenantId, CancellationToken cancellationToken)
         {
             return Task.FromResult<Tenant?>(null);
         }
@@ -55,12 +56,12 @@ public class CreateTenantCommandHandlerTests
             return Task.CompletedTask;
         }
 
-        public Task UpdateStatusAsync(Guid tenantId, TenantStatus status, CancellationToken cancellationToken)
+        public Task UpdateStatusAsync(UlidId tenantId, TenantStatus status, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
         }
 
-        public Task UpdateNameAsync(Guid tenantId, string name, CancellationToken cancellationToken)
+        public Task UpdateNameAsync(UlidId tenantId, string name, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
         }

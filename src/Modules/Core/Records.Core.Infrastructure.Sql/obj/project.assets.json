@@ -480,7 +480,6 @@
         "type": "project",
         "framework": ".NETCoreApp,Version=v9.0",
         "dependencies": {
-          "MediatR": "12.5.0",
           "Records.Core.Domain": "1.0.0"
         },
         "compile": {
@@ -1214,8 +1213,7 @@
     "net9.0": [
       "Microsoft.AspNetCore.DataProtection.EntityFrameworkCore >= 9.0.11",
       "Pomelo.EntityFrameworkCore.MySql >= 9.0.0",
-      "Records.Core.Contracts >= 1.0.0",
-      "Records.Core.Domain >= 1.0.0"
+      "Records.Core.Contracts >= 1.0.0"
     ]
   },
   "packageFolders": {
@@ -1245,9 +1243,6 @@
           "projectReferences": {
             "/Users/heath/git/Records/src/Modules/Core/Records.Core.Contracts/Records.Core.Contracts.csproj": {
               "projectPath": "/Users/heath/git/Records/src/Modules/Core/Records.Core.Contracts/Records.Core.Contracts.csproj"
-            },
-            "/Users/heath/git/Records/src/Modules/Core/Records.Core.Domain/Records.Core.Domain.csproj": {
-              "projectPath": "/Users/heath/git/Records/src/Modules/Core/Records.Core.Domain/Records.Core.Domain.csproj"
             }
           }
         }

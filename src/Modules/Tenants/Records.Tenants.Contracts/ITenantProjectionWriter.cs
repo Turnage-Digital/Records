@@ -1,3 +1,4 @@
+using Records.Core.Domain.ValueObjects;
 using Records.Tenants.Domain;
 
 namespace Records.Tenants.Contracts;
@@ -10,16 +11,16 @@ public interface ITenantProjectionWriter
 {
     Task UpsertAsync(TenantProjectionModel model, CancellationToken cancellationToken);
 
-    Task UpdateStatusAsync(Guid tenantId, TenantStatus status, CancellationToken cancellationToken);
+    Task UpdateStatusAsync(UlidId tenantId, TenantStatus status, CancellationToken cancellationToken);
 
-    Task UpdateNameAsync(Guid tenantId, string name, CancellationToken cancellationToken);
+    Task UpdateNameAsync(UlidId tenantId, string name, CancellationToken cancellationToken);
 }
 
 /// <summary>
 ///     Model representing the tenant projection data.
 /// </summary>
 public sealed record TenantProjectionModel(
-    Guid TenantId,
+    UlidId TenantId,
     string Name,
     TenantStatus Status,
     DateTimeOffset CreatedAt

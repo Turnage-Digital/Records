@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Records.Core.Domain.ValueObjects;
 using Records.Tenants.Application.Commands.CreateTenant;
 using Records.Tenants.Application.Commands.DisableTenant;
 using Records.Tenants.Contracts.Dtos;
@@ -18,10 +19,15 @@ public sealed class TenantsController(IMediator mediator, ITenantQueries tenantQ
         return Ok(tenants);
     }
 
-    [HttpGet("{tenantId:guid}")]
-    public async Task<ActionResult<TenantSummaryDto>> Get(Guid tenantId, CancellationToken cancellationToken)
+    [HttpGet("{tenantId}")]
+    public async Task<ActionResult<TenantSummaryDto>> Get(string tenantId, CancellationToken cancellationToken)
     {
-        var tenant = await tenantQueries.GetByIdAsync(tenantId, cancellationToken);
+        if (!UlidId.TryParse(tenantId, out var tenantUlid))
+        {
+            return BadRequest("Invalid tenant id format.");
+        }
+
+        var tenant = await tenantQueries.GetByIdAsync(tenantUlid, cancellationToken);
         if (tenant is null)
         {
             return NotFound();
@@ -31,16 +37,21 @@ public sealed class TenantsController(IMediator mediator, ITenantQueries tenantQ
     }
 
     [HttpPost]
-    public async Task<ActionResult<Guid>> Create(CreateTenantCommand command, CancellationToken cancellationToken)
+    public async Task<ActionResult<UlidId>> Create(CreateTenantCommand command, CancellationToken cancellationToken)
     {
         var id = await mediator.Send(command, cancellationToken);
         return Ok(id);
     }
 
-    [HttpPost("{tenantId:guid}/disable")]
-    public async Task<IActionResult> Disable(Guid tenantId, CancellationToken cancellationToken)
+    [HttpPost("{tenantId}/disable")]
+    public async Task<IActionResult> Disable(string tenantId, CancellationToken cancellationToken)
     {
-        await mediator.Send(new DisableTenantCommand(tenantId), cancellationToken);
+        if (!UlidId.TryParse(tenantId, out var tenantUlid))
+        {
+            return BadRequest("Invalid tenant id format.");
+        }
+
+        await mediator.Send(new DisableTenantCommand(tenantUlid), cancellationToken);
         return Ok();
     }
 }

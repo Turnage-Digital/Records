@@ -29,8 +29,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Records.Tenants.Application\Records.Tenants.Application.csproj"/>
-        <ProjectReference Include="..\Records.Tenants.Contracts\Records.Tenants.Contracts.csproj"/>
-        <ProjectReference Include="..\Records.Tenants.Domain\Records.Tenants.Domain.csproj"/>
     </ItemGroup>
 
 </Project>

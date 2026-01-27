@@ -12,7 +12,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Records.Core.Contracts\Records.Core.Contracts.csproj"/>
-        <ProjectReference Include="..\Records.Core.Domain\Records.Core.Domain.csproj"/>
     </ItemGroup>
 
 </Project>

@@ -1,9 +1,26 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Identity;
+using Records.App.Server.Services;
+using Records.Core.Domain.ValueObjects;
+using Records.Recordsets.Application.Commands.CreateRecord;
+using Records.Recordsets.Application.Commands.CreateRecordset;
+using Records.Recordsets.Application.Commands.Migrations;
+using Records.Recordsets.Application.Commands.UpdateRecord;
+using Records.Recordsets.Application.Commands.UpdateRecordsetSchema;
+using Records.Recordsets.Application.Controllers;
+using Records.Recordsets.Application.Migrations.Services;
+using Records.Recordsets.Application.Queries.Migrations;
+using Records.Recordsets.Domain.Services;
+using Records.Recordsets.Infrastructure.Sql;
 using Records.Tenants.Application.Commands.CreateTenant;
 using Records.Tenants.Application.Controllers;
 using Records.Tenants.Infrastructure.Sql;
+using Records.Users.Application.Commands.GrantUserRole;
+using Records.Users.Application.Commands.InviteUser;
+using Records.Users.Application.Commands.RevokeUserRole;
+using Records.Users.Application.Commands.SuspendUser;
+using Records.Users.Application.Controllers;
 using Records.Users.Domain.Entities;
 using Records.Users.Infrastructure.Sql;
 
@@ -22,14 +39,21 @@ internal static class HostingExtensions
                 options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
                 options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                options.JsonSerializerOptions.Converters.Add(new UlidIdJsonConverter());
             })
-            .AddApplicationPart(typeof(TenantsController).Assembly);
+            .AddApplicationPart(typeof(TenantsController).Assembly)
+            .AddApplicationPart(typeof(UsersController).Assembly)
+            .AddApplicationPart(typeof(RecordsetsController).Assembly);
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
                                ?? throw new InvalidOperationException("Missing DefaultConnection connection string.");
 
         builder.Services.AddUsersInfrastructureSql(connectionString);
         builder.Services.AddTenantsInfrastructureSql(connectionString);
+        builder.Services.AddRecordsetsInfrastructureSql(connectionString);
+        builder.Services.AddScoped<IRecordBagValidator, RecordBagValidator>();
+        builder.Services.AddScoped<IMigrationValidator, MigrationValidator>();
+        builder.Services.AddScoped<RecordsetMigrationJobRunner>();
 
         builder.Services
             .AddIdentityApiEndpoints<User>()
@@ -42,6 +66,16 @@ internal static class HostingExtensions
         builder.Services.AddMediatR(config =>
         {
             config.RegisterServicesFromAssemblyContaining<CreateTenantCommandHandler>();
+            config.RegisterServicesFromAssemblyContaining<InviteUserCommandHandler>();
+            config.RegisterServicesFromAssemblyContaining<GrantUserRoleCommandHandler>();
+            config.RegisterServicesFromAssemblyContaining<RevokeUserRoleCommandHandler>();
+            config.RegisterServicesFromAssemblyContaining<SuspendUserCommandHandler>();
+            config.RegisterServicesFromAssemblyContaining<CreateRecordsetCommandHandler>();
+            config.RegisterServicesFromAssemblyContaining<UpdateRecordsetSchemaCommandHandler>();
+            config.RegisterServicesFromAssemblyContaining<CreateRecordCommandHandler>();
+            config.RegisterServicesFromAssemblyContaining<UpdateRecordCommandHandler>();
+            config.RegisterServicesFromAssemblyContaining<RunMigrationCommandHandler>();
+            config.RegisterServicesFromAssemblyContaining<GetRecordsetMigrationJobStatusQueryHandler>();
         });
 
         if (builder.Environment.IsDevelopment())
@@ -50,6 +84,8 @@ internal static class HostingExtensions
                 .AddEndpointsApiExplorer()
                 .AddSwaggerGen();
         }
+
+        builder.Services.AddHostedService<RecordsetMigrationDispatcherService>();
 
         return builder.Build();
     }

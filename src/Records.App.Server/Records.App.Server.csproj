@@ -8,13 +8,14 @@
 
     <ItemGroup>
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.7.3"/>
-        <PackageReference Include="MediatR" Version="12.5.0"/>
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Modules\Recordsets\Records.Recordsets.Application\Records.Recordsets.Application.csproj"/>
+        <ProjectReference Include="..\Modules\Recordsets\Records.Recordsets.Infrastructure.Sql\Records.Recordsets.Infrastructure.Sql.csproj"/>
         <ProjectReference Include="..\Modules\Tenants\Records.Tenants.Application\Records.Tenants.Application.csproj"/>
         <ProjectReference Include="..\Modules\Tenants\Records.Tenants.Infrastructure.Sql\Records.Tenants.Infrastructure.Sql.csproj"/>
-        <ProjectReference Include="..\Modules\Users\Records.Users.Domain\Records.Users.Domain.csproj"/>
+        <ProjectReference Include="..\Modules\Users\Records.Users.Application\Records.Users.Application.csproj"/>
         <ProjectReference Include="..\Modules\Users\Records.Users.Infrastructure.Sql\Records.Users.Infrastructure.Sql.csproj"/>
     </ItemGroup>
 

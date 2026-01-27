@@ -1,3 +1,4 @@
+using Records.Core.Domain.ValueObjects;
 using Records.Tenants.Application.Commands.DisableTenant;
 using Records.Tenants.Contracts;
 using Records.Tenants.Domain;
@@ -11,7 +12,7 @@ public class DisableTenantCommandHandlerTests
     [Test]
     public async Task Handle_DisablesTenantAndUpdatesProjection()
     {
-        var tenant = new Tenant(Guid.NewGuid(), "Acme");
+        var tenant = new Tenant(UlidId.NewUlid(), "Acme");
         var unitOfWork = new FakeTenantsUnitOfWork(tenant);
         var projectionWriter = new FakeTenantProjectionWriter();
         var handler = new DisableTenantCommandHandler(unitOfWork, projectionWriter);
@@ -30,7 +31,7 @@ public class DisableTenantCommandHandlerTests
         var handler = new DisableTenantCommandHandler(unitOfWork, projectionWriter);
 
         Assert.ThrowsAsync<InvalidOperationException>(() =>
-            handler.Handle(new DisableTenantCommand(Guid.NewGuid()), CancellationToken.None));
+            handler.Handle(new DisableTenantCommand(UlidId.NewUlid()), CancellationToken.None));
     }
 
     private sealed class FakeTenantsUnitOfWork : ITenantsUnitOfWork
@@ -46,7 +47,7 @@ public class DisableTenantCommandHandlerTests
         {
         }
 
-        public Task<Tenant?> GetTenantByIdAsync(Guid tenantId, CancellationToken cancellationToken)
+        public Task<Tenant?> GetTenantByIdAsync(UlidId tenantId, CancellationToken cancellationToken)
         {
             return Task.FromResult(tenant);
         }
@@ -66,13 +67,13 @@ public class DisableTenantCommandHandlerTests
             return Task.CompletedTask;
         }
 
-        public Task UpdateStatusAsync(Guid tenantId, TenantStatus status, CancellationToken cancellationToken)
+        public Task UpdateStatusAsync(UlidId tenantId, TenantStatus status, CancellationToken cancellationToken)
         {
             UpdatedStatus = status;
             return Task.CompletedTask;
         }
 
-        public Task UpdateNameAsync(Guid tenantId, string name, CancellationToken cancellationToken)
+        public Task UpdateNameAsync(UlidId tenantId, string name, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
         }

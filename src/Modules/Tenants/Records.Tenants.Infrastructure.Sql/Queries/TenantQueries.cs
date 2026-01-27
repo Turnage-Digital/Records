@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Records.Core.Domain.ValueObjects;
 using Records.Tenants.Contracts.Dtos;
 using Records.Tenants.Contracts.Queries;
 
@@ -6,13 +7,14 @@ namespace Records.Tenants.Infrastructure.Sql.Queries;
 
 public sealed class TenantQueries(TenantsDbContext dbContext) : ITenantQueries
 {
-    public async Task<TenantSummaryDto?> GetByIdAsync(Guid tenantId, CancellationToken cancellationToken)
+    public async Task<TenantSummaryDto?> GetByIdAsync(UlidId tenantId, CancellationToken cancellationToken)
     {
+        var tenantKey = tenantId.ToString();
         return await dbContext.TenantProjections
             .AsNoTracking()
-            .Where(x => x.TenantId == tenantId)
+            .Where(x => x.TenantId == tenantKey)
             .Select(x => new TenantSummaryDto(
-                x.TenantId,
+                UlidId.Parse(x.TenantId),
                 x.Name,
                 x.Status,
                 x.CreatedAt
@@ -26,7 +28,7 @@ public sealed class TenantQueries(TenantsDbContext dbContext) : ITenantQueries
             .AsNoTracking()
             .OrderBy(x => x.Name)
             .Select(x => new TenantSummaryDto(
-                x.TenantId,
+                UlidId.Parse(x.TenantId),
                 x.Name,
                 x.Status,
                 x.CreatedAt

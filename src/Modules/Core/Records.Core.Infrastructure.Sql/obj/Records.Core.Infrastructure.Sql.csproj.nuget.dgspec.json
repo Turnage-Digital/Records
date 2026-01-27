@@ -47,12 +47,6 @@
       "frameworks": {
         "net9.0": {
           "targetAlias": "net9.0",
-          "dependencies": {
-            "MediatR": {
-              "target": "Package",
-              "version": "[12.5.0, )"
-            }
-          },
           "imports": [
             "net461",
             "net462",
@@ -186,9 +180,6 @@
             "projectReferences": {
               "/Users/heath/git/Records/src/Modules/Core/Records.Core.Contracts/Records.Core.Contracts.csproj": {
                 "projectPath": "/Users/heath/git/Records/src/Modules/Core/Records.Core.Contracts/Records.Core.Contracts.csproj"
-              },
-              "/Users/heath/git/Records/src/Modules/Core/Records.Core.Domain/Records.Core.Domain.csproj": {
-                "projectPath": "/Users/heath/git/Records/src/Modules/Core/Records.Core.Domain/Records.Core.Domain.csproj"
               }
             }
           }

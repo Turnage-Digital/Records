@@ -1,3 +1,5 @@
+using Records.Core.Domain.ValueObjects;
+
 namespace Records.Tenants.Domain.Entities;
 
 public class Tenant
@@ -6,7 +8,7 @@ public class Tenant
     {
     }
 
-    public Tenant(Guid id, string name)
+    public Tenant(UlidId id, string name)
     {
         Id = id;
         Name = name;
@@ -14,7 +16,7 @@ public class Tenant
         CreatedAt = DateTimeOffset.UtcNow;
     }
 
-    public Guid Id { get; private set; }
+    public UlidId Id { get; private set; }
     public string Name { get; private set; } = string.Empty;
     public TenantStatus Status { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }

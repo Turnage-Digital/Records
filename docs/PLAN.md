@@ -1,4 +1,4 @@
-# Records Port / Upgrade Plan
+4# Records Port / Upgrade Plan
 
 This plan tracks the staged migration from Lister to Records with a Holmes-style DDD/CQRS architecture.
 
@@ -14,29 +14,31 @@ This plan tracks the staged migration from Lister to Records with a Holmes-style
 
 - [x] Create `Records` repo + `Records.sln`
 - [x] Port Holmes Core → `Records.Core.*`
-- [ ] Scaffold `Records.App.Server` (Identity API mapping + host composition root)
-- [ ] Add `Records.App.Infrastructure.Security` (auth wiring only, no encryption service)
+- [x] Scaffold `Records.App.Server` (Identity API mapping + host composition root)
+- [x] Add `Records.App.Infrastructure.Security` (auth wiring only, no encryption service)
 
 ## Stage 1 — Tenants Module (New)
 
-- [ ] Create `Records.Tenants.Domain`
-- [ ] Create `Records.Tenants.Contracts`
-- [ ] Create `Records.Tenants.Application`
-- [ ] Create `Records.Tenants.Infrastructure.Sql`
-- [ ] Create `Records.Tenants.Tests`
-- [ ] Define Tenant aggregate + Admin provisioning commands
+- [x] Create `Records.Tenants.Domain`
+- [x] Create `Records.Tenants.Contracts`
+- [x] Create `Records.Tenants.Application`
+- [x] Create `Records.Tenants.Infrastructure.Sql`
+- [x] Create `Records.Tenants.Tests`
+- [x] Define Tenant aggregate + Admin provisioning commands
 - [ ] Integration events for tenant lifecycle (Created/Disabled/etc.)
+- [x] Add tenant queries + controller + projection writer
 
 ## Stage 2 — Users Module (External Identity)
 
-- [ ] Create `Records.Users.Domain`
-- [ ] Create `Records.Users.Contracts`
-- [ ] Create `Records.Users.Application`
-- [ ] Create `Records.Users.Infrastructure.Sql`
-- [ ] Create `Records.Users.Tests`
-- [ ] Model User ↔ Tenant membership + roles
-- [ ] Map ASP.NET Identity user entity to domain user model
-- [ ] Define user provisioning and membership commands
+- [x] Create `Records.Users.Domain`
+- [x] Create `Records.Users.Contracts`
+- [x] Create `Records.Users.Application`
+- [x] Create `Records.Users.Infrastructure.Sql`
+- [x] Create `Records.Users.Tests`
+- [x] Model User ↔ Tenant membership + roles
+- [x] Map ASP.NET Identity user entity to domain user model
+- [x] Define user provisioning and membership commands
+- [x] Add users queries + controller + projections
 
 ## Stage 3 — Recordsets Module (Port of Lists)
 

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Records.Core.Domain.ValueObjects;
 using Records.Tenants.Contracts;
 using Records.Tenants.Domain;
 using Records.Tenants.Infrastructure.Sql.Entities;
@@ -9,14 +10,15 @@ public sealed class TenantProjectionWriter(TenantsDbContext dbContext) : ITenant
 {
     public async Task UpsertAsync(TenantProjectionModel model, CancellationToken cancellationToken)
     {
+        var tenantKey = model.TenantId.ToString();
         var record = await dbContext.TenantProjections
-            .FirstOrDefaultAsync(x => x.TenantId == model.TenantId, cancellationToken);
+            .FirstOrDefaultAsync(x => x.TenantId == tenantKey, cancellationToken);
 
         if (record is null)
         {
             record = new TenantProjectionDb
             {
-                TenantId = model.TenantId,
+                TenantId = tenantKey,
                 Name = model.Name,
                 Status = model.Status,
                 CreatedAt = model.CreatedAt
@@ -32,10 +34,11 @@ public sealed class TenantProjectionWriter(TenantsDbContext dbContext) : ITenant
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateStatusAsync(Guid tenantId, TenantStatus status, CancellationToken cancellationToken)
+    public async Task UpdateStatusAsync(UlidId tenantId, TenantStatus status, CancellationToken cancellationToken)
     {
+        var tenantKey = tenantId.ToString();
         var record = await dbContext.TenantProjections
-            .FirstOrDefaultAsync(x => x.TenantId == tenantId, cancellationToken);
+            .FirstOrDefaultAsync(x => x.TenantId == tenantKey, cancellationToken);
 
         if (record is null)
         {
@@ -46,10 +49,11 @@ public sealed class TenantProjectionWriter(TenantsDbContext dbContext) : ITenant
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateNameAsync(Guid tenantId, string name, CancellationToken cancellationToken)
+    public async Task UpdateNameAsync(UlidId tenantId, string name, CancellationToken cancellationToken)
     {
+        var tenantKey = tenantId.ToString();
         var record = await dbContext.TenantProjections
-            .FirstOrDefaultAsync(x => x.TenantId == tenantId, cancellationToken);
+            .FirstOrDefaultAsync(x => x.TenantId == tenantKey, cancellationToken);
 
         if (record is null)
         {
