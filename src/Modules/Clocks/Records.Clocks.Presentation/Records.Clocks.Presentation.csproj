@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Records.Clocks.Application\Records.Clocks.Application.csproj"/>
+        <ProjectReference Include="..\Records.Clocks.Contracts\Records.Clocks.Contracts.csproj"/>
+    </ItemGroup>
+
+</Project>

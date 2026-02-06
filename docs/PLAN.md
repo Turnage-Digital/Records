@@ -1,4 +1,4 @@
-4# Records Port / Upgrade Plan
+# Records Port / Upgrade Plan
 
 This plan tracks the staged migration from Lister to Records with a Holmes-style DDD/CQRS architecture.
 
@@ -25,7 +25,7 @@ This plan tracks the staged migration from Lister to Records with a Holmes-style
 - [x] Create `Records.Tenants.Infrastructure.Sql`
 - [x] Create `Records.Tenants.Tests`
 - [x] Define Tenant aggregate + Admin provisioning commands
-- [ ] Integration events for tenant lifecycle (Created/Disabled/etc.)
+- [ ] Integration events for tenant lifecycle (deferred for now)
 - [x] Add tenant queries + controller + projection writer
 
 ## Stage 2 — Users Module (External Identity)
@@ -42,32 +42,36 @@ This plan tracks the staged migration from Lister to Records with a Holmes-style
 
 ## Stage 3 — Recordsets Module (Port of Lists)
 
-- [ ] Create `Records.Recordsets.Domain`
-- [ ] Create `Records.Recordsets.Contracts`
-- [ ] Create `Records.Recordsets.Application`
-- [ ] Create `Records.Recordsets.Infrastructure.Sql`
-- [ ] Create `Records.Recordsets.Tests`
-- [ ] Port Lister list/inventory concepts to Recordsets
-- [ ] Rewrite aggregates to Holmes-style DDD/CQRS (no manager aggregates)
+- [x] Create `Records.Recordsets.Domain`
+- [x] Create `Records.Recordsets.Contracts`
+- [x] Create `Records.Recordsets.Application`
+- [x] Create `Records.Recordsets.Infrastructure.Sql`
+- [x] Create `Records.Recordsets.Tests`
+- [x] Port Lister list/inventory concepts to Recordsets
+- [x] Rewrite aggregates to Holmes-style DDD/CQRS (no manager aggregates)
 
 ## Stage 4 — Notifications Module
 
-- [ ] Create `Records.Notifications.Domain`
-- [ ] Create `Records.Notifications.Contracts`
-- [ ] Create `Records.Notifications.Application`
-- [ ] Create `Records.Notifications.Infrastructure.Sql`
-- [ ] Create `Records.Notifications.Tests`
+- [x] Create `Records.Notifications.Domain`
+- [x] Create `Records.Notifications.Contracts`
+- [x] Create `Records.Notifications.Application`
+- [x] Create `Records.Notifications.Infrastructure.Sql`
+- [x] Create `Records.Notifications.Tests`
+- [x] Add `Records.Notifications.Presentation`
+- [x] Add notification rules (CRUD + queries)
+- [x] Add notifications list/unread endpoints (Lister-style API surface)
 - [ ] Rework notification flows around integration events
 
 ## Stage 5 — Clocks Module (Port of Holmes SlaClocks)
 
-- [ ] Create `Records.Clocks.Domain`
-- [ ] Create `Records.Clocks.Contracts`
-- [ ] Create `Records.Clocks.Application`
-- [ ] Create `Records.Clocks.Infrastructure.Sql`
-- [ ] Create `Records.Clocks.Tests`
-- [ ] Port Holmes `SlaClocks` domain concepts into `Clocks`
-- [ ] Integrate with Records outbox + projections
+- [x] Create `Records.Clocks.Domain`
+- [x] Create `Records.Clocks.Contracts`
+- [x] Create `Records.Clocks.Application`
+- [x] Create `Records.Clocks.Infrastructure.Sql`
+- [x] Create `Records.Clocks.Tests`
+- [x] Define clock definitions + record clocks (tenant-defined kinds + thresholds)
+- [x] Add business calendar service + watchdog
+- [x] Integrate with Records outbox + projections
 
 ## Stage 6 — Cross-Cutting
 

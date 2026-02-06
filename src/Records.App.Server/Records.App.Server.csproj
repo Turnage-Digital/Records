@@ -11,12 +11,22 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Modules\Clocks\Records.Clocks.Application\Records.Clocks.Application.csproj"/>
+        <ProjectReference Include="..\Modules\Clocks\Records.Clocks.Infrastructure.Sql\Records.Clocks.Infrastructure.Sql.csproj"/>
+        <ProjectReference Include="..\Modules\Clocks\Records.Clocks.Presentation\Records.Clocks.Presentation.csproj"/>
+        <ProjectReference Include="..\Modules\Core\Records.Core.Infrastructure.Sql\Records.Core.Infrastructure.Sql.csproj"/>
+        <ProjectReference Include="..\Modules\Notifications\Records.Notifications.Application\Records.Notifications.Application.csproj"/>
+        <ProjectReference Include="..\Modules\Notifications\Records.Notifications.Infrastructure.Sql\Records.Notifications.Infrastructure.Sql.csproj"/>
+        <ProjectReference Include="..\Modules\Notifications\Records.Notifications.Presentation\Records.Notifications.Presentation.csproj"/>
         <ProjectReference Include="..\Modules\Recordsets\Records.Recordsets.Application\Records.Recordsets.Application.csproj"/>
         <ProjectReference Include="..\Modules\Recordsets\Records.Recordsets.Infrastructure.Sql\Records.Recordsets.Infrastructure.Sql.csproj"/>
+        <ProjectReference Include="..\Modules\Recordsets\Records.Recordsets.Presentation\Records.Recordsets.Presentation.csproj"/>
         <ProjectReference Include="..\Modules\Tenants\Records.Tenants.Application\Records.Tenants.Application.csproj"/>
         <ProjectReference Include="..\Modules\Tenants\Records.Tenants.Infrastructure.Sql\Records.Tenants.Infrastructure.Sql.csproj"/>
+        <ProjectReference Include="..\Modules\Tenants\Records.Tenants.Presentation\Records.Tenants.Presentation.csproj"/>
         <ProjectReference Include="..\Modules\Users\Records.Users.Application\Records.Users.Application.csproj"/>
         <ProjectReference Include="..\Modules\Users\Records.Users.Infrastructure.Sql\Records.Users.Infrastructure.Sql.csproj"/>
+        <ProjectReference Include="..\Modules\Users\Records.Users.Presentation\Records.Users.Presentation.csproj"/>
     </ItemGroup>
 
 </Project>
