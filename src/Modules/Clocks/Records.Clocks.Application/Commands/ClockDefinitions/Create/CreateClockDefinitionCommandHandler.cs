@@ -1,5 +1,4 @@
 using MediatR;
-using Records.Clocks.Contracts.Projections;
 using Records.Clocks.Domain.Entities;
 using Records.Clocks.Domain.Interfaces;
 using Records.Clocks.Domain.ValueObjects;
@@ -8,8 +7,7 @@ using Records.Core.Domain.ValueObjects;
 namespace Records.Clocks.Application.Commands.ClockDefinitions.Create;
 
 public sealed class CreateClockDefinitionCommandHandler(
-    IClocksUnitOfWork unitOfWork,
-    IClockDefinitionProjectionWriter projectionWriter
+    IClocksUnitOfWork unitOfWork
 ) : IRequestHandler<CreateClockDefinitionCommand, UlidId>
 {
     public async Task<UlidId> Handle(CreateClockDefinitionCommand request, CancellationToken cancellationToken)
@@ -35,22 +33,7 @@ public sealed class CreateClockDefinitionCommandHandler(
         );
 
         await unitOfWork.ClockDefinitions.AddAsync(definition, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        await projectionWriter.UpsertAsync(
-            new ClockDefinitionProjectionModel(
-                definition.Id,
-                definition.TenantId,
-                definition.Name,
-                definition.AtRiskThreshold.Value,
-                definition.AtRiskThreshold.Unit,
-                definition.BreachThreshold.Value,
-                definition.BreachThreshold.Unit,
-                definition.IsActive,
-                request.CreatedAt
-            ),
-            cancellationToken
-        );
+        await unitOfWork.SaveChangesAsync(true, cancellationToken);
 
         return definition.Id;
     }

@@ -61,7 +61,7 @@ public sealed class ClocksController(
     }
 
     [HttpPost]
-    public async Task<ActionResult<UlidId>> Start(
+    public async Task<ActionResult<ClockDto>> Start(
         string recordsetId,
         int recordId,
         StartClockCommand command,
@@ -79,7 +79,10 @@ public sealed class ClocksController(
         }
 
         var id = await mediator.Send(command, cancellationToken);
-        return Ok(id);
+        var clock = await queries.GetByIdAsync(id, cancellationToken);
+        return clock is null
+            ? Created($"/api/recordsets/{recordsetId}/records/{recordId}/clocks/{id}", new { clockId = id })
+            : Created($"/api/recordsets/{recordsetId}/records/{recordId}/clocks/{id}", clock);
     }
 
     [HttpPost("{clockId}/pause")]
@@ -107,7 +110,7 @@ public sealed class ClocksController(
         }
 
         await mediator.Send(command, cancellationToken);
-        return Ok();
+        return NoContent();
     }
 
     [HttpPost("{clockId}/resume")]
@@ -135,7 +138,7 @@ public sealed class ClocksController(
         }
 
         await mediator.Send(command, cancellationToken);
-        return Ok();
+        return NoContent();
     }
 
     [HttpPost("{clockId}/complete")]
@@ -163,6 +166,6 @@ public sealed class ClocksController(
         }
 
         await mediator.Send(command, cancellationToken);
-        return Ok();
+        return NoContent();
     }
 }

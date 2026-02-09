@@ -1,6 +1,11 @@
 using System.Text.Json;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Records.Core.Contracts;
+using Records.Core.Contracts.Events;
+using Records.Core.Domain;
 using Records.Core.Domain.ValueObjects;
+using Records.Core.Infrastructure.Sql;
 using Records.Recordsets.Domain.Entities;
 using Records.Recordsets.Domain.Interfaces;
 using Records.Recordsets.Infrastructure.Sql.Entities;
@@ -8,8 +13,23 @@ using Records.Recordsets.Infrastructure.Sql.Mappers;
 
 namespace Records.Recordsets.Infrastructure.Sql.Repositories;
 
-public sealed class RecordsetRepository(RecordsetsDbContext dbContext) : IRecordsetsUnitOfWork
+public sealed class RecordsetRepository : UnitOfWork<RecordsetsDbContext>, IRecordsetsUnitOfWork
 {
+    private readonly RecordsetsDbContext dbContext;
+    private readonly List<(Record Record, RecordDb Entity)> pendingRecords = [];
+
+    public RecordsetRepository(
+        RecordsetsDbContext dbContext,
+        IMediator mediator,
+        IEventStore? eventStore = null,
+        IDomainEventSerializer? serializer = null,
+        ITenantContext? tenantContext = null
+    )
+        : base(dbContext, mediator, eventStore, serializer, tenantContext)
+    {
+        this.dbContext = dbContext;
+    }
+
     public async Task<Recordset?> GetRecordsetByIdAsync(UlidId recordsetId, CancellationToken cancellationToken)
     {
         var recordsetKey = recordsetId.ToString();
@@ -114,6 +134,7 @@ public sealed class RecordsetRepository(RecordsetsDbContext dbContext) : IRecord
             CreatedAt = record.CreatedAt
         };
         await dbContext.RecordsetItems.AddAsync(entity, cancellationToken);
+        pendingRecords.Add((record, entity));
     }
 
     public async Task UpdateRecordAsync(Record record, CancellationToken cancellationToken)
@@ -163,9 +184,35 @@ public sealed class RecordsetRepository(RecordsetsDbContext dbContext) : IRecord
         return dbContext.RecordsetItems.CountAsync(x => x.RecordsetId == recordsetKey, cancellationToken);
     }
 
-    public Task<int> SaveChangesAsync(CancellationToken cancellationToken)
+    Task<int> IUnitOfWork.SaveChangesAsync(CancellationToken cancellationToken)
     {
-        return dbContext.SaveChangesAsync(cancellationToken);
+        return SaveAndAssignIdsAsync(false, cancellationToken);
+    }
+
+    Task<int> IUnitOfWork.SaveChangesAsync(bool deferDispatch, CancellationToken cancellationToken)
+    {
+        return SaveAndAssignIdsAsync(deferDispatch, cancellationToken);
+    }
+
+    private async Task<int> SaveAndAssignIdsAsync(bool deferDispatch, CancellationToken cancellationToken)
+    {
+        var result = await base.SaveChangesAsync(deferDispatch, cancellationToken);
+
+        if (pendingRecords.Count == 0)
+        {
+            return result;
+        }
+
+        foreach (var (record, entity) in pendingRecords)
+        {
+            if (entity.Id > 0)
+            {
+                record.Id = (int)entity.Id;
+            }
+        }
+
+        pendingRecords.Clear();
+        return result;
     }
 
     private async Task ReplaceSchemaAsync(Recordset recordset, CancellationToken cancellationToken)

@@ -1,6 +1,5 @@
 using Records.Core.Domain.ValueObjects;
 using Records.Recordsets.Application.Commands.UpdateRecordsetSchema;
-using Records.Recordsets.Contracts.Projections;
 using Records.Recordsets.Domain.Entities;
 using Records.Recordsets.Domain.Enums;
 using Records.Recordsets.Domain.Exceptions;
@@ -25,8 +24,7 @@ public class UpdateRecordsetSchemaCommandHandlerTests
         );
 
         var unitOfWork = new FakeRecordsetsUnitOfWork(recordset);
-        var projectionWriter = new FakeProjectionWriter();
-        var handler = new UpdateRecordsetSchemaCommandHandler(unitOfWork, projectionWriter);
+        var handler = new UpdateRecordsetSchemaCommandHandler(unitOfWork);
 
         await handler.Handle(new UpdateRecordsetSchemaCommand(
             recordset.Id,
@@ -38,7 +36,6 @@ public class UpdateRecordsetSchemaCommandHandlerTests
         ), CancellationToken.None);
 
         Assert.That(unitOfWork.UpdatedRecordset, Is.Not.Null);
-        Assert.That(projectionWriter.Upserted, Is.Not.Null);
     }
 
     [Test]
@@ -55,8 +52,7 @@ public class UpdateRecordsetSchemaCommandHandlerTests
         );
 
         var unitOfWork = new FakeRecordsetsUnitOfWork(recordset);
-        var projectionWriter = new FakeProjectionWriter();
-        var handler = new UpdateRecordsetSchemaCommandHandler(unitOfWork, projectionWriter);
+        var handler = new UpdateRecordsetSchemaCommandHandler(unitOfWork);
 
         Assert.ThrowsAsync<MigrationRequiredException>(() =>
             handler.Handle(new UpdateRecordsetSchemaCommand(
@@ -83,8 +79,7 @@ public class UpdateRecordsetSchemaCommandHandlerTests
         );
 
         var unitOfWork = new FakeRecordsetsUnitOfWork(recordset);
-        var projectionWriter = new FakeProjectionWriter();
-        var handler = new UpdateRecordsetSchemaCommandHandler(unitOfWork, projectionWriter);
+        var handler = new UpdateRecordsetSchemaCommandHandler(unitOfWork);
 
         Assert.ThrowsAsync<MigrationRequiredException>(() =>
             handler.Handle(new UpdateRecordsetSchemaCommand(
@@ -158,30 +153,15 @@ public class UpdateRecordsetSchemaCommandHandlerTests
         {
             return Task.FromResult(1);
         }
-    }
 
-    private sealed class FakeProjectionWriter : IRecordsetProjectionWriter
-    {
-        public RecordsetProjectionModel? Upserted { get; private set; }
-
-        public Task UpsertAsync(RecordsetProjectionModel model, CancellationToken cancellationToken)
+        public Task<int> SaveChangesAsync(bool deferDispatch, CancellationToken cancellationToken)
         {
-            Upserted = model;
-            return Task.CompletedTask;
+            return Task.FromResult(1);
         }
 
-        public Task UpdateItemCountAsync(UlidId recordsetId, int itemCount, CancellationToken cancellationToken)
+        public void Dispose()
         {
-            return Task.CompletedTask;
-        }
-
-        public Task UpdateLastUpdatedAsync(
-            UlidId recordsetId,
-            DateTimeOffset updatedAt,
-            CancellationToken cancellationToken
-        )
-        {
-            return Task.CompletedTask;
         }
     }
+
 }

@@ -73,11 +73,24 @@ Application ──────► Contracts ◄────── Infrastructure
 - EF Core entity classes in `.Infrastructure.Sql` projects end with `Db`.
 - Table names remain unchanged by class renames.
 
+## 2.2) Module Composition and Portability
+
+- Modules are designed to be **portable building blocks**. A Records variant (e.g., "Records for Background Checks")
+  should be achievable by composing a different set of modules (e.g., `Orders`, `Services`) and omitting others
+  (e.g., dynamic `Recordsets`), with minimal glue code in the app host.
+- Each module must expose a single `Add{Module}()` registration extension (services + data access) and a single
+  `Map{Module}()` extension (HTTP endpoints). The host composes the product by calling these.
+- Modules must declare dependencies only through **Contracts**; cross-module calls are via Contracts interfaces or
+  integration events. No hidden or "backchannel" dependencies are allowed.
+- Module-owned schemas, migrations, and background services stay inside the module. The host only wires them up.
+
 ## 3) Bounded Contexts (Initial)
 
 - Recordsets
 - Notifications
 - Users
+- Tenants
+- Clocks
 
 ---
 
@@ -98,6 +111,13 @@ Application ──────► Contracts ◄────── Infrastructure
 
 - `Records.App.Server` (API surface, background services, integration wiring)
 - `Records.App.Infrastructure.Security` (host security/identity wiring and policies)
+
+## 5.1) API Conventions
+
+- Write endpoints map to a single command (CQRS). No direct database writes in controllers.
+- `POST` returns `201 Created` with a Location header and the created representation (or identifier payload).
+- `PUT`/`PATCH`/state change commands return `204 NoContent` on success.
+- Read endpoints use query services and return `200 OK` with DTOs.
 
 ---
 

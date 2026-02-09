@@ -1,14 +1,12 @@
 using MediatR;
 using Records.Core.Domain.ValueObjects;
-using Records.Recordsets.Contracts.Projections;
 using Records.Recordsets.Domain.Entities;
 using Records.Recordsets.Domain.Interfaces;
 
 namespace Records.Recordsets.Application.Commands.CreateRecordset;
 
 public sealed class CreateRecordsetCommandHandler(
-    IRecordsetsUnitOfWork unitOfWork,
-    IRecordsetProjectionWriter projectionWriter
+    IRecordsetsUnitOfWork unitOfWork
 ) : IRequestHandler<CreateRecordsetCommand, UlidId>
 {
     public async Task<UlidId> Handle(CreateRecordsetCommand request, CancellationToken cancellationToken)
@@ -24,12 +22,7 @@ public sealed class CreateRecordsetCommandHandler(
         );
 
         await unitOfWork.AddRecordsetAsync(recordset, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        await projectionWriter.UpsertAsync(
-            new RecordsetProjectionModel(recordset.Id, recordset.Name, 0, request.CreatedAt),
-            cancellationToken
-        );
+        await unitOfWork.SaveChangesAsync(true, cancellationToken);
 
         return recordset.Id;
     }

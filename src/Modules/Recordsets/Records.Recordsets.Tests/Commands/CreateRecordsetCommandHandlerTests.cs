@@ -1,6 +1,5 @@
 using Records.Core.Domain.ValueObjects;
 using Records.Recordsets.Application.Commands.CreateRecordset;
-using Records.Recordsets.Contracts.Projections;
 using Records.Recordsets.Domain.Entities;
 using Records.Recordsets.Domain.Enums;
 using Records.Recordsets.Domain.Interfaces;
@@ -14,8 +13,7 @@ public class CreateRecordsetCommandHandlerTests
     public async Task Handle_CreatesRecordsetAndProjection()
     {
         var unitOfWork = new FakeRecordsetsUnitOfWork();
-        var projectionWriter = new FakeProjectionWriter();
-        var handler = new CreateRecordsetCommandHandler(unitOfWork, projectionWriter);
+        var handler = new CreateRecordsetCommandHandler(unitOfWork);
 
         var adminId = UlidId.NewUlid();
         var id = await handler.Handle(new CreateRecordsetCommand(
@@ -29,7 +27,6 @@ public class CreateRecordsetCommandHandlerTests
 
         Assert.That(id, Is.Not.EqualTo(default(UlidId)));
         Assert.That(unitOfWork.AddedRecordset, Is.Not.Null);
-        Assert.That(projectionWriter.Upserted, Is.Not.Null);
     }
 
     private sealed class FakeRecordsetsUnitOfWork : IRecordsetsUnitOfWork
@@ -86,30 +83,15 @@ public class CreateRecordsetCommandHandlerTests
         {
             return Task.FromResult(1);
         }
-    }
 
-    private sealed class FakeProjectionWriter : IRecordsetProjectionWriter
-    {
-        public RecordsetProjectionModel? Upserted { get; private set; }
-
-        public Task UpsertAsync(RecordsetProjectionModel model, CancellationToken cancellationToken)
+        public Task<int> SaveChangesAsync(bool deferDispatch, CancellationToken cancellationToken)
         {
-            Upserted = model;
-            return Task.CompletedTask;
+            return Task.FromResult(1);
         }
 
-        public Task UpdateItemCountAsync(UlidId recordsetId, int itemCount, CancellationToken cancellationToken)
+        public void Dispose()
         {
-            return Task.CompletedTask;
-        }
-
-        public Task UpdateLastUpdatedAsync(
-            UlidId recordsetId,
-            DateTimeOffset updatedAt,
-            CancellationToken cancellationToken
-        )
-        {
-            return Task.CompletedTask;
         }
     }
+
 }

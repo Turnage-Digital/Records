@@ -43,10 +43,17 @@ public sealed class RecordsetsController(
     }
 
     [HttpPost]
-    public async Task<ActionResult<UlidId>> Create(CreateRecordsetCommand command, CancellationToken cancellationToken)
+    public async Task<ActionResult<RecordsetSummaryDto>> Create(
+        CreateRecordsetCommand command,
+        CancellationToken cancellationToken
+    )
     {
         var id = await mediator.Send(command, cancellationToken);
-        return Ok(id);
+        var recordset = await recordsetQueries.GetByIdAsync(id, cancellationToken);
+
+        return recordset is null
+            ? Created($"/api/recordsets/{id}", new { recordsetId = id })
+            : Created($"/api/recordsets/{id}", recordset);
     }
 
     [HttpPost("{recordsetId}/schema")]
@@ -67,7 +74,7 @@ public sealed class RecordsetsController(
         }
 
         await mediator.Send(command, cancellationToken);
-        return Ok();
+        return NoContent();
     }
 
     [HttpGet("{recordsetId}/records")]
@@ -107,7 +114,7 @@ public sealed class RecordsetsController(
     }
 
     [HttpPost("{recordsetId}/records")]
-    public async Task<IActionResult> CreateRecord(
+    public async Task<ActionResult<CreateRecordResult>> CreateRecord(
         string recordsetId,
         CreateRecordCommand command,
         CancellationToken cancellationToken
@@ -123,8 +130,8 @@ public sealed class RecordsetsController(
             return BadRequest("Route recordsetId does not match payload.");
         }
 
-        await mediator.Send(command, cancellationToken);
-        return Ok();
+        var result = await mediator.Send(command, cancellationToken);
+        return Created($"/api/recordsets/{recordsetId}/records/{result.RecordId}", result);
     }
 
     [HttpPost("{recordsetId}/records/{recordId:int}")]
@@ -146,6 +153,6 @@ public sealed class RecordsetsController(
         }
 
         await mediator.Send(command, cancellationToken);
-        return Ok();
+        return NoContent();
     }
 }

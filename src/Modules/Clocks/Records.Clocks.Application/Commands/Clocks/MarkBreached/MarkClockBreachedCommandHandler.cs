@@ -1,12 +1,10 @@
 using MediatR;
-using Records.Clocks.Contracts.Projections;
 using Records.Clocks.Domain.Interfaces;
 
 namespace Records.Clocks.Application.Commands.Clocks.MarkBreached;
 
 public sealed class MarkClockBreachedCommandHandler(
-    IClocksUnitOfWork unitOfWork,
-    IClockProjectionWriter projectionWriter
+    IClocksUnitOfWork unitOfWork
 ) : IRequestHandler<MarkClockBreachedCommand>
 {
     public async Task Handle(MarkClockBreachedCommand request, CancellationToken cancellationToken)
@@ -19,13 +17,6 @@ public sealed class MarkClockBreachedCommandHandler(
 
         clock.MarkBreached(request.BreachedAt);
         await unitOfWork.Clocks.UpdateAsync(clock, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        await projectionWriter.UpdateBreachedAsync(
-            clock.Id,
-            clock.State,
-            request.BreachedAt,
-            cancellationToken
-        );
+        await unitOfWork.SaveChangesAsync(true, cancellationToken);
     }
 }

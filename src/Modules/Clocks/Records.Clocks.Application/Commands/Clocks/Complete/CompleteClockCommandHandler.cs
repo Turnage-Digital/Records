@@ -1,12 +1,10 @@
 using MediatR;
-using Records.Clocks.Contracts.Projections;
 using Records.Clocks.Domain.Interfaces;
 
 namespace Records.Clocks.Application.Commands.Clocks.Complete;
 
 public sealed class CompleteClockCommandHandler(
-    IClocksUnitOfWork unitOfWork,
-    IClockProjectionWriter projectionWriter
+    IClocksUnitOfWork unitOfWork
 ) : IRequestHandler<CompleteClockCommand>
 {
     public async Task Handle(CompleteClockCommand request, CancellationToken cancellationToken)
@@ -19,13 +17,6 @@ public sealed class CompleteClockCommandHandler(
 
         clock.Complete(request.CompletedAt);
         await unitOfWork.Clocks.UpdateAsync(clock, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        await projectionWriter.UpdateCompletedAsync(
-            clock.Id,
-            clock.State,
-            request.CompletedAt,
-            cancellationToken
-        );
+        await unitOfWork.SaveChangesAsync(true, cancellationToken);
     }
 }

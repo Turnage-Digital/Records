@@ -8,4 +8,10 @@ public sealed record CreateRecordCommand(
     object Bag,
     UlidId CreatedBy,
     DateTimeOffset CreatedAt
-) : IRequest;
+) : IRequest<CreateRecordResult>;
+
+public sealed record CreateRecordResult(
+    UlidId RecordsetId,
+    int RecordId,
+    DateTimeOffset CreatedAt
+);

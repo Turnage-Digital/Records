@@ -1,3 +1,4 @@
+using MediatR;
 using Records.Core.Domain.ValueObjects;
 using Records.Recordsets.Application.Commands.UpdateRecord;
 using Records.Recordsets.Contracts.Projections;
@@ -18,7 +19,7 @@ public class UpdateRecordCommandHandlerTests
         var unitOfWork = new FakeRecordsetsUnitOfWork(record);
         var bagValidator = new FakeBagValidator();
         var projectionWriter = new FakeProjectionWriter();
-        var handler = new UpdateRecordCommandHandler(unitOfWork, bagValidator, projectionWriter);
+        var handler = new UpdateRecordCommandHandler(unitOfWork, bagValidator, projectionWriter, new NoopPublisher());
 
         await handler.Handle(
             new UpdateRecordCommand(record.RecordsetId, record.Id, new { name = "new" }, UlidId.NewUlid(),
@@ -96,6 +97,15 @@ public class UpdateRecordCommandHandlerTests
         {
             return Task.FromResult(1);
         }
+
+        public Task<int> SaveChangesAsync(bool deferDispatch, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(1);
+        }
+
+        public void Dispose()
+        {
+        }
     }
 
     private sealed class FakeBagValidator : IRecordBagValidator
@@ -126,6 +136,20 @@ public class UpdateRecordCommandHandlerTests
             DateTimeOffset updatedAt,
             CancellationToken cancellationToken
         )
+        {
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class NoopPublisher : IPublisher
+    {
+        public Task Publish(object notification, CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task Publish<TNotification>(TNotification notification, CancellationToken cancellationToken = default)
+            where TNotification : INotification
         {
             return Task.CompletedTask;
         }

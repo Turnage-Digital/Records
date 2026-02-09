@@ -1,12 +1,10 @@
 using MediatR;
-using Records.Clocks.Contracts.Projections;
 using Records.Clocks.Domain.Interfaces;
 
 namespace Records.Clocks.Application.Commands.Clocks.MarkAtRisk;
 
 public sealed class MarkClockAtRiskCommandHandler(
-    IClocksUnitOfWork unitOfWork,
-    IClockProjectionWriter projectionWriter
+    IClocksUnitOfWork unitOfWork
 ) : IRequestHandler<MarkClockAtRiskCommand>
 {
     public async Task Handle(MarkClockAtRiskCommand request, CancellationToken cancellationToken)
@@ -19,13 +17,6 @@ public sealed class MarkClockAtRiskCommandHandler(
 
         clock.MarkAtRisk(request.AtRiskAt);
         await unitOfWork.Clocks.UpdateAsync(clock, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        await projectionWriter.UpdateAtRiskAsync(
-            clock.Id,
-            clock.State,
-            request.AtRiskAt,
-            cancellationToken
-        );
+        await unitOfWork.SaveChangesAsync(true, cancellationToken);
     }
 }

@@ -108,7 +108,7 @@ public sealed class NotificationsController(
             return BadRequest(result.Error);
         }
 
-        return Ok(result.Value);
+        return Created($"/api/notifications/{result.Value.NotificationId}", result.Value);
     }
 
     [HttpPost("{notificationId}/read")]
@@ -145,7 +145,7 @@ public sealed class NotificationsController(
             return BadRequest(result.Error);
         }
 
-        return Ok();
+        return NoContent();
     }
 
     private string? ResolveUserId(string? explicitUserId)

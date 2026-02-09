@@ -1,13 +1,11 @@
 using MediatR;
-using Records.Recordsets.Contracts.Projections;
 using Records.Recordsets.Domain.Interfaces;
 using Records.Recordsets.Domain.Services.Migrations;
 
 namespace Records.Recordsets.Application.Commands.UpdateRecordsetSchema;
 
 public sealed class UpdateRecordsetSchemaCommandHandler(
-    IRecordsetsUnitOfWork unitOfWork,
-    IRecordsetProjectionWriter projectionWriter
+    IRecordsetsUnitOfWork unitOfWork
 ) : IRequestHandler<UpdateRecordsetSchemaCommand>
 {
     public async Task Handle(UpdateRecordsetSchemaCommand request, CancellationToken cancellationToken)
@@ -34,12 +32,6 @@ public sealed class UpdateRecordsetSchemaCommandHandler(
         );
 
         await unitOfWork.UpdateRecordsetAsync(recordset, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        var itemCount = await unitOfWork.GetRecordCountAsync(recordset.Id, cancellationToken);
-        await projectionWriter.UpsertAsync(
-            new RecordsetProjectionModel(recordset.Id, recordset.Name, itemCount, request.UpdatedAt),
-            cancellationToken
-        );
+        await unitOfWork.SaveChangesAsync(true, cancellationToken);
     }
 }

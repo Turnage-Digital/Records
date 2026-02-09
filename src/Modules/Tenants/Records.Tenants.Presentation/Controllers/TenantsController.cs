@@ -37,10 +37,16 @@ public sealed class TenantsController(IMediator mediator, ITenantQueries tenantQ
     }
 
     [HttpPost]
-    public async Task<ActionResult<UlidId>> Create(CreateTenantCommand command, CancellationToken cancellationToken)
+    public async Task<ActionResult<TenantSummaryDto>> Create(
+        CreateTenantCommand command,
+        CancellationToken cancellationToken
+    )
     {
         var id = await mediator.Send(command, cancellationToken);
-        return Ok(id);
+        var tenant = await tenantQueries.GetByIdAsync(id, cancellationToken);
+        return tenant is null
+            ? Created($"/api/tenants/{id}", new { tenantId = id })
+            : Created($"/api/tenants/{id}", tenant);
     }
 
     [HttpPost("{tenantId}/disable")]
@@ -52,6 +58,6 @@ public sealed class TenantsController(IMediator mediator, ITenantQueries tenantQ
         }
 
         await mediator.Send(new DisableTenantCommand(tenantUlid), cancellationToken);
-        return Ok();
+        return NoContent();
     }
 }

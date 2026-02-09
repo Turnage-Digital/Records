@@ -60,7 +60,7 @@ This plan tracks the staged migration from Lister to Records with a Holmes-style
 - [x] Add `Records.Notifications.Presentation`
 - [x] Add notification rules (CRUD + queries)
 - [x] Add notifications list/unread endpoints (Lister-style API surface)
-- [ ] Rework notification flows around integration events
+- [x] Rework notification flows around integration events
 
 ## Stage 5 — Clocks Module (Port of Holmes SlaClocks)
 
@@ -75,7 +75,31 @@ This plan tracks the staged migration from Lister to Records with a Holmes-style
 
 ## Stage 6 — Cross-Cutting
 
-- [ ] Integrations: outbox, projections, SSE (as needed)
-- [ ] Enforce controller/command rules (one command per write endpoint)
-- [ ] Module integration event map
-- [ ] Read model strategy per module
+- [x] Integrations: outbox, projections, SSE (as needed)
+- [x] Enforce controller/command rules (one command per write endpoint)
+- [x] Module integration event map
+- [x] Read model strategy per module
+
+## Stage 7 — API Parity (Backend)
+
+- [ ] Add `/api/lists/*` compatibility layer or alias to recordsets endpoints
+- [ ] List history + item history endpoints
+- [ ] Paged list items with sort (`page`, `pageSize`, `field`, `sort`)
+- [ ] `/api/lists/names` and `/api/lists/{id}/itemDefinition`
+- [ ] Query-options parity audit (Lister `query-options.ts`)
+
+## Stage 8 — Frontend/UI Port (React)
+
+- [ ] Port base client app shell + routing
+- [ ] Lists/Recordsets UI parity (list view, record view, filters, schema editor)
+- [ ] Notifications UI parity (list, detail, rules)
+- [ ] Migrations UI parity (plan + progress)
+- [ ] Identity + tenant admin screens
+
+## Stage 9 — Hardening & Ops
+
+- [ ] Auth policies + tenant scoping (global admins vs tenant admins vs ops)
+- [ ] Background jobs reliability + retries
+- [ ] Observability (logging, metrics, tracing)
+- [ ] Data migrations / seed scripts
+- [ ] Deployment templates (docker-compose, K8s, CI)

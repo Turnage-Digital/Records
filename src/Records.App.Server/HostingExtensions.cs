@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Records.App.Server.Services;
@@ -77,6 +78,9 @@ internal static class HostingExtensions
             .AddIdentityApiEndpoints<User>()
             .AddEntityFrameworkStores<UsersDbContext>()
             .AddDefaultTokenProviders();
+
+        builder.Services.AddSingleton<ChangeFeed>();
+        builder.Services.AddTransient(typeof(INotificationHandler<>), typeof(ChangeFeedNotificationHandler<>));
 
         builder.Services.AddAuthentication().AddIdentityCookies();
         builder.Services.AddAuthorization();

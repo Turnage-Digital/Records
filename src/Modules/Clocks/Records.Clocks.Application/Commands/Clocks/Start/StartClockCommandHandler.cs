@@ -1,5 +1,4 @@
 using MediatR;
-using Records.Clocks.Contracts.Projections;
 using Records.Clocks.Contracts.Services;
 using Records.Clocks.Domain;
 using Records.Clocks.Domain.Entities;
@@ -10,8 +9,7 @@ namespace Records.Clocks.Application.Commands.Clocks.Start;
 
 public sealed class StartClockCommandHandler(
     IClocksUnitOfWork unitOfWork,
-    IBusinessCalendarService calendarService,
-    IClockProjectionWriter projectionWriter
+    IBusinessCalendarService calendarService
 ) : IRequestHandler<StartClockCommand, UlidId>
 {
     public async Task<UlidId> Handle(StartClockCommand request, CancellationToken cancellationToken)
@@ -67,22 +65,7 @@ public sealed class StartClockCommandHandler(
         );
 
         await unitOfWork.Clocks.AddAsync(clock, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        await projectionWriter.UpsertAsync(
-            new ClockProjectionModel(
-                clock.Id,
-                clock.RecordsetId,
-                clock.RecordId,
-                clock.TenantId,
-                clock.DefinitionId,
-                clock.State,
-                clock.StartedAt,
-                clock.AtRiskDueAt,
-                clock.BreachDueAt
-            ),
-            cancellationToken
-        );
+        await unitOfWork.SaveChangesAsync(true, cancellationToken);
 
         return clock.Id;
     }

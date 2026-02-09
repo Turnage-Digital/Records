@@ -58,10 +58,16 @@ public sealed class UsersController(
     }
 
     [HttpPost("invite")]
-    public async Task<ActionResult<UlidId>> Invite(InviteUserCommand command, CancellationToken cancellationToken)
+    public async Task<ActionResult<UserSummaryDto>> Invite(
+        InviteUserCommand command,
+        CancellationToken cancellationToken
+    )
     {
         var id = await mediator.Send(command, cancellationToken);
-        return Ok(id);
+        var user = await userQueries.GetByIdAsync(id, cancellationToken);
+        return user is null
+            ? Created($"/api/users/{id}", new { userId = id })
+            : Created($"/api/users/{id}", user);
     }
 
     [HttpPost("{userId}/suspend")]
@@ -82,7 +88,7 @@ public sealed class UsersController(
         }
 
         await mediator.Send(command, cancellationToken);
-        return Ok();
+        return NoContent();
     }
 
     [HttpPost("{userId}/roles/grant")]
@@ -103,7 +109,7 @@ public sealed class UsersController(
         }
 
         await mediator.Send(command, cancellationToken);
-        return Ok();
+        return NoContent();
     }
 
     [HttpPost("{userId}/roles/revoke")]
@@ -124,6 +130,6 @@ public sealed class UsersController(
         }
 
         await mediator.Send(command, cancellationToken);
-        return Ok();
+        return NoContent();
     }
 }

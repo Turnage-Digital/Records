@@ -13,7 +13,7 @@ public sealed class Record
         CreatedAt = createdAt;
     }
 
-    public int Id { get; private set; }
+    public int Id { get; internal set; }
     public UlidId RecordsetId { get; private set; }
     public object Bag { get; private set; }
     public UlidId CreatedBy { get; private set; }

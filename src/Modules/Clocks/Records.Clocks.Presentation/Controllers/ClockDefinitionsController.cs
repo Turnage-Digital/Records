@@ -52,13 +52,16 @@ public sealed class ClockDefinitionsController(
     }
 
     [HttpPost]
-    public async Task<ActionResult<UlidId>> Create(
+    public async Task<ActionResult<ClockDefinitionDto>> Create(
         CreateClockDefinitionCommand command,
         CancellationToken cancellationToken
     )
     {
         var id = await mediator.Send(command, cancellationToken);
-        return Ok(id);
+        var definition = await queries.GetByIdAsync(id, cancellationToken);
+        return definition is null
+            ? Created($"/api/clock-definitions/{id}", new { definitionId = id })
+            : Created($"/api/clock-definitions/{id}", definition);
     }
 
     [HttpPut("{definitionId}")]
@@ -79,7 +82,7 @@ public sealed class ClockDefinitionsController(
         }
 
         await mediator.Send(command, cancellationToken);
-        return Ok();
+        return NoContent();
     }
 
     [HttpPost("{definitionId}/disable")]
@@ -100,6 +103,6 @@ public sealed class ClockDefinitionsController(
         }
 
         await mediator.Send(command, cancellationToken);
-        return Ok();
+        return NoContent();
     }
 }
