@@ -82,19 +82,22 @@ This plan tracks the staged migration from Lister to Records with a Holmes-style
 
 ## Stage 7 — API Parity (Backend)
 
-- [ ] Add `/api/lists/*` compatibility layer or alias to recordsets endpoints
-- [ ] List history + item history endpoints
-- [ ] Paged list items with sort (`page`, `pageSize`, `field`, `sort`)
-- [ ] `/api/lists/names` and `/api/lists/{id}/itemDefinition`
-- [ ] Query-options parity audit (Lister `query-options.ts`)
+- [x] Keep canonical API as `/api/recordsets/*` (no `/api/lists/*` compatibility alias)
+- [x] List history + item history endpoints
+- [x] Paged list items with sort (`page`, `pageSize`, `field`, `sort`)
+- [x] Add recordset equivalents for names + definition metadata
+- [x] Query-options migration: update `Lister/src/Lister.Client/src/query-options.ts` calls to `/api/recordsets/*`
 
 ## Stage 8 — Frontend/UI Port (React)
 
-- [ ] Port base client app shell + routing
+- [x] Port base client app shell + routing
+- [x] Recordset setup flow uses in-context side drawers for notifications + clock definitions
+- [x] Recordset page exposes scoped notifications drawer (query + unread + mark-all within recordset context)
 - [ ] Lists/Recordsets UI parity (list view, record view, filters, schema editor)
 - [ ] Notifications UI parity (list, detail, rules)
 - [ ] Migrations UI parity (plan + progress)
 - [ ] Identity + tenant admin screens
+- [x] Clocks UI baseline (clock definitions + record clock actions)
 
 ## Stage 9 — Hardening & Ops
 

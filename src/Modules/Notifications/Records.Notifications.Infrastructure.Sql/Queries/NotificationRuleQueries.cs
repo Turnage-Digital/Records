@@ -11,9 +11,9 @@ public sealed class NotificationRuleQueries(NotificationsDbContext context)
 {
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
 
-    public async Task<IReadOnlyList<NotificationRuleDto>> GetByListAsync(
+    public async Task<IReadOnlyList<NotificationRuleDto>> GetByRecordsetAsync(
         string userId,
-        string? listId,
+        string? recordsetId,
         CancellationToken cancellationToken
     )
     {
@@ -21,9 +21,9 @@ public sealed class NotificationRuleQueries(NotificationsDbContext context)
             .AsNoTracking()
             .Where(r => r.UserId == userId && !r.IsDeleted);
 
-        if (!string.IsNullOrWhiteSpace(listId))
+        if (!string.IsNullOrWhiteSpace(recordsetId))
         {
-            query = query.Where(r => r.RecordsetId == listId);
+            query = query.Where(r => r.RecordsetId == recordsetId);
         }
 
         var rules = await query.ToListAsync(cancellationToken);
@@ -41,7 +41,7 @@ public sealed class NotificationRuleQueries(NotificationsDbContext context)
                 {
                     Id = rule.Id,
                     UserId = rule.UserId,
-                    ListId = rule.RecordsetId,
+                    RecordsetId = rule.RecordsetId,
                     IsActive = rule.IsActive,
                     TemplateId = rule.TemplateId,
                     Trigger = new NotificationTriggerDto

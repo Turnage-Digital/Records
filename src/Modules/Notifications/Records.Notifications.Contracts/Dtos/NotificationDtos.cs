@@ -20,11 +20,11 @@ public sealed record NotificationSummaryDto
     [JsonPropertyName("occurredOn")]
     public DateTimeOffset OccurredOn { get; init; }
 
-    [JsonPropertyName("listId")]
-    public string? ListId { get; init; }
+    [JsonPropertyName("recordsetId")]
+    public string? RecordsetId { get; init; }
 
-    [JsonPropertyName("itemId")]
-    public int? ItemId { get; init; }
+    [JsonPropertyName("recordId")]
+    public int? RecordId { get; init; }
 
     [JsonPropertyName("metadata")]
     public object? Metadata { get; init; }
@@ -56,11 +56,11 @@ public sealed record NotificationDetailsDto
     [JsonPropertyName("userId")]
     public string UserId { get; init; } = string.Empty;
 
-    [JsonPropertyName("listId")]
-    public string? ListId { get; init; }
+    [JsonPropertyName("recordsetId")]
+    public string? RecordsetId { get; init; }
 
-    [JsonPropertyName("itemId")]
-    public int? ItemId { get; init; }
+    [JsonPropertyName("recordId")]
+    public int? RecordId { get; init; }
 
     [JsonPropertyName("title")]
     public string Title { get; init; } = string.Empty;

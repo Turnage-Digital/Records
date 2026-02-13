@@ -18,6 +18,13 @@ public sealed class RecordsetsController(
     IRecordQueries recordQueries
 ) : ControllerBase
 {
+    [HttpGet("names")]
+    public async Task<ActionResult<IReadOnlyList<RecordsetNameDto>>> ListNames(CancellationToken cancellationToken)
+    {
+        var names = await recordsetQueries.ListNamesAsync(cancellationToken);
+        return Ok(names);
+    }
+
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<RecordsetSummaryDto>>> List(CancellationToken cancellationToken)
     {
@@ -56,6 +63,26 @@ public sealed class RecordsetsController(
             : Created($"/api/recordsets/{id}", recordset);
     }
 
+    [HttpGet("{recordsetId}/itemDefinition")]
+    public async Task<ActionResult<RecordsetItemDefinitionDto>> GetItemDefinition(
+        string recordsetId,
+        CancellationToken cancellationToken
+    )
+    {
+        if (!UlidId.TryParse(recordsetId, out var recordsetUlid))
+        {
+            return BadRequest("Invalid recordset id format.");
+        }
+
+        var definition = await recordsetQueries.GetItemDefinitionAsync(recordsetUlid, cancellationToken);
+        if (definition is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(definition);
+    }
+
     [HttpPost("{recordsetId}/schema")]
     public async Task<IActionResult> UpdateSchema(
         string recordsetId,
@@ -78,9 +105,13 @@ public sealed class RecordsetsController(
     }
 
     [HttpGet("{recordsetId}/records")]
-    public async Task<ActionResult<IReadOnlyList<RecordDto>>> ListRecords(
+    public async Task<ActionResult<RecordsetPagedRecordsDto>> ListRecords(
         string recordsetId,
-        CancellationToken cancellationToken
+        [FromQuery] int page = 0,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? field = null,
+        [FromQuery] string? sort = null,
+        CancellationToken cancellationToken = default
     )
     {
         if (!UlidId.TryParse(recordsetId, out var recordsetUlid))
@@ -88,12 +119,29 @@ public sealed class RecordsetsController(
             return BadRequest("Invalid recordset id format.");
         }
 
-        var records = await recordQueries.ListAsync(recordsetUlid, cancellationToken);
-        return Ok(records);
+        if (page < 0 || pageSize <= 0)
+        {
+            return BadRequest("Invalid pagination arguments.");
+        }
+
+        var effectivePageSize = Math.Min(pageSize, 200);
+        var pageResult = await recordQueries.GetPageAsync(
+            recordsetUlid,
+            page,
+            effectivePageSize,
+            field,
+            sort,
+            cancellationToken);
+        if (pageResult is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(pageResult);
     }
 
     [HttpGet("{recordsetId}/records/{recordId:int}")]
-    public async Task<ActionResult<RecordDto>> GetRecord(
+    public async Task<ActionResult<RecordItemDetailsDto>> GetRecord(
         string recordsetId,
         int recordId,
         CancellationToken cancellationToken
@@ -104,13 +152,78 @@ public sealed class RecordsetsController(
             return BadRequest("Invalid recordset id format.");
         }
 
-        var record = await recordQueries.GetByIdAsync(recordsetUlid, recordId, cancellationToken);
+        var record = await recordQueries.GetDetailsAsync(recordsetUlid, recordId, cancellationToken);
         if (record is null)
         {
             return NotFound();
         }
 
         return Ok(record);
+    }
+
+    [HttpGet("{recordsetId}/history")]
+    public async Task<ActionResult<HistoryPageDto>> GetRecordsetHistory(
+        string recordsetId,
+        [FromQuery] int page = 0,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (!UlidId.TryParse(recordsetId, out var recordsetUlid))
+        {
+            return BadRequest("Invalid recordset id format.");
+        }
+
+        if (page < 0 || pageSize <= 0)
+        {
+            return BadRequest("Invalid pagination arguments.");
+        }
+
+        var recordset = await recordsetQueries.GetByIdAsync(recordsetUlid, cancellationToken);
+        if (recordset is null)
+        {
+            return NotFound();
+        }
+
+        var history = await recordQueries.GetRecordsetHistoryAsync(
+            recordsetUlid,
+            page,
+            pageSize,
+            cancellationToken);
+        return Ok(history);
+    }
+
+    [HttpGet("{recordsetId}/records/{recordId:int}/history")]
+    public async Task<ActionResult<HistoryPageDto>> GetRecordHistory(
+        string recordsetId,
+        int recordId,
+        [FromQuery] int page = 0,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (!UlidId.TryParse(recordsetId, out var recordsetUlid))
+        {
+            return BadRequest("Invalid recordset id format.");
+        }
+
+        if (page < 0 || pageSize <= 0)
+        {
+            return BadRequest("Invalid pagination arguments.");
+        }
+
+        var history = await recordQueries.GetRecordHistoryAsync(
+            recordsetUlid,
+            recordId,
+            page,
+            pageSize,
+            cancellationToken);
+        if (history is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(history);
     }
 
     [HttpPost("{recordsetId}/records")]
@@ -134,6 +247,7 @@ public sealed class RecordsetsController(
         return Created($"/api/recordsets/{recordsetId}/records/{result.RecordId}", result);
     }
 
+    [HttpPut("{recordsetId}/records/{recordId:int}")]
     [HttpPost("{recordsetId}/records/{recordId:int}")]
     public async Task<IActionResult> UpdateRecord(
         string recordsetId,

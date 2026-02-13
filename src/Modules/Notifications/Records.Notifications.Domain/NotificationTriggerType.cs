@@ -2,13 +2,13 @@ namespace Records.Notifications.Domain;
 
 public enum NotificationTriggerType
 {
-    ItemCreated,
-    ItemDeleted,
-    ItemUpdated,
+    RecordCreated,
+    RecordDeleted,
+    RecordUpdated,
     StatusChanged,
     ColumnValueChanged,
-    ListDeleted,
-    ListUpdated,
+    RecordsetDeleted,
+    RecordsetUpdated,
     CustomCondition,
     ClockAtRisk,
     ClockBreached,

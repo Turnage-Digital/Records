@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Records.Core.Application;
 using Records.Core.Domain.ValueObjects;
 using Records.Notifications.Application.Commands;
 using Records.Notifications.Contracts;
@@ -39,7 +40,7 @@ public sealed class NotificationsController(
 
     [HttpGet]
     public async Task<ActionResult<NotificationListPageDto>> List(
-        [FromQuery] string? listId,
+        [FromQuery] string? recordsetId,
         [FromQuery] DateTimeOffset? since,
         [FromQuery] bool? unread,
         [FromQuery] int pageSize = 20,
@@ -54,9 +55,9 @@ public sealed class NotificationsController(
             return Unauthorized();
         }
 
-        if (!string.IsNullOrWhiteSpace(listId) && !UlidId.TryParse(listId, out _))
+        if (!string.IsNullOrWhiteSpace(recordsetId) && !UlidId.TryParse(recordsetId, out _))
         {
-            return BadRequest("Invalid list id format.");
+            return BadRequest("Invalid recordset id format.");
         }
 
         var effectivePageSize = pageSize <= 0 ? 20 : Math.Min(pageSize, 200);
@@ -64,7 +65,7 @@ public sealed class NotificationsController(
 
         var result = await queries.GetPageAsync(
             resolvedUserId,
-            listId,
+            recordsetId,
             since,
             unread,
             effectivePageSize,
@@ -76,7 +77,7 @@ public sealed class NotificationsController(
 
     [HttpGet("unreadCount")]
     public async Task<ActionResult<int>> GetUnreadCount(
-        [FromQuery] string? listId,
+        [FromQuery] string? recordsetId,
         [FromQuery] string? userId,
         CancellationToken cancellationToken
     )
@@ -87,12 +88,12 @@ public sealed class NotificationsController(
             return Unauthorized();
         }
 
-        if (!string.IsNullOrWhiteSpace(listId) && !UlidId.TryParse(listId, out _))
+        if (!string.IsNullOrWhiteSpace(recordsetId) && !UlidId.TryParse(recordsetId, out _))
         {
-            return BadRequest("Invalid list id format.");
+            return BadRequest("Invalid recordset id format.");
         }
 
-        var count = await queries.GetUnreadCountAsync(resolvedUserId, listId, cancellationToken);
+        var count = await queries.GetUnreadCountAsync(resolvedUserId, recordsetId, cancellationToken);
         return Ok(count);
     }
 
@@ -114,7 +115,6 @@ public sealed class NotificationsController(
     [HttpPost("{notificationId}/read")]
     public async Task<IActionResult> MarkRead(
         string notificationId,
-        MarkNotificationReadCommand command,
         CancellationToken cancellationToken
     )
     {
@@ -123,29 +123,56 @@ public sealed class NotificationsController(
             return BadRequest("Invalid notification id format.");
         }
 
-        if (notificationUlid != command.NotificationId)
+        var readerUserId = ResolveUserId(null);
+        if (string.IsNullOrWhiteSpace(readerUserId))
         {
-            return BadRequest("Route notificationId does not match payload.");
+            return Unauthorized();
         }
 
-        if (string.IsNullOrWhiteSpace(command.ReaderUserId))
-        {
-            var resolvedUserId = ResolveUserId(null);
-            if (string.IsNullOrWhiteSpace(resolvedUserId))
-            {
-                return Unauthorized();
-            }
-
-            command = command with { ReaderUserId = resolvedUserId };
-        }
+        var command = new MarkNotificationReadCommand(
+            notificationUlid,
+            readerUserId,
+            DateTimeOffset.UtcNow);
 
         var result = await mediator.Send(command, cancellationToken);
         if (!result.IsSuccess)
         {
-            return BadRequest(result.Error);
+            return result.Error == ResultErrors.NotFound
+                ? NotFound()
+                : BadRequest(result.Error);
         }
 
         return NoContent();
+    }
+
+    [HttpPost("readAll")]
+    public async Task<IActionResult> MarkAllRead(
+        [FromBody] MarkAllReadBody? body,
+        CancellationToken cancellationToken
+    )
+    {
+        UlidId? scopedRecordsetId = null;
+        if (!string.IsNullOrWhiteSpace(body?.RecordsetId))
+        {
+            if (!UlidId.TryParse(body.RecordsetId, out var parsedRecordsetId))
+            {
+                return BadRequest("Invalid recordset id format.");
+            }
+
+            scopedRecordsetId = parsedRecordsetId;
+        }
+
+        var command = new MarkAllNotificationsReadCommand(body?.Before, scopedRecordsetId);
+        var result = await mediator.Send(command, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return result.Error == ResultErrors.Forbidden
+                ? Unauthorized()
+                : BadRequest(result.Error);
+        }
+
+        return Ok();
     }
 
     private string? ResolveUserId(string? explicitUserId)
@@ -157,4 +184,6 @@ public sealed class NotificationsController(
 
         return User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity?.Name;
     }
+
+    public sealed record MarkAllReadBody(DateTimeOffset? Before, string? RecordsetId);
 }

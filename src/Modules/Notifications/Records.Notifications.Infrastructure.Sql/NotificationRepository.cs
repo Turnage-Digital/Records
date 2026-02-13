@@ -60,6 +60,35 @@ public sealed class NotificationRepository(NotificationsDbContext context) : INo
         return failed.Select(NotificationMapper.ToDomain).ToList();
     }
 
+    public async Task MarkAllAsReadAsync(
+        string userId,
+        DateTimeOffset readAt,
+        DateTimeOffset? before = null,
+        UlidId? recordsetId = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var query = context.Notifications
+            .Where(n => n.RecipientUserId == userId && n.ReadAt == null);
+
+        if (before.HasValue)
+        {
+            query = query.Where(n => n.CreatedAt <= before.Value.UtcDateTime);
+        }
+
+        if (recordsetId.HasValue)
+        {
+            var recordsetKey = recordsetId.Value.ToString();
+            query = query.Where(n => n.RecordsetId == recordsetKey);
+        }
+
+        var notifications = await query.ToListAsync(cancellationToken);
+        foreach (var notification in notifications)
+        {
+            notification.ReadAt = readAt.UtcDateTime;
+        }
+    }
+
     public async Task AddAsync(Notification notification, CancellationToken cancellationToken = default)
     {
         var db = NotificationMapper.ToDb(notification);

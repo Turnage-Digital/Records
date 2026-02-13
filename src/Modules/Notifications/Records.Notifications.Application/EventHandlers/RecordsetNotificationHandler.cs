@@ -23,7 +23,7 @@ public sealed class RecordsetNotificationHandler(
             cancellationToken);
 
         var matchingRules = rules
-            .Where(r => r.Trigger.Type == NotificationTriggerType.ListUpdated)
+            .Where(r => r.Trigger.Type == NotificationTriggerType.RecordsetUpdated)
             .ToList();
 
         if (matchingRules.Count == 0)
@@ -42,7 +42,7 @@ public sealed class RecordsetNotificationHandler(
 
         foreach (var rule in matchingRules)
         {
-            var trigger = NotificationTrigger.ListUpdated(rule.TenantId, notification.RecordsetId);
+            var trigger = NotificationTrigger.RecordsetUpdated(rule.TenantId, notification.RecordsetId);
 
             if (!await triggerEvaluator.ShouldTriggerAsync(rule, trigger, context, cancellationToken))
             {
@@ -77,7 +77,7 @@ public sealed class RecordsetNotificationHandler(
             cancellationToken);
 
         var matchingRules = rules
-            .Where(r => r.Trigger.Type == NotificationTriggerType.ItemCreated)
+            .Where(r => r.Trigger.Type == NotificationTriggerType.RecordCreated)
             .ToList();
 
         if (matchingRules.Count == 0)
@@ -99,7 +99,7 @@ public sealed class RecordsetNotificationHandler(
         {
             var trigger = new NotificationTrigger
             {
-                Type = NotificationTriggerType.ItemCreated,
+                Type = NotificationTriggerType.RecordCreated,
                 TenantId = rule.TenantId,
                 RecordsetId = notification.RecordsetId,
                 RecordId = notification.RecordId
@@ -196,7 +196,7 @@ public sealed class RecordsetNotificationHandler(
             cancellationToken);
 
         var matchingRules = rules
-            .Where(r => r.Trigger.Type == NotificationTriggerType.ItemDeleted)
+            .Where(r => r.Trigger.Type == NotificationTriggerType.RecordDeleted)
             .ToList();
 
         if (matchingRules.Count == 0)
@@ -218,7 +218,7 @@ public sealed class RecordsetNotificationHandler(
         {
             var trigger = new NotificationTrigger
             {
-                Type = NotificationTriggerType.ItemDeleted,
+                Type = NotificationTriggerType.RecordDeleted,
                 TenantId = rule.TenantId,
                 RecordsetId = notification.RecordsetId,
                 RecordId = notification.RecordId
@@ -299,7 +299,7 @@ public sealed class RecordsetNotificationHandler(
         {
             new()
             {
-                Type = NotificationTriggerType.ItemUpdated,
+                Type = NotificationTriggerType.RecordUpdated,
                 RecordsetId = notification.RecordsetId,
                 RecordId = notification.RecordId
             }

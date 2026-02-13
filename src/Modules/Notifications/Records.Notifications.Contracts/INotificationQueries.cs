@@ -12,7 +12,7 @@ public interface INotificationQueries
 
     Task<NotificationListPageDto> GetPageAsync(
         string userId,
-        string? listId,
+        string? recordsetId,
         DateTimeOffset? since,
         bool? unread,
         int pageSize,
@@ -20,7 +20,7 @@ public interface INotificationQueries
         CancellationToken cancellationToken
     );
 
-    Task<int> GetUnreadCountAsync(string userId, string? listId, CancellationToken cancellationToken);
+    Task<int> GetUnreadCountAsync(string userId, string? recordsetId, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<NotificationPendingDto>> GetPendingAsync(
         int limit,

@@ -52,8 +52,8 @@ public sealed class NotificationQueries(NotificationsDbContext dbContext)
             Id = entity.Id,
             NotificationRuleId = entity.NotificationRuleId,
             UserId = entity.RecipientUserId ?? string.Empty,
-            ListId = entity.RecordsetId,
-            ItemId = entity.RecordId,
+            RecordsetId = entity.RecordsetId,
+            RecordId = entity.RecordId,
             Title = entity.ContentSubject,
             Body = entity.ContentBody,
             Metadata = metadata.Count > 0 ? metadata : null,
@@ -65,7 +65,7 @@ public sealed class NotificationQueries(NotificationsDbContext dbContext)
 
     public async Task<NotificationListPageDto> GetPageAsync(
         string userId,
-        string? listId,
+        string? recordsetId,
         DateTimeOffset? since,
         bool? unread,
         int pageSize,
@@ -80,9 +80,9 @@ public sealed class NotificationQueries(NotificationsDbContext dbContext)
             query = query.Where(n => n.CreatedAt >= since.Value.UtcDateTime);
         }
 
-        if (!string.IsNullOrWhiteSpace(listId))
+        if (!string.IsNullOrWhiteSpace(recordsetId))
         {
-            query = query.Where(n => n.RecordsetId == listId);
+            query = query.Where(n => n.RecordsetId == recordsetId);
         }
 
         if (unread.HasValue)
@@ -119,8 +119,8 @@ public sealed class NotificationQueries(NotificationsDbContext dbContext)
                 return new NotificationSummaryDto
                 {
                     Id = row.Id,
-                    ListId = row.RecordsetId,
-                    ItemId = row.RecordId,
+                    RecordsetId = row.RecordsetId,
+                    RecordId = row.RecordId,
                     Title = row.ContentSubject,
                     Body = row.ContentBody,
                     Metadata = metadata.Count > 0 ? metadata : null,
@@ -139,15 +139,15 @@ public sealed class NotificationQueries(NotificationsDbContext dbContext)
         };
     }
 
-    public async Task<int> GetUnreadCountAsync(string userId, string? listId, CancellationToken cancellationToken)
+    public async Task<int> GetUnreadCountAsync(string userId, string? recordsetId, CancellationToken cancellationToken)
     {
         var query = dbContext.Notifications
             .AsNoTracking()
             .Where(n => n.RecipientUserId == userId && n.ReadAt == null);
 
-        if (!string.IsNullOrWhiteSpace(listId))
+        if (!string.IsNullOrWhiteSpace(recordsetId))
         {
-            query = query.Where(n => n.RecordsetId == listId);
+            query = query.Where(n => n.RecordsetId == recordsetId);
         }
 
         return await query.CountAsync(cancellationToken);

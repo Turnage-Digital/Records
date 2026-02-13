@@ -22,11 +22,11 @@ public sealed class NotificationTriggerEvaluator : INotificationTriggerEvaluator
 
         var result = ruleTrigger.Type switch
         {
-            NotificationTriggerType.ItemCreated
-                or NotificationTriggerType.ItemDeleted
-                or NotificationTriggerType.ItemUpdated
-                or NotificationTriggerType.ListDeleted
-                or NotificationTriggerType.ListUpdated => true,
+            NotificationTriggerType.RecordCreated
+                or NotificationTriggerType.RecordDeleted
+                or NotificationTriggerType.RecordUpdated
+                or NotificationTriggerType.RecordsetDeleted
+                or NotificationTriggerType.RecordsetUpdated => true,
 
             NotificationTriggerType.StatusChanged => EvaluateStatusChanged(ruleTrigger, actualTrigger),
 

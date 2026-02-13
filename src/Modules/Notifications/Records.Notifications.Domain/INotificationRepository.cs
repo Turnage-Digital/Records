@@ -19,6 +19,14 @@ public interface INotificationRepository
         CancellationToken cancellationToken = default
     );
 
+    Task MarkAllAsReadAsync(
+        string userId,
+        DateTimeOffset readAt,
+        DateTimeOffset? before = null,
+        UlidId? recordsetId = null,
+        CancellationToken cancellationToken = default
+    );
+
     Task AddAsync(Notification notification, CancellationToken cancellationToken = default);
     Task UpdateAsync(Notification notification, CancellationToken cancellationToken = default);
 }

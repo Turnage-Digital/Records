@@ -135,6 +135,8 @@ internal static class HostingExtensions
         }
 
         app.UseHttpsRedirection();
+        app.UseDefaultFiles();
+        app.UseStaticFiles();
         app.UseRouting();
 
         app.UseAuthentication();
@@ -155,6 +157,8 @@ internal static class HostingExtensions
                 return Results.Ok();
             }
         );
+
+        app.MapFallbackToFile("index.html");
 
         return app;
     }

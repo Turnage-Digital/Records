@@ -4,9 +4,9 @@ namespace Records.Notifications.Contracts;
 
 public interface INotificationRuleQueries
 {
-    Task<IReadOnlyList<NotificationRuleDto>> GetByListAsync(
+    Task<IReadOnlyList<NotificationRuleDto>> GetByRecordsetAsync(
         string userId,
-        string? listId,
+        string? recordsetId,
         CancellationToken cancellationToken
     );
 }

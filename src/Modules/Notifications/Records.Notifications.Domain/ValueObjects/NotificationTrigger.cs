@@ -16,33 +16,33 @@ public sealed record NotificationTrigger
     public string? Value { get; init; }
     public IReadOnlyDictionary<string, object> Context { get; init; } = new Dictionary<string, object>();
 
-    public static NotificationTrigger ItemCreated(UlidId tenantId, UlidId recordsetId, int recordId)
+    public static NotificationTrigger RecordCreated(UlidId tenantId, UlidId recordsetId, int recordId)
     {
         return new NotificationTrigger
         {
-            Type = NotificationTriggerType.ItemCreated,
+            Type = NotificationTriggerType.RecordCreated,
             TenantId = tenantId,
             RecordsetId = recordsetId,
             RecordId = recordId
         };
     }
 
-    public static NotificationTrigger ItemUpdated(UlidId tenantId, UlidId recordsetId, int recordId)
+    public static NotificationTrigger RecordUpdated(UlidId tenantId, UlidId recordsetId, int recordId)
     {
         return new NotificationTrigger
         {
-            Type = NotificationTriggerType.ItemUpdated,
+            Type = NotificationTriggerType.RecordUpdated,
             TenantId = tenantId,
             RecordsetId = recordsetId,
             RecordId = recordId
         };
     }
 
-    public static NotificationTrigger ItemDeleted(UlidId tenantId, UlidId recordsetId, int recordId)
+    public static NotificationTrigger RecordDeleted(UlidId tenantId, UlidId recordsetId, int recordId)
     {
         return new NotificationTrigger
         {
-            Type = NotificationTriggerType.ItemDeleted,
+            Type = NotificationTriggerType.RecordDeleted,
             TenantId = tenantId,
             RecordsetId = recordsetId,
             RecordId = recordId
@@ -89,21 +89,21 @@ public sealed record NotificationTrigger
         };
     }
 
-    public static NotificationTrigger ListUpdated(UlidId tenantId, UlidId recordsetId)
+    public static NotificationTrigger RecordsetUpdated(UlidId tenantId, UlidId recordsetId)
     {
         return new NotificationTrigger
         {
-            Type = NotificationTriggerType.ListUpdated,
+            Type = NotificationTriggerType.RecordsetUpdated,
             TenantId = tenantId,
             RecordsetId = recordsetId
         };
     }
 
-    public static NotificationTrigger ListDeleted(UlidId tenantId, UlidId recordsetId)
+    public static NotificationTrigger RecordsetDeleted(UlidId tenantId, UlidId recordsetId)
     {
         return new NotificationTrigger
         {
-            Type = NotificationTriggerType.ListDeleted,
+            Type = NotificationTriggerType.RecordsetDeleted,
             TenantId = tenantId,
             RecordsetId = recordsetId
         };

@@ -19,7 +19,7 @@ public sealed class NotificationRulesController(
 {
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<NotificationRuleDto>>> Get(
-        [FromQuery] string? listId,
+        [FromQuery] string? recordsetId,
         [FromQuery] string? userId,
         CancellationToken cancellationToken
     )
@@ -30,12 +30,12 @@ public sealed class NotificationRulesController(
             return Unauthorized();
         }
 
-        if (!string.IsNullOrWhiteSpace(listId) && !UlidId.TryParse(listId, out _))
+        if (!string.IsNullOrWhiteSpace(recordsetId) && !UlidId.TryParse(recordsetId, out _))
         {
-            return BadRequest("Invalid list id format.");
+            return BadRequest("Invalid recordset id format.");
         }
 
-        var rules = await ruleQueries.GetByListAsync(resolvedUserId, listId, cancellationToken);
+        var rules = await ruleQueries.GetByRecordsetAsync(resolvedUserId, recordsetId, cancellationToken);
         return Ok(rules);
     }
 
@@ -45,9 +45,9 @@ public sealed class NotificationRulesController(
         CancellationToken cancellationToken
     )
     {
-        if (!UlidId.TryParse(request.ListId, out var recordsetId))
+        if (!UlidId.TryParse(request.RecordsetId, out var recordsetId))
         {
-            return BadRequest("Invalid list id format.");
+            return BadRequest("Invalid recordset id format.");
         }
 
         if (!UlidId.TryParse(request.TenantId, out var tenantId))

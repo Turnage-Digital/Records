@@ -7,4 +7,6 @@ public interface IRecordsetQueries
 {
     Task<RecordsetSummaryDto?> GetByIdAsync(UlidId recordsetId, CancellationToken cancellationToken);
     Task<IReadOnlyList<RecordsetSummaryDto>> ListAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyList<RecordsetNameDto>> ListNamesAsync(CancellationToken cancellationToken);
+    Task<RecordsetItemDefinitionDto?> GetItemDefinitionAsync(UlidId recordsetId, CancellationToken cancellationToken);
 }

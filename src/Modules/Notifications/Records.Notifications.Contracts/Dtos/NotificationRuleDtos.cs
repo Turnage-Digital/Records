@@ -26,8 +26,8 @@ public sealed record NotificationRuleDto
     [JsonPropertyName("userId")]
     public string UserId { get; init; } = string.Empty;
 
-    [JsonPropertyName("listId")]
-    public string ListId { get; init; } = string.Empty;
+    [JsonPropertyName("recordsetId")]
+    public string RecordsetId { get; init; } = string.Empty;
 }
 
 public sealed record NotificationTriggerDto

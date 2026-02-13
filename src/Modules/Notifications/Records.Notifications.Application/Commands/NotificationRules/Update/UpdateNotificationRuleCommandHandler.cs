@@ -41,7 +41,7 @@ public sealed class UpdateNotificationRuleCommandHandler(
         {
             Id = rule.Id.ToString(),
             UserId = rule.UserId,
-            ListId = rule.RecordsetId.ToString(),
+            RecordsetId = rule.RecordsetId.ToString(),
             IsActive = rule.IsActive,
             TemplateId = rule.TemplateId,
             Trigger = new NotificationTriggerDto

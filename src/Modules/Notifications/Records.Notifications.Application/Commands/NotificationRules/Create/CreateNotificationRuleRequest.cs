@@ -4,7 +4,7 @@ namespace Records.Notifications.Application.Commands.NotificationRules.Create;
 
 public sealed class CreateNotificationRuleRequest
 {
-    public string ListId { get; set; } = string.Empty;
+    public string RecordsetId { get; set; } = string.Empty;
     public string TenantId { get; set; } = string.Empty;
     public string UserId { get; set; } = string.Empty;
     public NotificationTrigger Trigger { get; set; } = null!;
