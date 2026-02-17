@@ -2,6 +2,11 @@ import * as React from "react";
 
 export type AuthStatus = "checking" | "loggedOut" | "loggedIn";
 
+export interface AccessInfo {
+  isGlobalAdmin: boolean;
+  canAccessOps: boolean;
+}
+
 export interface UserInfo {
   userName?: string;
   email?: string;
@@ -14,12 +19,14 @@ interface AuthState {
   status: AuthStatus;
   username?: string;
   user: UserInfo | null;
+  access: AccessInfo;
 }
 
 export interface Auth {
   status: AuthStatus;
   username?: string;
   user: UserInfo | null;
+  access: AccessInfo;
   login: (username?: string) => void;
   logout: () => void;
   refresh: () => void;
@@ -48,13 +55,20 @@ const createLoggedOutState = (): AuthState => ({
   status: "loggedOut",
   username: undefined,
   user: null,
+  access: { isGlobalAdmin: false, canAccessOps: false },
 });
 
 const createCheckingState = (username?: string): AuthState => ({
   status: "checking",
   username,
   user: null,
+  access: { isGlobalAdmin: false, canAccessOps: false },
 });
+
+const readBoolean = (
+  payload: Record<string, unknown>,
+  key: string,
+): boolean => payload[key] === true;
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [state, setState] = React.useState<AuthState>(() =>
@@ -86,8 +100,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       const info = (await response.json()) as UserInfo | null;
+      let access: AccessInfo = {
+        isGlobalAdmin: false,
+        canAccessOps: false,
+      };
+
+      try {
+        const accessResponse = await fetch("/identity/access", {
+          credentials: "include",
+        });
+
+        if (accessResponse.status === 401) {
+          setState(createLoggedOutState());
+          return;
+        }
+
+        if (accessResponse.ok) {
+          const payload = (await accessResponse.json()) as Record<
+            string,
+            unknown
+          >;
+          access = {
+            isGlobalAdmin: readBoolean(payload, "isGlobalAdmin"),
+            canAccessOps: readBoolean(payload, "canAccessOps"),
+          };
+        }
+      } catch {
+        // Fall back to no client-side elevated access; server remains authoritative.
+      }
+
       const username = getUsernameFromInfo(info);
-      setState({ status: "loggedIn", username, user: info ?? null });
+      setState({ status: "loggedIn", username, user: info ?? null, access });
     } catch (error) {
       if (requestId !== requestIdRef.current) {
         return;
@@ -131,11 +174,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       status: state.status,
       username: state.username,
       user: state.user,
+      access: state.access,
       login,
       logout,
       refresh,
     }),
-    [state.status, state.username, state.user, login, logout, refresh],
+    [state.status, state.username, state.user, state.access, login, logout, refresh],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

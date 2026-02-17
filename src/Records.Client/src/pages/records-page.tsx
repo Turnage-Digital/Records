@@ -1,7 +1,14 @@
 import * as React from "react";
 
 import { AddCircle, History, NotificationsActive } from "@mui/icons-material";
-import { useMediaQuery, useTheme } from "@mui/material";
+import {
+  Box,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
 import { GridPaginationModel, GridSortModel } from "@mui/x-data-grid";
 import {
   useMutation,
@@ -30,9 +37,16 @@ export const getRecordsetSearch = (
 ): RecordsetSearch => {
   const page = Number(params.get("page") ?? "0");
   const pageSize = Number(params.get("pageSize") ?? "10");
+  const status = params.get("status") ?? undefined;
   const field = params.get("field") ?? undefined;
   const sort = params.get("sort") ?? undefined;
-  return { page, pageSize, field: field ?? undefined, sort: sort ?? undefined };
+  return {
+    page,
+    pageSize,
+    status: status ?? undefined,
+    field: field ?? undefined,
+    sort: sort ?? undefined,
+  };
 };
 
 const setRecordsetSearch = (
@@ -44,6 +58,9 @@ const setRecordsetSearch = (
   const nextParams = new URLSearchParams();
   nextParams.set("page", nextSearch.page.toString());
   nextParams.set("pageSize", nextSearch.pageSize.toString());
+  if (nextSearch.status) {
+    nextParams.set("status", nextSearch.status);
+  }
   if (nextSearch.field) {
     nextParams.set("field", nextSearch.field);
   }
@@ -175,6 +192,25 @@ const RecordsPage = () => {
     );
   };
 
+  const handleStatusFilterChange = (
+    _event: React.MouseEvent<HTMLElement>,
+    nextValue: string | null,
+  ) => {
+    if (!nextValue) {
+      return;
+    }
+
+    setRecordsetSearch(
+      (prev) => ({
+        ...prev,
+        page: 0,
+        status: nextValue === "__all__" ? undefined : nextValue,
+      }),
+      (next) => setSearchParams(next),
+      searchParams,
+    );
+  };
+
   const handleCreateRecord = () => {
     navigate(`/${recordsetId}/create`);
   };
@@ -244,6 +280,40 @@ const RecordsPage = () => {
     },
   ];
 
+  const hasStatusFilter = definition.statuses.length > 0;
+  const statusFilterValue = search.status ?? "__all__";
+  const statusFilterBar = hasStatusFilter ? (
+    <Box
+      sx={{
+        px: { xs: 0, md: 0.5 },
+        pb: 2,
+        display: "flex",
+        alignItems: { xs: "flex-start", md: "center" },
+        justifyContent: "space-between",
+        gap: 1.5,
+        flexWrap: "wrap",
+      }}
+    >
+      <Typography variant="body2" color="text.secondary">
+        Filter by status
+      </Typography>
+      <ToggleButtonGroup
+        size="small"
+        exclusive
+        value={statusFilterValue}
+        onChange={handleStatusFilterChange}
+        aria-label="Record status filter"
+      >
+        <ToggleButton value="__all__">All</ToggleButton>
+        {definition.statuses.map((status) => (
+          <ToggleButton key={status.name} value={status.name}>
+            {status.name}
+          </ToggleButton>
+        ))}
+      </ToggleButtonGroup>
+    </Box>
+  ) : null;
+
   const recordsView = isMobile ? (
     <RecordsMobileView
       records={pagedRecordsQuery.data.items}
@@ -277,6 +347,7 @@ const RecordsPage = () => {
         actions={actions}
         breadcrumbs={breadcrumbs}
       />
+      {statusFilterBar}
       {recordsView}
       <ConfirmDeleteDialog
         open={Boolean(recordToDelete)}

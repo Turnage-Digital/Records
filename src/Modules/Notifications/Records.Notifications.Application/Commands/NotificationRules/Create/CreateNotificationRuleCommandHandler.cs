@@ -38,6 +38,7 @@ public sealed class CreateNotificationRuleCommandHandler(
             Id = rule.Id.ToString(),
             UserId = rule.UserId,
             RecordsetId = rule.RecordsetId.ToString(),
+            TenantId = rule.TenantId.ToString(),
             IsActive = rule.IsActive,
             TemplateId = rule.TemplateId,
             Trigger = new NotificationTriggerDto

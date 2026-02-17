@@ -1,0 +1,172 @@
+using Microsoft.EntityFrameworkCore;
+using Records.Notifications.Domain;
+using Records.Notifications.Infrastructure.Sql;
+using Records.Notifications.Infrastructure.Sql.Entities;
+using Records.Notifications.Infrastructure.Sql.Queries;
+
+namespace Records.Notifications.Tests.Queries;
+
+public sealed class NotificationQueriesTests
+{
+    [Test]
+    public async Task GetFailedForRetryAsync_ReturnsOnlyEligibleNotifications()
+    {
+        await using var dbContext = CreateDbContext();
+        var now = DateTime.UtcNow;
+
+        var eligibleId = Ulid.NewUlid().ToString();
+        dbContext.Notifications.Add(new NotificationDb
+        {
+            Id = eligibleId,
+            TenantId = Ulid.NewUlid().ToString(),
+            TriggerType = (int)NotificationTriggerType.RecordUpdated,
+            Channel = (int)NotificationChannel.Email,
+            RecipientAddress = "ops@records.local",
+            ContentSubject = "Eligible",
+            ContentBody = "Eligible",
+            ContentTemplateDataJson = "{}",
+            RecipientMetadataJson = "{}",
+            ScheduleJson = "{}",
+            Priority = 1,
+            Status = (int)DeliveryStatus.Failed,
+            CreatedAt = now.AddMinutes(-20),
+            DeliveryAttempts =
+            [
+                new DeliveryAttemptDb
+                {
+                    Channel = (int)NotificationChannel.Email,
+                    Status = (int)DeliveryStatus.Failed,
+                    AttemptedAt = now.AddMinutes(-10),
+                    AttemptNumber = 1,
+                    FailureReason = "retryable"
+                }
+            ]
+        });
+
+        dbContext.Notifications.Add(new NotificationDb
+        {
+            Id = Ulid.NewUlid().ToString(),
+            TenantId = Ulid.NewUlid().ToString(),
+            TriggerType = (int)NotificationTriggerType.RecordUpdated,
+            Channel = (int)NotificationChannel.Email,
+            RecipientAddress = "ops@records.local",
+            ContentSubject = "Not due yet",
+            ContentBody = "Not due yet",
+            ContentTemplateDataJson = "{}",
+            RecipientMetadataJson = "{}",
+            ScheduleJson = "{}",
+            Priority = 1,
+            Status = (int)DeliveryStatus.Failed,
+            CreatedAt = now.AddMinutes(-19),
+            DeliveryAttempts =
+            [
+                new DeliveryAttemptDb
+                {
+                    Channel = (int)NotificationChannel.Email,
+                    Status = (int)DeliveryStatus.Failed,
+                    AttemptedAt = now.AddMinutes(-1),
+                    AttemptNumber = 1,
+                    FailureReason = "wait more",
+                    NextRetryAfter = TimeSpan.FromHours(1)
+                }
+            ]
+        });
+
+        dbContext.Notifications.Add(new NotificationDb
+        {
+            Id = Ulid.NewUlid().ToString(),
+            TenantId = Ulid.NewUlid().ToString(),
+            TriggerType = (int)NotificationTriggerType.RecordUpdated,
+            Channel = (int)NotificationChannel.Email,
+            RecipientAddress = "ops@records.local",
+            ContentSubject = "Max attempts reached",
+            ContentBody = "Max attempts reached",
+            ContentTemplateDataJson = "{}",
+            RecipientMetadataJson = "{}",
+            ScheduleJson = "{}",
+            Priority = 1,
+            Status = (int)DeliveryStatus.Failed,
+            CreatedAt = now.AddMinutes(-18),
+            DeliveryAttempts =
+            [
+                new DeliveryAttemptDb
+                {
+                    Channel = (int)NotificationChannel.Email,
+                    Status = (int)DeliveryStatus.Failed,
+                    AttemptedAt = now.AddMinutes(-30),
+                    AttemptNumber = 1,
+                    FailureReason = "attempt 1"
+                },
+                new DeliveryAttemptDb
+                {
+                    Channel = (int)NotificationChannel.Email,
+                    Status = (int)DeliveryStatus.Failed,
+                    AttemptedAt = now.AddMinutes(-20),
+                    AttemptNumber = 2,
+                    FailureReason = "attempt 2"
+                },
+                new DeliveryAttemptDb
+                {
+                    Channel = (int)NotificationChannel.Email,
+                    Status = (int)DeliveryStatus.Failed,
+                    AttemptedAt = now.AddMinutes(-10),
+                    AttemptNumber = 3,
+                    FailureReason = "attempt 3"
+                }
+            ]
+        });
+
+        dbContext.Notifications.Add(new NotificationDb
+        {
+            Id = Ulid.NewUlid().ToString(),
+            TenantId = Ulid.NewUlid().ToString(),
+            TriggerType = (int)NotificationTriggerType.RecordUpdated,
+            Channel = (int)NotificationChannel.Email,
+            RecipientAddress = "ops@records.local",
+            ContentSubject = "No attempts",
+            ContentBody = "No attempts",
+            ContentTemplateDataJson = "{}",
+            RecipientMetadataJson = "{}",
+            ScheduleJson = "{}",
+            Priority = 1,
+            Status = (int)DeliveryStatus.Failed,
+            CreatedAt = now.AddMinutes(-17)
+        });
+
+        await dbContext.SaveChangesAsync();
+
+        var queries = new NotificationQueries(dbContext);
+        var results = await queries.GetFailedForRetryAsync(
+            maxAttempts: 3,
+            retryAfter: TimeSpan.FromMinutes(5),
+            limit: 10,
+            CancellationToken.None);
+
+        Assert.That(results, Has.Count.EqualTo(1));
+        Assert.That(results[0].Id, Is.EqualTo(eligibleId));
+        Assert.That(results[0].AttemptCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task GetFailedForRetryAsync_ReturnsEmpty_WhenLimitIsZero()
+    {
+        await using var dbContext = CreateDbContext();
+        var queries = new NotificationQueries(dbContext);
+
+        var results = await queries.GetFailedForRetryAsync(
+            maxAttempts: 5,
+            retryAfter: TimeSpan.FromMinutes(1),
+            limit: 0,
+            CancellationToken.None);
+
+        Assert.That(results, Is.Empty);
+    }
+
+    private static NotificationsDbContext CreateDbContext()
+    {
+        var options = new DbContextOptionsBuilder<NotificationsDbContext>()
+            .UseInMemoryDatabase($"notifications-tests-{Guid.NewGuid():N}")
+            .Options;
+        return new NotificationsDbContext(options);
+    }
+}

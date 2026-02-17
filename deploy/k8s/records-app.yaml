@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: records-app-secrets
+type: Opaque
+stringData:
+  connection-string: server=records-mysql;port=3306;database=records;user=records;password=records;SslMode=None
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: records-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: records-app
+  template:
+    metadata:
+      labels:
+        app: records-app
+    spec:
+      containers:
+        - name: records-app
+          image: ghcr.io/your-org/records-app:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_URLS
+              value: http://+:8080
+            - name: ConnectionStrings__DefaultConnection
+              valueFrom:
+                secretKeyRef:
+                  name: records-app-secrets
+                  key: connection-string
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: records-app
+spec:
+  selector:
+    app: records-app
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP

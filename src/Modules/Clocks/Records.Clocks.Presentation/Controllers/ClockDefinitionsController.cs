@@ -1,18 +1,22 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Records.Clocks.Application.Commands.ClockDefinitions.Create;
 using Records.Clocks.Application.Commands.ClockDefinitions.Disable;
 using Records.Clocks.Application.Commands.ClockDefinitions.Update;
 using Records.Clocks.Contracts.Dtos;
 using Records.Clocks.Contracts.Queries;
+using Records.Core.Contracts.Security;
 using Records.Core.Domain.ValueObjects;
 
 namespace Records.Clocks.Presentation.Controllers;
 
 [ApiController]
+[Authorize(Policy = AuthorizationPolicies.RequireOps)]
 [Route("api/clock-definitions")]
 public sealed class ClockDefinitionsController(
     IMediator mediator,
+    ICurrentUserAccess currentUserAccess,
     IClockDefinitionQueries queries
 ) : ControllerBase
 {
@@ -25,6 +29,12 @@ public sealed class ClockDefinitionsController(
         if (!UlidId.TryParse(tenantId, out var tenantUlid))
         {
             return BadRequest("Invalid tenant id format.");
+        }
+
+        var canOperateTenant = await currentUserAccess.CanOperateTenantAsync(tenantUlid, cancellationToken);
+        if (!canOperateTenant)
+        {
+            return Forbid();
         }
 
         var definitions = await queries.ListByTenantAsync(tenantUlid, cancellationToken);
@@ -48,6 +58,14 @@ public sealed class ClockDefinitionsController(
             return NotFound();
         }
 
+        var canOperateTenant = await currentUserAccess.CanOperateTenantAsync(
+            definition.TenantId,
+            cancellationToken);
+        if (!canOperateTenant)
+        {
+            return Forbid();
+        }
+
         return Ok(definition);
     }
 
@@ -57,7 +75,20 @@ public sealed class ClockDefinitionsController(
         CancellationToken cancellationToken
     )
     {
-        var id = await mediator.Send(command, cancellationToken);
+        var canManageTenant = await currentUserAccess.CanManageTenantAsync(command.TenantId, cancellationToken);
+        if (!canManageTenant)
+        {
+            return Forbid();
+        }
+
+        var actorId = currentUserAccess.GetCurrentUserIdOrThrow();
+        var effectiveCommand = command with
+        {
+            CreatedBy = actorId,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        var id = await mediator.Send(effectiveCommand, cancellationToken);
         var definition = await queries.GetByIdAsync(id, cancellationToken);
         return definition is null
             ? Created($"/api/clock-definitions/{id}", new { definitionId = id })
@@ -81,7 +112,28 @@ public sealed class ClockDefinitionsController(
             return BadRequest("Route definitionId does not match payload.");
         }
 
-        await mediator.Send(command, cancellationToken);
+        var definition = await queries.GetByIdAsync(definitionUlid, cancellationToken);
+        if (definition is null)
+        {
+            return NotFound();
+        }
+
+        var canManageTenant = await currentUserAccess.CanManageTenantAsync(
+            definition.TenantId,
+            cancellationToken);
+        if (!canManageTenant)
+        {
+            return Forbid();
+        }
+
+        var actorId = currentUserAccess.GetCurrentUserIdOrThrow();
+        var effectiveCommand = command with
+        {
+            UpdatedBy = actorId,
+            UpdatedAt = DateTimeOffset.UtcNow
+        };
+
+        await mediator.Send(effectiveCommand, cancellationToken);
         return NoContent();
     }
 
@@ -102,7 +154,28 @@ public sealed class ClockDefinitionsController(
             return BadRequest("Route definitionId does not match payload.");
         }
 
-        await mediator.Send(command, cancellationToken);
+        var definition = await queries.GetByIdAsync(definitionUlid, cancellationToken);
+        if (definition is null)
+        {
+            return NotFound();
+        }
+
+        var canManageTenant = await currentUserAccess.CanManageTenantAsync(
+            definition.TenantId,
+            cancellationToken);
+        if (!canManageTenant)
+        {
+            return Forbid();
+        }
+
+        var actorId = currentUserAccess.GetCurrentUserIdOrThrow();
+        var effectiveCommand = command with
+        {
+            UpdatedBy = actorId,
+            UpdatedAt = DateTimeOffset.UtcNow
+        };
+
+        await mediator.Send(effectiveCommand, cancellationToken);
         return NoContent();
     }
 }

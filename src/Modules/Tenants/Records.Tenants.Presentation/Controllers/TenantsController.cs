@@ -1,5 +1,7 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Records.Core.Contracts.Security;
 using Records.Core.Domain.ValueObjects;
 using Records.Tenants.Application.Commands.CreateTenant;
 using Records.Tenants.Application.Commands.DisableTenant;
@@ -9,6 +11,7 @@ using Records.Tenants.Contracts.Queries;
 namespace Records.Tenants.Presentation.Controllers;
 
 [ApiController]
+[Authorize(Policy = AuthorizationPolicies.RequireGlobalAdmin)]
 [Route("api/tenants")]
 public sealed class TenantsController(IMediator mediator, ITenantQueries tenantQueries) : ControllerBase
 {

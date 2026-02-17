@@ -54,10 +54,29 @@ public sealed class ProcessNotificationCommandHandler(
 
         notification.MarkQueued(DateTimeOffset.UtcNow);
 
-        var result = await provider.SendAsync(
-            notification.Recipient,
-            notification.Content,
-            cancellationToken);
+        NotificationSendResult result;
+        try
+        {
+            result = await provider.SendAsync(
+                notification.Recipient,
+                notification.Content,
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            var failedAt = DateTimeOffset.UtcNow;
+            notification.RecordDeliveryFailure(
+                failedAt,
+                $"Provider exception: {ex.Message}");
+            await unitOfWork.Notifications.UpdateAsync(notification, cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            logger.LogError(
+                ex,
+                "Notification {NotificationId} provider threw an exception. Recorded as failed for retry.",
+                notification.Id);
+            return Result.Fail(ex.Message);
+        }
 
         var now = DateTimeOffset.UtcNow;
 

@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Records.App.Server.Services;
+using Records.Core.Contracts.Security;
 
 namespace Records.App.Server.Controllers;
 
 [ApiController]
-[AllowAnonymous]
+[Authorize(Policy = AuthorizationPolicies.RequireOps)]
 [Route("api/changes/stream")]
 public sealed class ChangeStreamController(ChangeFeed feed) : ControllerBase
 {

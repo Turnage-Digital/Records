@@ -1,5 +1,7 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Records.Core.Contracts.Security;
 using Records.Core.Domain.ValueObjects;
 using Records.Recordsets.Application.Commands.CreateRecord;
 using Records.Recordsets.Application.Commands.CreateRecordset;
@@ -11,9 +13,11 @@ using Records.Recordsets.Contracts.Queries;
 namespace Records.Recordsets.Presentation.Controllers;
 
 [ApiController]
+[Authorize(Policy = AuthorizationPolicies.RequireOps)]
 [Route("api/recordsets")]
 public sealed class RecordsetsController(
     IMediator mediator,
+    ICurrentUserAccess currentUserAccess,
     IRecordsetQueries recordsetQueries,
     IRecordQueries recordQueries
 ) : ControllerBase
@@ -55,7 +59,14 @@ public sealed class RecordsetsController(
         CancellationToken cancellationToken
     )
     {
-        var id = await mediator.Send(command, cancellationToken);
+        var actorId = currentUserAccess.GetCurrentUserIdOrThrow();
+        var effectiveCommand = command with
+        {
+            CreatedBy = actorId,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        var id = await mediator.Send(effectiveCommand, cancellationToken);
         var recordset = await recordsetQueries.GetByIdAsync(id, cancellationToken);
 
         return recordset is null
@@ -100,7 +111,14 @@ public sealed class RecordsetsController(
             return BadRequest("Route recordsetId does not match payload.");
         }
 
-        await mediator.Send(command, cancellationToken);
+        var actorId = currentUserAccess.GetCurrentUserIdOrThrow();
+        var effectiveCommand = command with
+        {
+            UpdatedBy = actorId,
+            UpdatedAt = DateTimeOffset.UtcNow
+        };
+
+        await mediator.Send(effectiveCommand, cancellationToken);
         return NoContent();
     }
 
@@ -109,6 +127,7 @@ public sealed class RecordsetsController(
         string recordsetId,
         [FromQuery] int page = 0,
         [FromQuery] int pageSize = 20,
+        [FromQuery] string? status = null,
         [FromQuery] string? field = null,
         [FromQuery] string? sort = null,
         CancellationToken cancellationToken = default
@@ -129,6 +148,7 @@ public sealed class RecordsetsController(
             recordsetUlid,
             page,
             effectivePageSize,
+            status,
             field,
             sort,
             cancellationToken);
@@ -243,7 +263,14 @@ public sealed class RecordsetsController(
             return BadRequest("Route recordsetId does not match payload.");
         }
 
-        var result = await mediator.Send(command, cancellationToken);
+        var actorId = currentUserAccess.GetCurrentUserIdOrThrow();
+        var effectiveCommand = command with
+        {
+            CreatedBy = actorId,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        var result = await mediator.Send(effectiveCommand, cancellationToken);
         return Created($"/api/recordsets/{recordsetId}/records/{result.RecordId}", result);
     }
 
@@ -266,7 +293,14 @@ public sealed class RecordsetsController(
             return BadRequest("Route identifiers do not match payload.");
         }
 
-        await mediator.Send(command, cancellationToken);
+        var actorId = currentUserAccess.GetCurrentUserIdOrThrow();
+        var effectiveCommand = command with
+        {
+            UpdatedBy = actorId,
+            UpdatedAt = DateTimeOffset.UtcNow
+        };
+
+        await mediator.Send(effectiveCommand, cancellationToken);
         return NoContent();
     }
 }

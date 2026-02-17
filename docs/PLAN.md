@@ -93,16 +93,25 @@ This plan tracks the staged migration from Lister to Records with a Holmes-style
 - [x] Port base client app shell + routing
 - [x] Recordset setup flow uses in-context side drawers for notifications + clock definitions
 - [x] Recordset page exposes scoped notifications drawer (query + unread + mark-all within recordset context)
-- [ ] Lists/Recordsets UI parity (list view, record view, filters, schema editor)
-- [ ] Notifications UI parity (list, detail, rules)
-- [ ] Migrations UI parity (plan + progress)
-- [ ] Identity + tenant admin screens
+- [x] Recordset page supports URL-backed status filtering with server-side query filtering
+- [x] Lists/Recordsets UI parity (list view, record view, filters, schema editor)
+- [x] Notifications UI parity (list, detail, rules)
+- [x] Migrations UI parity (plan + progress)
+- [x] Identity + tenant admin screens
 - [x] Clocks UI baseline (clock definitions + record clock actions)
 
 ## Stage 9 — Hardening & Ops
 
-- [ ] Auth policies + tenant scoping (global admins vs tenant admins vs ops)
-- [ ] Background jobs reliability + retries
-- [ ] Observability (logging, metrics, tracing)
-- [ ] Data migrations / seed scripts
-- [ ] Deployment templates (docker-compose, K8s, CI)
+- [x] Auth policies + tenant scoping (global admins vs tenant admins vs ops)
+- [x] Background jobs reliability + retries
+- [x] Observability (logging, metrics, tracing)
+- [x] Data migrations / seed scripts (`ef-reset.ps1` + opt-in dev seed bootstrap)
+- [x] Deployment templates (docker-compose, K8s, CI)
+
+## Stage 10 — Release Readiness
+
+- [x] Add hosted-service failure-injection coverage (`DeferredDispatchProcessor`, `NotificationProcessingService`)
+- [x] Fill `Records.Notifications.Tests` with real reliability tests
+- [x] Add app-host integration smoke tests (`/health`, `/identity/logout`)
+- [x] Add performance smoke harness for key API paths
+- [x] Final release checklist + runbook pass

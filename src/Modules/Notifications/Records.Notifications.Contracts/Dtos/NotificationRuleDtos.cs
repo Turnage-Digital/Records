@@ -28,6 +28,9 @@ public sealed record NotificationRuleDto
 
     [JsonPropertyName("recordsetId")]
     public string RecordsetId { get; init; } = string.Empty;
+
+    [JsonPropertyName("tenantId")]
+    public string TenantId { get; init; } = string.Empty;
 }
 
 public sealed record NotificationTriggerDto

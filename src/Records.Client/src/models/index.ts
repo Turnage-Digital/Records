@@ -33,6 +33,8 @@ export type {
 export type { HistoryEntry, HistoryPage } from "./history";
 export type { ChangeFeedMessage, ChangeFeedHandler } from "./change-feed";
 export type { TenantSummary, TenantStatus } from "./tenant-summary";
+export type { UserSummary, UserStatus } from "./user-summary";
+export type { UserRoleMembership, UserRole } from "./user-role-membership";
 export type {
   MigrationPlan,
   ChangeColumnTypeOp,

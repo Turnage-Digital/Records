@@ -1,7 +1,8 @@
-using System.Security.Claims;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Records.Core.Application;
+using Records.Core.Contracts.Security;
 using Records.Core.Domain.ValueObjects;
 using Records.Notifications.Application.Commands;
 using Records.Notifications.Contracts;
@@ -10,26 +11,26 @@ using Records.Notifications.Contracts.Dtos;
 namespace Records.Notifications.Presentation.Controllers;
 
 [ApiController]
+[Authorize(Policy = AuthorizationPolicies.RequireOps)]
 [Route("api/notifications")]
 public sealed class NotificationsController(
     IMediator mediator,
+    ICurrentUserAccess currentUserAccess,
     INotificationQueries queries
 ) : ControllerBase
 {
     [HttpGet("{notificationId}")]
     public async Task<ActionResult<NotificationDetailsDto>> Get(
         string notificationId,
-        [FromQuery] string? userId,
         CancellationToken cancellationToken
     )
     {
-        var resolvedUserId = ResolveUserId(userId);
-        if (string.IsNullOrWhiteSpace(resolvedUserId))
+        if (!currentUserAccess.TryGetCurrentUserId(out var currentUserId))
         {
             return Unauthorized();
         }
 
-        var notification = await queries.GetByIdAsync(notificationId, resolvedUserId, cancellationToken);
+        var notification = await queries.GetByIdAsync(notificationId, currentUserId.ToString(), cancellationToken);
         if (notification is null)
         {
             return NotFound();
@@ -45,12 +46,10 @@ public sealed class NotificationsController(
         [FromQuery] bool? unread,
         [FromQuery] int pageSize = 20,
         [FromQuery] int page = 0,
-        [FromQuery] string? userId = null,
         CancellationToken cancellationToken = default
     )
     {
-        var resolvedUserId = ResolveUserId(userId);
-        if (string.IsNullOrWhiteSpace(resolvedUserId))
+        if (!currentUserAccess.TryGetCurrentUserId(out var currentUserId))
         {
             return Unauthorized();
         }
@@ -64,7 +63,7 @@ public sealed class NotificationsController(
         var effectivePage = Math.Max(0, page);
 
         var result = await queries.GetPageAsync(
-            resolvedUserId,
+            currentUserId.ToString(),
             recordsetId,
             since,
             unread,
@@ -78,12 +77,10 @@ public sealed class NotificationsController(
     [HttpGet("unreadCount")]
     public async Task<ActionResult<int>> GetUnreadCount(
         [FromQuery] string? recordsetId,
-        [FromQuery] string? userId,
         CancellationToken cancellationToken
     )
     {
-        var resolvedUserId = ResolveUserId(userId);
-        if (string.IsNullOrWhiteSpace(resolvedUserId))
+        if (!currentUserAccess.TryGetCurrentUserId(out var currentUserId))
         {
             return Unauthorized();
         }
@@ -93,7 +90,7 @@ public sealed class NotificationsController(
             return BadRequest("Invalid recordset id format.");
         }
 
-        var count = await queries.GetUnreadCountAsync(resolvedUserId, recordsetId, cancellationToken);
+        var count = await queries.GetUnreadCountAsync(currentUserId.ToString(), recordsetId, cancellationToken);
         return Ok(count);
     }
 
@@ -123,16 +120,16 @@ public sealed class NotificationsController(
             return BadRequest("Invalid notification id format.");
         }
 
-        var readerUserId = ResolveUserId(null);
-        if (string.IsNullOrWhiteSpace(readerUserId))
+        if (!currentUserAccess.TryGetCurrentUserId(out var currentUserId))
         {
             return Unauthorized();
         }
 
         var command = new MarkNotificationReadCommand(
             notificationUlid,
-            readerUserId,
+            currentUserId.ToString(),
             DateTimeOffset.UtcNow);
+        command.UserId = currentUserId.ToString();
 
         var result = await mediator.Send(command, cancellationToken);
         if (!result.IsSuccess)
@@ -151,6 +148,11 @@ public sealed class NotificationsController(
         CancellationToken cancellationToken
     )
     {
+        if (!currentUserAccess.TryGetCurrentUserId(out var currentUserId))
+        {
+            return Unauthorized();
+        }
+
         UlidId? scopedRecordsetId = null;
         if (!string.IsNullOrWhiteSpace(body?.RecordsetId))
         {
@@ -163,6 +165,7 @@ public sealed class NotificationsController(
         }
 
         var command = new MarkAllNotificationsReadCommand(body?.Before, scopedRecordsetId);
+        command.UserId = currentUserId.ToString();
         var result = await mediator.Send(command, cancellationToken);
 
         if (!result.IsSuccess)
@@ -173,16 +176,6 @@ public sealed class NotificationsController(
         }
 
         return Ok();
-    }
-
-    private string? ResolveUserId(string? explicitUserId)
-    {
-        if (!string.IsNullOrWhiteSpace(explicitUserId))
-        {
-            return explicitUserId;
-        }
-
-        return User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity?.Name;
     }
 
     public sealed record MarkAllReadBody(DateTimeOffset? Before, string? RecordsetId);

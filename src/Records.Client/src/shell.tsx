@@ -5,12 +5,19 @@ import {
   Box,
   CircularProgress,
   Container,
+  Tab,
+  Tabs,
   Toolbar,
   Typography,
   useTheme,
 } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import {
+  Link as RouterLink,
+  Navigate,
+  Outlet,
+  useLocation,
+} from "react-router-dom";
 
 import { useAuth } from "./auth";
 import { NotificationsBell, UserMenu } from "./components";
@@ -270,6 +277,15 @@ const Shell = () => {
     return <Navigate to={`/sign-in${search}`} replace />;
   }
 
+  const canManageGlobalAdminAreas = auth.access.isGlobalAdmin;
+
+  let selectedNav: "recordsets" | "tenants" | "users" = "recordsets";
+  if (location.pathname.startsWith("/admin/tenants")) {
+    selectedNav = "tenants";
+  } else if (location.pathname.startsWith("/admin/users")) {
+    selectedNav = "users";
+  }
+
   return (
     <>
       <Box sx={{ minHeight: "100vh" }}>
@@ -288,10 +304,43 @@ const Shell = () => {
               variant="h4"
               fontWeight="bold"
               color="primary"
-              sx={{ flexGrow: 1 }}
+              sx={{ mr: 3 }}
             >
               Records
             </Typography>
+
+            <Tabs
+              value={selectedNav}
+              textColor="primary"
+              indicatorColor="primary"
+              sx={{ flexGrow: 1, minHeight: 48 }}
+            >
+              <Tab
+                value="recordsets"
+                label="Recordsets"
+                component={RouterLink}
+                to="/"
+                sx={{ minHeight: 48, textTransform: "none" }}
+              />
+              {canManageGlobalAdminAreas ? (
+                <Tab
+                  value="tenants"
+                  label="Tenants"
+                  component={RouterLink}
+                  to="/admin/tenants"
+                  sx={{ minHeight: 48, textTransform: "none" }}
+                />
+              ) : null}
+              {canManageGlobalAdminAreas ? (
+                <Tab
+                  value="users"
+                  label="Users"
+                  component={RouterLink}
+                  to="/admin/users"
+                  sx={{ minHeight: 48, textTransform: "none" }}
+                />
+              ) : null}
+            </Tabs>
 
             <NotificationsBell />
             <UserMenu />

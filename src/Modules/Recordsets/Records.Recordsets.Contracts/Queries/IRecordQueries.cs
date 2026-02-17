@@ -11,6 +11,7 @@ public interface IRecordQueries
         UlidId recordsetId,
         int page,
         int pageSize,
+        string? status,
         string? field,
         string? sort,
         CancellationToken cancellationToken

@@ -185,11 +185,35 @@ public sealed class NotificationQueries(NotificationsDbContext dbContext)
         CancellationToken cancellationToken
     )
     {
-        var cutoff = DateTime.UtcNow.Subtract(retryAfter);
-        var spec = new FailedNotificationsForRetrySpec(maxAttempts, cutoff, limit);
-        var query = SpecificationEvaluator.GetQuery(dbContext.Notifications.AsNoTracking(), spec);
+        if (limit <= 0)
+        {
+            return [];
+        }
 
-        return await query
+        var now = DateTime.UtcNow;
+        var candidates = await dbContext.Notifications
+            .AsNoTracking()
+            .AsSplitQuery()
+            .Include(x => x.DeliveryAttempts)
+            .Where(n => n.Status == (int)DeliveryStatus.Failed)
+            .OrderBy(n => n.CreatedAt)
+            .Take(limit * 4)
+            .ToListAsync(cancellationToken);
+
+        var eligible = candidates
+            .Where(n => n.DeliveryAttempts.Count > 0 && n.DeliveryAttempts.Count < maxAttempts)
+            .Where(n =>
+            {
+                var lastAttempt = n.DeliveryAttempts
+                    .OrderByDescending(a => a.AttemptedAt)
+                    .First();
+                var effectiveRetryAfter = lastAttempt.NextRetryAfter ?? retryAfter;
+                return lastAttempt.AttemptedAt.Add(effectiveRetryAfter) <= now;
+            })
+            .Take(limit)
+            .ToList();
+
+        return eligible
             .Select(n => new NotificationPendingDto(
                 n.Id,
                 n.TenantId,
@@ -203,7 +227,7 @@ public sealed class NotificationQueries(NotificationsDbContext dbContext)
                 n.DeliveryAttempts.Count,
                 n.ScheduledFor.HasValue ? new DateTimeOffset(n.ScheduledFor.Value, TimeSpan.Zero) : null
             ))
-            .ToListAsync(cancellationToken);
+            .ToList();
     }
 
     private static Dictionary<string, object> DeserializeDictionary(string json)

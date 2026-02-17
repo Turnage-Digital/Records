@@ -1,6 +1,7 @@
-using System.Security.Claims;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Records.Core.Contracts.Security;
 using Records.Core.Domain.ValueObjects;
 using Records.Notifications.Application.Commands.NotificationRules.Create;
 using Records.Notifications.Application.Commands.NotificationRules.Delete;
@@ -11,21 +12,21 @@ using Records.Notifications.Contracts.Dtos;
 namespace Records.Notifications.Presentation.Controllers;
 
 [ApiController]
+[Authorize(Policy = AuthorizationPolicies.RequireOps)]
 [Route("api/notifications/rules")]
 public sealed class NotificationRulesController(
     IMediator mediator,
+    ICurrentUserAccess currentUserAccess,
     INotificationRuleQueries ruleQueries
 ) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<NotificationRuleDto>>> Get(
         [FromQuery] string? recordsetId,
-        [FromQuery] string? userId,
         CancellationToken cancellationToken
     )
     {
-        var resolvedUserId = ResolveUserId(userId);
-        if (string.IsNullOrWhiteSpace(resolvedUserId))
+        if (!currentUserAccess.TryGetCurrentUserId(out var currentUserId))
         {
             return Unauthorized();
         }
@@ -35,7 +36,7 @@ public sealed class NotificationRulesController(
             return BadRequest("Invalid recordset id format.");
         }
 
-        var rules = await ruleQueries.GetByRecordsetAsync(resolvedUserId, recordsetId, cancellationToken);
+        var rules = await ruleQueries.GetByRecordsetAsync(currentUserId.ToString(), recordsetId, cancellationToken);
         return Ok(rules);
     }
 
@@ -55,16 +56,21 @@ public sealed class NotificationRulesController(
             return BadRequest("Invalid tenant id format.");
         }
 
-        var resolvedUserId = ResolveUserId(request.UserId);
-        if (string.IsNullOrWhiteSpace(resolvedUserId))
+        if (!currentUserAccess.TryGetCurrentUserId(out var currentUserId))
         {
             return Unauthorized();
+        }
+
+        var canManageTenant = await currentUserAccess.CanManageTenantAsync(tenantId, cancellationToken);
+        if (!canManageTenant)
+        {
+            return Forbid();
         }
 
         var command = new CreateNotificationRuleCommand(
             tenantId,
             recordsetId,
-            resolvedUserId,
+            currentUserId.ToString(),
             request.Trigger,
             request.Channels,
             request.Schedule,
@@ -89,10 +95,26 @@ public sealed class NotificationRulesController(
             return BadRequest("Invalid rule id format.");
         }
 
-        var resolvedUserId = ResolveUserId(request.UserId);
-        if (string.IsNullOrWhiteSpace(resolvedUserId))
+        if (!currentUserAccess.TryGetCurrentUserId(out var currentUserId))
         {
             return Unauthorized();
+        }
+
+        var existingRule = await ruleQueries.GetByIdAsync(ruleId, cancellationToken);
+        if (existingRule is null)
+        {
+            return NotFound();
+        }
+
+        if (!UlidId.TryParse(existingRule.TenantId, out var tenantId))
+        {
+            return BadRequest("Stored tenant id format is invalid.");
+        }
+
+        var canManageTenant = await currentUserAccess.CanManageTenantAsync(tenantId, cancellationToken);
+        if (!canManageTenant)
+        {
+            return Forbid();
         }
 
         var command = new UpdateNotificationRuleCommand(
@@ -102,7 +124,7 @@ public sealed class NotificationRulesController(
             request.Schedule,
             request.TemplateId,
             request.IsActive,
-            resolvedUserId,
+            currentUserId.ToString(),
             DateTimeOffset.UtcNow
         );
 
@@ -113,7 +135,6 @@ public sealed class NotificationRulesController(
     [HttpDelete("{ruleId}")]
     public async Task<IActionResult> Delete(
         string ruleId,
-        [FromQuery] string? userId,
         CancellationToken cancellationToken
     )
     {
@@ -122,24 +143,33 @@ public sealed class NotificationRulesController(
             return BadRequest("Invalid rule id format.");
         }
 
-        var resolvedUserId = ResolveUserId(userId);
-        if (string.IsNullOrWhiteSpace(resolvedUserId))
+        if (!currentUserAccess.TryGetCurrentUserId(out var currentUserId))
         {
             return Unauthorized();
         }
 
-        var command = new DeleteNotificationRuleCommand(ruleUlid, resolvedUserId, DateTimeOffset.UtcNow);
-        await mediator.Send(command, cancellationToken);
-        return NoContent();
-    }
-
-    private string? ResolveUserId(string? explicitUserId)
-    {
-        if (!string.IsNullOrWhiteSpace(explicitUserId))
+        var existingRule = await ruleQueries.GetByIdAsync(ruleId, cancellationToken);
+        if (existingRule is null)
         {
-            return explicitUserId;
+            return NotFound();
         }
 
-        return User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity?.Name;
+        if (!UlidId.TryParse(existingRule.TenantId, out var tenantId))
+        {
+            return BadRequest("Stored tenant id format is invalid.");
+        }
+
+        var canManageTenant = await currentUserAccess.CanManageTenantAsync(tenantId, cancellationToken);
+        if (!canManageTenant)
+        {
+            return Forbid();
+        }
+
+        var command = new DeleteNotificationRuleCommand(
+            ruleUlid,
+            currentUserId.ToString(),
+            DateTimeOffset.UtcNow);
+        await mediator.Send(command, cancellationToken);
+        return NoContent();
     }
 }

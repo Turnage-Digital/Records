@@ -16,7 +16,15 @@ public static class DependencyInjection
         string connectionString
     )
     {
-        var serverVersion = ServerVersion.AutoDetect(connectionString);
+        ServerVersion serverVersion;
+        try
+        {
+            serverVersion = ServerVersion.AutoDetect(connectionString);
+        }
+        catch
+        {
+            serverVersion = new MySqlServerVersion(new Version(8, 0, 34));
+        }
 
         services.AddDbContext<NotificationsDbContext>(options =>
             options.UseMySql(connectionString, serverVersion, builder =>

@@ -15,6 +15,8 @@ import {
   NotificationsSearch,
   RecordsetPagedRecords,
   TenantSummary,
+  UserRoleMembership,
+  UserSummary,
 } from "./models";
 
 const throwIfNotOk = async (response: Response, message: string) => {
@@ -231,11 +233,15 @@ export const pagedRecordsQueryOptions = (
       recordsetId,
       search.page,
       search.pageSize,
+      search.status ?? "__all__",
       search.field ?? "id",
       search.sort ?? "asc",
     ],
     queryFn: async () => {
       let url = `/api/recordsets/${recordsetId}/records?page=${search.page}&pageSize=${search.pageSize}`;
+      if (search.status) {
+        url += `&status=${encodeURIComponent(search.status)}`;
+      }
       if (search.field && search.sort) {
         url += `&field=${search.field}&sort=${search.sort}`;
       }
@@ -269,6 +275,33 @@ export const tenantSummariesQueryOptions = () =>
       const response = await fetch("/api/tenants", { method: "GET" });
       await throwIfNotOk(response, "Failed to load tenants");
       return (await response.json()) as TenantSummary[];
+    },
+  });
+
+export const userSummariesQueryOptions = () =>
+  queryOptions({
+    queryKey: ["user-summaries"],
+    queryFn: async () => {
+      const response = await fetch("/api/users", { method: "GET" });
+      await throwIfNotOk(response, "Failed to load users");
+      return (await response.json()) as UserSummary[];
+    },
+  });
+
+export const userRoleMembershipsQueryOptions = (userId?: string) =>
+  queryOptions({
+    queryKey: ["user-role-memberships", userId ?? null],
+    enabled: Boolean(userId),
+    queryFn: async () => {
+      if (!userId) {
+        return [] as UserRoleMembership[];
+      }
+
+      const response = await fetch(`/api/users/${userId}/roles`, {
+        method: "GET",
+      });
+      await throwIfNotOk(response, "Failed to load user role memberships");
+      return (await response.json()) as UserRoleMembership[];
     },
   });
 

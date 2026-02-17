@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import { QueryClient } from "@tanstack/react-query";
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { createBrowserRouter, Navigate, redirect } from "react-router-dom";
 
 import {
   CreateRecordPage,
@@ -16,14 +16,51 @@ import {
   ResetPasswordPage,
   SignInPage,
   SignUpPage,
+  TenantsAdminPage,
+  UsersAdminPage,
 } from "./pages";
 import {
   recordQueryOptions,
   recordsetItemDefinitionQueryOptions,
+  tenantSummariesQueryOptions,
   notificationRulesQueryOptions,
   pagedRecordsQueryOptions,
+  userSummariesQueryOptions,
 } from "./query-options";
 import Shell from "./shell";
+
+interface IdentityAccessResponse {
+  isGlobalAdmin?: boolean;
+}
+
+const buildSignInRedirect = (request: Request) => {
+  const url = new URL(request.url);
+  const callbackUrl = `${url.pathname}${url.search}${url.hash}`;
+  const search = callbackUrl
+    ? `?callbackUrl=${encodeURIComponent(callbackUrl)}`
+    : "";
+  return redirect(`/sign-in${search}`);
+};
+
+const ensureGlobalAdminAccess = async (request: Request) => {
+  const response = await fetch("/identity/access", {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (response.status === 401) {
+    throw buildSignInRedirect(request);
+  }
+
+  if (!response.ok) {
+    throw redirect("/");
+  }
+
+  const access = (await response.json()) as IdentityAccessResponse;
+  if (access.isGlobalAdmin !== true) {
+    throw redirect("/");
+  }
+};
 
 export const createAppRouter = (queryClient: QueryClient) =>
   createBrowserRouter([
@@ -122,6 +159,27 @@ export const createAppRouter = (queryClient: QueryClient) =>
               ],
             },
           ],
+        },
+        {
+          path: "admin/tenants",
+          loader: async ({ request }) => {
+            await ensureGlobalAdminAccess(request);
+            await queryClient.ensureQueryData(tenantSummariesQueryOptions());
+            return null;
+          },
+          element: <TenantsAdminPage />,
+        },
+        {
+          path: "admin/users",
+          loader: async ({ request }) => {
+            await ensureGlobalAdminAccess(request);
+            await Promise.all([
+              queryClient.ensureQueryData(userSummariesQueryOptions()),
+              queryClient.ensureQueryData(tenantSummariesQueryOptions()),
+            ]);
+            return null;
+          },
+          element: <UsersAdminPage />,
         },
       ],
     },

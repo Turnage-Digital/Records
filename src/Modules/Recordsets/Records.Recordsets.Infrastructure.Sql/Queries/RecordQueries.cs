@@ -51,6 +51,7 @@ public sealed class RecordQueries(RecordsetsDbContext dbContext) : IRecordQuerie
         UlidId recordsetId,
         int page,
         int pageSize,
+        string? status,
         string? field,
         string? sort,
         CancellationToken cancellationToken
@@ -58,6 +59,10 @@ public sealed class RecordQueries(RecordsetsDbContext dbContext) : IRecordQuerie
     {
         var recordsetKey = recordsetId.ToString();
         var builder = new SqlBuilder();
+        var parameters = new DynamicParameters();
+        parameters.Add("recordsetId", recordsetKey);
+        parameters.Add("pageSize", pageSize);
+        parameters.Add("offset", page * pageSize);
         const string sql = """
                            SELECT SQL_CALC_FOUND_ROWS
                                i.BagJson, i.Id, i.RecordsetId
@@ -65,20 +70,20 @@ public sealed class RecordQueries(RecordsetsDbContext dbContext) : IRecordQuerie
                                recordset_items i
                            WHERE
                                i.RecordsetId = @recordsetId
+                           /**where**/
                            /**orderby**/
                            LIMIT @pageSize OFFSET @offset;
                            SELECT FOUND_ROWS();
                            SELECT Name FROM recordsets WHERE Id = @recordsetId;
                            """;
 
-        var parameters = new
-        {
-            recordsetId = recordsetKey,
-            pageSize,
-            offset = page * pageSize
-        };
-
         var template = builder.AddTemplate(sql, parameters);
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            builder.Where("JSON_UNQUOTE(JSON_EXTRACT(i.BagJson, '$.\"status\"')) = @status");
+            parameters.Add("status", status.Trim());
+        }
+
         builder.OrderBy(BuildOrderByClause(field, sort));
 
         var connection = dbContext.Database.GetDbConnection();

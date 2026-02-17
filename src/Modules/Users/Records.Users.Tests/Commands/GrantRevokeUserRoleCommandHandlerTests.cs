@@ -102,5 +102,20 @@ public class GrantRevokeUserRoleCommandHandlerTests
         {
             return Task.FromResult(false);
         }
+
+        public Task<bool> IsTenantAdminAsync(UlidId userId, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(false);
+        }
+
+        public Task<bool> IsOperationsAsync(UlidId userId, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(false);
+        }
+
+        public Task<bool> IsOperationsAsync(UlidId userId, UlidId tenantId, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(false);
+        }
     }
 }

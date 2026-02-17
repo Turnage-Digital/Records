@@ -12,6 +12,12 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.10.0"/>
+        <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.10.0-beta.1"/>
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.10.0"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.10.0"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.10.0"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.10.0"/>
         <PackageReference Include="Microsoft.AspNetCore.SpaProxy" Version="9.0.0"/>
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.7.3"/>
     </ItemGroup>
@@ -20,6 +26,7 @@
         <ProjectReference Include="..\Records.Client\Records.Client.esproj">
             <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
         </ProjectReference>
+        <ProjectReference Include="..\Records.App.Infrastructure.Security\Records.App.Infrastructure.Security.csproj" />
         <ProjectReference Include="..\Modules\Clocks\Records.Clocks.Application\Records.Clocks.Application.csproj"/>
         <ProjectReference Include="..\Modules\Clocks\Records.Clocks.Infrastructure.Sql\Records.Clocks.Infrastructure.Sql.csproj"/>
         <ProjectReference Include="..\Modules\Clocks\Records.Clocks.Presentation\Records.Clocks.Presentation.csproj"/>

@@ -11,6 +11,17 @@ public sealed class NotificationRuleQueries(NotificationsDbContext context)
 {
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
 
+    public async Task<NotificationRuleDto?> GetByIdAsync(
+        string ruleId,
+        CancellationToken cancellationToken
+    )
+    {
+        var rule = await context.NotificationRules
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == ruleId && !x.IsDeleted, cancellationToken);
+        return rule is null ? null : Map(rule);
+    }
+
     public async Task<IReadOnlyList<NotificationRuleDto>> GetByRecordsetAsync(
         string userId,
         string? recordsetId,
@@ -28,49 +39,51 @@ public sealed class NotificationRuleQueries(NotificationsDbContext context)
 
         var rules = await query.ToListAsync(cancellationToken);
 
-        return rules.Select(rule =>
-            {
-                var trigger = JsonSerializer.Deserialize<NotificationTrigger>(rule.TriggerJson, SerializerOptions) ??
-                              new NotificationTrigger { Type = 0 };
-                var channels =
-                    JsonSerializer.Deserialize<NotificationChannelConfig[]>(rule.ChannelsJson, SerializerOptions) ?? [];
-                var schedule = JsonSerializer.Deserialize<NotificationSchedule>(rule.ScheduleJson, SerializerOptions) ??
-                               NotificationSchedule.Immediate();
+        return rules.Select(Map).ToList();
+    }
 
-                return new NotificationRuleDto
+    private static NotificationRuleDto Map(Entities.NotificationRuleDb rule)
+    {
+        var trigger = JsonSerializer.Deserialize<NotificationTrigger>(rule.TriggerJson, SerializerOptions) ??
+                      new NotificationTrigger { Type = 0 };
+        var channels = JsonSerializer.Deserialize<NotificationChannelConfig[]>(rule.ChannelsJson, SerializerOptions) ??
+                       [];
+        var schedule = JsonSerializer.Deserialize<NotificationSchedule>(rule.ScheduleJson, SerializerOptions) ??
+                       NotificationSchedule.Immediate();
+
+        return new NotificationRuleDto
+        {
+            Id = rule.Id,
+            UserId = rule.UserId,
+            RecordsetId = rule.RecordsetId,
+            TenantId = rule.TenantId,
+            IsActive = rule.IsActive,
+            TemplateId = rule.TemplateId,
+            Trigger = new NotificationTriggerDto
+            {
+                Type = trigger.Type,
+                FromValue = trigger.FromValue,
+                ToValue = trigger.ToValue,
+                ColumnName = trigger.ColumnName,
+                Operator = trigger.Operator,
+                Value = trigger.Value
+            },
+            Channels = channels
+                .Select(channel => new NotificationChannelDto
                 {
-                    Id = rule.Id,
-                    UserId = rule.UserId,
-                    RecordsetId = rule.RecordsetId,
-                    IsActive = rule.IsActive,
-                    TemplateId = rule.TemplateId,
-                    Trigger = new NotificationTriggerDto
-                    {
-                        Type = trigger.Type,
-                        FromValue = trigger.FromValue,
-                        ToValue = trigger.ToValue,
-                        ColumnName = trigger.ColumnName,
-                        Operator = trigger.Operator,
-                        Value = trigger.Value
-                    },
-                    Channels = channels
-                        .Select(channel => new NotificationChannelDto
-                        {
-                            Type = channel.Type,
-                            Address = channel.Address,
-                            Settings = channel.Settings
-                        })
-                        .ToArray(),
-                    Schedule = new NotificationScheduleDto
-                    {
-                        Type = schedule.Type,
-                        Delay = schedule.Delay,
-                        CronExpression = schedule.CronExpression,
-                        DailyAt = schedule.DailyAt,
-                        DaysOfWeek = schedule.DaysOfWeek
-                    }
-                };
-            })
-            .ToList();
+                    Type = channel.Type,
+                    Address = channel.Address,
+                    Settings = channel.Settings
+                })
+                .ToArray(),
+            Schedule = new NotificationScheduleDto
+            {
+                Type = schedule.Type,
+                Delay = schedule.Delay,
+                CronExpression = schedule.CronExpression,
+                DailyAt = schedule.DailyAt,
+                DaysOfWeek = schedule.DaysOfWeek
+            }
+        };
     }
 }

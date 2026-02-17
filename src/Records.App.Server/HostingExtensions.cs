@@ -1,13 +1,19 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using MediatR;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Records.App.Infrastructure.Security;
 using Records.App.Server.Services;
 using Records.Clocks.Application.Commands.ClockDefinitions.Create;
 using Records.Clocks.Application.Commands.Clocks.Start;
 using Records.Clocks.Infrastructure.Sql;
 using Records.Clocks.Presentation.Controllers;
+using Records.Core.Contracts.Security;
 using Records.Core.Domain.ValueObjects;
 using Records.Core.Infrastructure.Sql;
 using Records.Notifications.Application.Commands;
@@ -43,7 +49,46 @@ internal static class HostingExtensions
 {
     public static WebApplication ConfigureServices(this WebApplicationBuilder builder)
     {
+        var isTestingEnvironment = builder.Environment.IsEnvironment("Testing");
+
+        builder.Services.AddHealthChecks();
+        builder.Services.Configure<DevelopmentSeedOptions>(
+            builder.Configuration.GetSection("DevelopmentSeed"));
+        builder.Services.AddOpenTelemetry()
+            .ConfigureResource(resource => resource.AddService(
+                "Records.App.Server",
+                serviceVersion: typeof(HostingExtensions).Assembly.GetName().Version?.ToString()))
+            .WithMetrics(metrics =>
+            {
+                metrics
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddRuntimeInstrumentation()
+                    .AddMeter(UnitOfWorkTelemetry.MeterName)
+                    .AddMeter(BackgroundServiceTelemetry.MeterName)
+                    .AddPrometheusExporter();
+            })
+            .WithTracing(tracing =>
+            {
+                tracing
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddSource(UnitOfWorkTelemetry.ActivitySourceName)
+                    .AddSource(BackgroundServiceTelemetry.ActivitySourceName);
+
+                var otlpEndpoint = builder.Configuration["OpenTelemetry:Exporter:Endpoint"];
+                tracing.AddOtlpExporter(options =>
+                {
+                    if (!string.IsNullOrWhiteSpace(otlpEndpoint) &&
+                        Uri.TryCreate(otlpEndpoint, UriKind.Absolute, out var endpoint))
+                    {
+                        options.Endpoint = endpoint;
+                    }
+                });
+            });
+
         builder.Services.AddHttpContextAccessor();
+        builder.Services.AddMemoryCache();
         builder.Services.AddDistributedMemoryCache();
 
         builder.Services.AddControllers()
@@ -62,7 +107,16 @@ internal static class HostingExtensions
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
                                ?? throw new InvalidOperationException("Missing DefaultConnection connection string.");
-        var serverVersion = ServerVersion.AutoDetect(connectionString);
+
+        ServerVersion serverVersion;
+        try
+        {
+            serverVersion = ServerVersion.AutoDetect(connectionString);
+        }
+        catch
+        {
+            serverVersion = new MySqlServerVersion(new Version(8, 0, 34));
+        }
 
         builder.Services.AddCoreInfrastructureSql(connectionString, serverVersion);
         builder.Services.AddUsersInfrastructureSql(connectionString);
@@ -82,8 +136,7 @@ internal static class HostingExtensions
         builder.Services.AddSingleton<ChangeFeed>();
         builder.Services.AddTransient(typeof(INotificationHandler<>), typeof(ChangeFeedNotificationHandler<>));
 
-        builder.Services.AddAuthentication().AddIdentityCookies();
-        builder.Services.AddAuthorization();
+        builder.Services.AddRecordsAppSecurity();
 
         builder.Services.AddMediatR(config =>
         {
@@ -111,12 +164,17 @@ internal static class HostingExtensions
             builder.Services
                 .AddEndpointsApiExplorer()
                 .AddSwaggerGen();
+
+            builder.Services.AddHostedService<SeedData>();
         }
 
-        builder.Services.AddHostedService<RecordsetMigrationDispatcherService>();
-        builder.Services.AddHostedService<ClockWatchdogService>();
-        builder.Services.AddHostedService<DeferredDispatchProcessor>();
-        builder.Services.AddHostedService<NotificationProcessingService>();
+        if (!isTestingEnvironment)
+        {
+            builder.Services.AddHostedService<RecordsetMigrationDispatcherService>();
+            builder.Services.AddHostedService<ClockWatchdogService>();
+            builder.Services.AddHostedService<DeferredDispatchProcessor>();
+            builder.Services.AddHostedService<NotificationProcessingService>();
+        }
 
         return builder.Build();
     }
@@ -130,7 +188,7 @@ internal static class HostingExtensions
         }
         else
         {
-            app.UseExceptionHandler();
+            app.UseExceptionHandler("/error");
             app.UseHsts();
         }
 
@@ -157,6 +215,37 @@ internal static class HostingExtensions
                 return Results.Ok();
             }
         );
+
+        identityGroup.MapGet(
+                "access",
+                async (ICurrentUserAccess currentUserAccess, CancellationToken cancellationToken) =>
+                {
+                    var isGlobalAdmin = await currentUserAccess.IsGlobalAdminAsync(cancellationToken);
+                    var canAccessOps = await currentUserAccess.CanAccessOpsAsync(cancellationToken);
+
+                    return Results.Ok(new
+                    {
+                        isGlobalAdmin,
+                        canAccessOps
+                    });
+                })
+            .RequireAuthorization();
+
+        app.MapHealthChecks("/health")
+            .AllowAnonymous();
+
+        app.MapPrometheusScrapingEndpoint()
+            .AllowAnonymous();
+
+        app.Map("/error", (HttpContext context, IHostEnvironment env) =>
+            {
+                var error = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+                var detail = env.IsDevelopment() || env.IsEnvironment("Testing")
+                    ? error?.ToString()
+                    : null;
+                return Results.Problem(statusCode: StatusCodes.Status500InternalServerError, detail: detail);
+            })
+            .AllowAnonymous();
 
         app.MapFallbackToFile("index.html");
 

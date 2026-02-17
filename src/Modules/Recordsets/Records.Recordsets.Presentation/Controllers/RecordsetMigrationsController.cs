@@ -1,5 +1,7 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Records.Core.Contracts.Security;
 using Records.Core.Domain.ValueObjects;
 using Records.Recordsets.Application.Commands.Migrations;
 using Records.Recordsets.Application.Queries.Migrations;
@@ -7,8 +9,12 @@ using Records.Recordsets.Application.Queries.Migrations;
 namespace Records.Recordsets.Presentation.Controllers;
 
 [ApiController]
+[Authorize(Policy = AuthorizationPolicies.RequireOps)]
 [Route("api/recordsets/{recordsetId}/migrations")]
-public sealed class RecordsetMigrationsController(IMediator mediator) : ControllerBase
+public sealed class RecordsetMigrationsController(
+    IMediator mediator,
+    ICurrentUserAccess currentUserAccess
+) : ControllerBase
 {
     [HttpPost]
     public async Task<ActionResult<MigrationResult>> RunMigration(
@@ -31,8 +37,8 @@ public sealed class RecordsetMigrationsController(IMediator mediator) : Controll
             recordsetUlid,
             request.Plan,
             request.Mode,
-            request.RequestedBy,
-            request.RequestedAt);
+            currentUserAccess.GetCurrentUserIdOrThrow(),
+            DateTimeOffset.UtcNow);
 
         var result = await mediator.Send(command, cancellationToken);
         return Ok(result);

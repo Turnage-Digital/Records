@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Records.Core.Domain.ValueObjects;
 using Records.Recordsets.Domain.Enums;
@@ -12,6 +13,9 @@ public class RecordsetMigrationDispatcherService(
     IServiceScopeFactory scopeFactory
 ) : BackgroundService
 {
+    private const int MaxAttempts = 8;
+    private static readonly TimeSpan RunningRecoveryThreshold = TimeSpan.FromMinutes(15);
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         logger.LogInformation("RecordsetMigrationDispatcher: service started");
@@ -19,12 +23,18 @@ public class RecordsetMigrationDispatcherService(
         while (!stoppingToken.IsCancellationRequested)
         {
             RecordsetMigrationJobDb? job = null;
+            var processed = 0;
+            var outcome = "success";
+            var startedAt = Stopwatch.GetTimestamp();
+            using var activity = BackgroundServiceTelemetry.ActivitySource.StartActivity(
+                "RecordsetMigrationDispatcher.loop");
             try
             {
                 using var scope = scopeFactory.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<RecordsetsDbContext>();
                 var runner = scope.ServiceProvider.GetRequiredService<RecordsetMigrationJobRunner>();
                 var unitOfWork = scope.ServiceProvider.GetRequiredService<IRecordsetsUnitOfWork>();
+                await RecoverStaleRunningJobsAsync(dbContext, logger, stoppingToken);
                 job = await GetNextJobAsync(dbContext, stoppingToken);
                 if (job is null)
                 {
@@ -33,13 +43,27 @@ public class RecordsetMigrationDispatcherService(
                 else
                 {
                     await ProcessJobAsync(job, dbContext, runner, logger, stoppingToken);
+                    processed = 1;
                 }
 
                 await CleanupExpiredBackupsAsync(dbContext, unitOfWork, logger, stoppingToken);
             }
             catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
             {
+                outcome = "failure";
                 logger.LogError(ex, "RecordsetMigrationDispatcher: loop error");
+            }
+            finally
+            {
+                activity?.SetTag("service", "recordset-migration-dispatcher");
+                activity?.SetTag("processed", processed);
+                activity?.SetTag("outcome", outcome);
+                var durationMs = Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds;
+                BackgroundServiceTelemetry.RecordRun(
+                    "recordset-migration-dispatcher",
+                    outcome,
+                    processed,
+                    durationMs);
             }
 
             try
@@ -64,10 +88,49 @@ public class RecordsetMigrationDispatcherService(
         var now = DateTime.UtcNow;
         return await dbContext.RecordsetMigrationJobs
             .Where(j =>
-                (j.Stage == RecordsetMigrationJobStage.Pending || j.Stage == RecordsetMigrationJobStage.Failed) &&
+                j.Stage == RecordsetMigrationJobStage.Pending &&
                 (j.AvailableAfter == null || j.AvailableAfter <= now))
             .OrderBy(j => j.CreatedOn)
             .FirstOrDefaultAsync(ct);
+    }
+
+    private static async Task RecoverStaleRunningJobsAsync(
+        RecordsetsDbContext dbContext,
+        ILogger logger,
+        CancellationToken cancellationToken
+    )
+    {
+        var recoveryCutoff = DateTime.UtcNow.Subtract(RunningRecoveryThreshold);
+        var staleJobs = await dbContext.RecordsetMigrationJobs
+            .Where(j =>
+                j.Stage == RecordsetMigrationJobStage.Running &&
+                j.StartedOn != null &&
+                j.StartedOn <= recoveryCutoff)
+            .OrderBy(j => j.StartedOn)
+            .Take(10)
+            .ToListAsync(cancellationToken);
+
+        if (staleJobs.Count == 0)
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        foreach (var job in staleJobs)
+        {
+            job.Stage = RecordsetMigrationJobStage.Pending;
+            job.AvailableAfter = now;
+            job.LastError = $"Recovered stale running job at {now:O}.";
+            BackgroundServiceTelemetry.RecordRetryScheduled(
+                "recordset-migration-dispatcher",
+                "stale-running-recovery");
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        logger.LogWarning(
+            "RecordsetMigrationDispatcher: recovered {Count} stale running migration job(s)",
+            staleJobs.Count);
     }
 
     private static async Task ProcessJobAsync(
@@ -97,11 +160,30 @@ public class RecordsetMigrationDispatcherService(
         }
         catch (Exception ex)
         {
+            if (job.Attempts >= MaxAttempts)
+            {
+                job.Stage = RecordsetMigrationJobStage.Failed;
+                job.CompletedOn = DateTime.UtcNow;
+                job.LastError = ex.Message;
+                job.AvailableAfter = null;
+                await dbContext.SaveChangesAsync(ct);
+
+                logger.LogError(
+                    ex,
+                    "RecordsetMigrationDispatcher: job {JobId} reached max attempts ({Attempts}) and is now Failed",
+                    job.Id,
+                    job.Attempts);
+                return;
+            }
+
             var delay = ComputeRetryDelay(job.Attempts);
             job.Stage = RecordsetMigrationJobStage.Pending;
             job.LastError = ex.Message;
             job.AvailableAfter = DateTime.UtcNow.Add(delay);
             await dbContext.SaveChangesAsync(ct);
+            BackgroundServiceTelemetry.RecordRetryScheduled(
+                "recordset-migration-dispatcher",
+                "job-failed");
             logger.LogWarning(ex,
                 "RecordsetMigrationDispatcher: job {JobId} failed, will retry after {Delay}",
                 job.Id,
@@ -161,7 +243,7 @@ public class RecordsetMigrationDispatcherService(
 
     private static TimeSpan ComputeRetryDelay(int attempts)
     {
-        var seconds = Math.Min(Math.Pow(2, attempts), 300);
+        var seconds = Math.Min(Math.Pow(2, attempts), 600);
         return TimeSpan.FromSeconds(seconds);
     }
 }
