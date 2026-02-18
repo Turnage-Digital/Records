@@ -3,8 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Records.Tenants.Contracts;
 using Records.Tenants.Contracts.Queries;
 using Records.Tenants.Domain.Interfaces;
-using Records.Tenants.Infrastructure.Sql.Projections;
-using Records.Tenants.Infrastructure.Sql.Queries;
 
 namespace Records.Tenants.Infrastructure.Sql;
 

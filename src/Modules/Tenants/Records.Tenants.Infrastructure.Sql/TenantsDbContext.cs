@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Records.Core.Domain.ValueObjects;
-using Records.Tenants.Domain.Entities;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Records.Tenants.Infrastructure.Sql.Entities;
 
 namespace Records.Tenants.Infrastructure.Sql;
@@ -8,30 +7,32 @@ namespace Records.Tenants.Infrastructure.Sql;
 public class TenantsDbContext(DbContextOptions<TenantsDbContext> options)
     : DbContext(options)
 {
-    public DbSet<Tenant> Tenants => Set<Tenant>();
+    public DbSet<TenantDb> Tenants => Set<TenantDb>();
     public DbSet<TenantProjectionDb> TenantProjections => Set<TenantProjectionDb>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        ConfigureTenants(modelBuilder.Entity<TenantDb>());
+        ConfigureTenantProjections(modelBuilder.Entity<TenantProjectionDb>());
+    }
 
-        modelBuilder.Entity<Tenant>(entity =>
-        {
-            entity.HasKey(x => x.Id);
-            entity.Property(x => x.Id)
-                .HasConversion(v => v.ToString(), s => UlidId.Parse(s))
-                .HasMaxLength(26)
-                .IsRequired();
-            entity.Property(x => x.Name).HasMaxLength(256).IsRequired();
-            entity.Property(x => x.Status).HasConversion<int>();
-        });
+    private static void ConfigureTenants(EntityTypeBuilder<TenantDb> builder)
+    {
+        builder.ToTable("Tenants");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).HasMaxLength(26).IsRequired();
+        builder.Property(x => x.Name).HasMaxLength(256).IsRequired();
+        builder.Property(x => x.Status).HasConversion<int>();
+        builder.Property(x => x.CreatedAt).IsRequired();
+    }
 
-        modelBuilder.Entity<TenantProjectionDb>(entity =>
-        {
-            entity.HasKey(x => x.TenantId);
-            entity.Property(x => x.TenantId).HasMaxLength(26).IsRequired();
-            entity.Property(x => x.Name).HasMaxLength(256).IsRequired();
-            entity.Property(x => x.Status).HasConversion<int>();
-        });
+    private static void ConfigureTenantProjections(EntityTypeBuilder<TenantProjectionDb> builder)
+    {
+        builder.ToTable("TenantProjections");
+        builder.HasKey(x => x.TenantId);
+        builder.Property(x => x.TenantId).HasMaxLength(26).IsRequired();
+        builder.Property(x => x.Name).HasMaxLength(256).IsRequired();
+        builder.Property(x => x.Status).HasConversion<int>();
     }
 }

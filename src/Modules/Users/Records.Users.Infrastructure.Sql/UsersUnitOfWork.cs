@@ -1,9 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using Records.Core.Infrastructure.Sql.Specifications;
 using Records.Core.Domain.ValueObjects;
 using Records.Users.Domain;
 using Records.Users.Domain.Entities;
 using Records.Users.Domain.Interfaces;
 using Records.Users.Infrastructure.Sql.Entities;
+using Records.Users.Infrastructure.Sql.Specifications;
 
 namespace Records.Users.Infrastructure.Sql;
 
@@ -54,11 +56,10 @@ public sealed class UsersUnitOfWork(UsersDbContext dbContext) : IUsersUnitOfWork
     {
         var userKey = userId.ToString();
         var tenantKey = tenantId?.ToString();
+        var spec = new UserRoleMembershipByUserAndRoleAndTenantSpec(userKey, role, tenantKey);
         var membership = await dbContext.UserRoleMemberships
-            .FirstOrDefaultAsync(
-                x => x.UserId == userKey && x.Role == role && x.TenantId == tenantKey,
-                cancellationToken
-            );
+            .ApplySpecification(spec)
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (membership is null)
         {

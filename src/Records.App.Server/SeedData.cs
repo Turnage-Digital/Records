@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Records.App.Server.Services;
 using Records.Core.Domain.ValueObjects;
-using Records.Tenants.Domain.Entities;
+using Records.Tenants.Domain;
 using Records.Tenants.Infrastructure.Sql;
 using Records.Tenants.Infrastructure.Sql.Entities;
 using Records.Users.Domain;
@@ -165,19 +165,25 @@ public sealed class SeedData(
 
         if (existingTenant is null)
         {
-            existingTenant = new Tenant(UlidId.NewUlid(), tenantName);
+            existingTenant = new TenantDb
+            {
+                Id = UlidId.NewUlid().ToString(),
+                Name = tenantName,
+                Status = TenantStatus.Active,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
             tenantsDbContext.Tenants.Add(existingTenant);
             await tenantsDbContext.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Created seed tenant {TenantId}", existingTenant.Id);
         }
 
         var projection = await tenantsDbContext.TenantProjections
-            .SingleOrDefaultAsync(x => x.TenantId == existingTenant.Id.ToString(), cancellationToken);
+            .SingleOrDefaultAsync(x => x.TenantId == existingTenant.Id, cancellationToken);
         if (projection is null)
         {
             tenantsDbContext.TenantProjections.Add(new TenantProjectionDb
             {
-                TenantId = existingTenant.Id.ToString(),
+                TenantId = existingTenant.Id,
                 Name = existingTenant.Name,
                 Status = existingTenant.Status,
                 CreatedAt = existingTenant.CreatedAt

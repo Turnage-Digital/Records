@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Records.Core.Contracts.Events;
 using Records.Core.Infrastructure.Sql;
-using Records.Core.Infrastructure.Sql.Projections;
 
 namespace Records.Clocks.Infrastructure.Sql;
 

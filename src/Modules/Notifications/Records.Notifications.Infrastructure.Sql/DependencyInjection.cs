@@ -3,9 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Records.Notifications.Contracts;
 using Records.Notifications.Domain;
 using Records.Notifications.Domain.Services;
-using Records.Notifications.Infrastructure.Sql.Projections;
-using Records.Notifications.Infrastructure.Sql.Queries;
-using Records.Notifications.Infrastructure.Sql.Services;
 
 namespace Records.Notifications.Infrastructure.Sql;
 

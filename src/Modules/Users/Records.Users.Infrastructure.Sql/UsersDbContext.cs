@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Records.Users.Domain.Entities;
 using Records.Users.Infrastructure.Sql.Entities;
 
@@ -14,28 +16,42 @@ public class UsersDbContext(DbContextOptions<UsersDbContext> options)
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        ConfigureIdentityTables(modelBuilder);
+        ConfigureUserRoleMemberships(modelBuilder.Entity<UserRoleMembershipDb>());
+        ConfigureUserProjections(modelBuilder.Entity<UserProjectionDb>());
+    }
 
-        modelBuilder.Entity<UserRoleMembershipDb>(entity =>
-        {
-            entity.ToTable("user_role_memberships");
-            entity.HasKey(x => x.Id);
-            entity.Property(x => x.UserId).HasMaxLength(26).IsRequired();
-            entity.Property(x => x.Role).HasConversion<int>().IsRequired();
-            entity.Property(x => x.TenantId).HasMaxLength(26);
-            entity.Property(x => x.GrantedBy).HasMaxLength(26).IsRequired();
-            entity.Property(x => x.GrantedAt).IsRequired();
-            entity.HasIndex(x => new { x.UserId, x.Role, x.TenantId }).IsUnique();
-        });
+    private static void ConfigureIdentityTables(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<User>().ToTable("AspNetUsers");
+        modelBuilder.Entity<IdentityRole>().ToTable("AspNetRoles");
+        modelBuilder.Entity<IdentityUserRole<string>>().ToTable("AspNetUserRoles");
+        modelBuilder.Entity<IdentityUserClaim<string>>().ToTable("AspNetUserClaims");
+        modelBuilder.Entity<IdentityUserLogin<string>>().ToTable("AspNetUserLogins");
+        modelBuilder.Entity<IdentityRoleClaim<string>>().ToTable("AspNetRoleClaims");
+        modelBuilder.Entity<IdentityUserToken<string>>().ToTable("AspNetUserTokens");
+    }
 
-        modelBuilder.Entity<UserProjectionDb>(entity =>
-        {
-            entity.ToTable("user_projections");
-            entity.HasKey(x => x.UserId);
-            entity.Property(x => x.UserId).HasMaxLength(26).IsRequired();
-            entity.Property(x => x.Email).HasMaxLength(256).IsRequired();
-            entity.Property(x => x.DisplayName).HasMaxLength(256);
-            entity.Property(x => x.Status).HasConversion<int>().IsRequired();
-            entity.Property(x => x.LastUpdatedAt).IsRequired();
-        });
+    private static void ConfigureUserRoleMemberships(EntityTypeBuilder<UserRoleMembershipDb> builder)
+    {
+        builder.ToTable("UserRoleMemberships");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.UserId).HasMaxLength(26).IsRequired();
+        builder.Property(x => x.Role).HasConversion<int>().IsRequired();
+        builder.Property(x => x.TenantId).HasMaxLength(26);
+        builder.Property(x => x.GrantedBy).HasMaxLength(26).IsRequired();
+        builder.Property(x => x.GrantedAt).IsRequired();
+        builder.HasIndex(x => new { x.UserId, x.Role, x.TenantId }).IsUnique();
+    }
+
+    private static void ConfigureUserProjections(EntityTypeBuilder<UserProjectionDb> builder)
+    {
+        builder.ToTable("UserProjections");
+        builder.HasKey(x => x.UserId);
+        builder.Property(x => x.UserId).HasMaxLength(26).IsRequired();
+        builder.Property(x => x.Email).HasMaxLength(256).IsRequired();
+        builder.Property(x => x.DisplayName).HasMaxLength(256);
+        builder.Property(x => x.Status).HasConversion<int>().IsRequired();
+        builder.Property(x => x.LastUpdatedAt).IsRequired();
     }
 }

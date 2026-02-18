@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Records.Notifications.Domain;
 using Records.Notifications.Infrastructure.Sql;
 using Records.Notifications.Infrastructure.Sql.Entities;
-using Records.Notifications.Infrastructure.Sql.Queries;
 
 namespace Records.Notifications.Tests.Queries;
 
@@ -137,9 +136,9 @@ public sealed class NotificationQueriesTests
 
         var queries = new NotificationQueries(dbContext);
         var results = await queries.GetFailedForRetryAsync(
-            maxAttempts: 3,
-            retryAfter: TimeSpan.FromMinutes(5),
-            limit: 10,
+            3,
+            TimeSpan.FromMinutes(5),
+            10,
             CancellationToken.None);
 
         Assert.That(results, Has.Count.EqualTo(1));
@@ -154,9 +153,9 @@ public sealed class NotificationQueriesTests
         var queries = new NotificationQueries(dbContext);
 
         var results = await queries.GetFailedForRetryAsync(
-            maxAttempts: 5,
-            retryAfter: TimeSpan.FromMinutes(1),
-            limit: 0,
+            5,
+            TimeSpan.FromMinutes(1),
+            0,
             CancellationToken.None);
 
         Assert.That(results, Is.Empty);

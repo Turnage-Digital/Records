@@ -1,5 +1,5 @@
 using MediatR;
-using Records.Core.Infrastructure.Sql.Events;
+using Records.Core.Infrastructure.Sql;
 
 namespace Records.Core.Tests.Events;
 

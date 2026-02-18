@@ -16,7 +16,7 @@ read models for internal and external clients.
 ## 2) Module Architecture (Target)
 
 Records is a .NET 9 **Modular Monolith** using **Clean Architecture** and **Domain-Driven Design**. Each bounded
-context is a self-contained module under `src/Modules/{ModuleName}/` with five projects:
+context is a self-contained module under `src/Modules/{ModuleName}/` with six projects:
 
 1. `Records.{Module}.Domain`
     - Aggregate roots
@@ -42,28 +42,38 @@ context is a self-contained module under `src/Modules/{ModuleName}/` with five p
     - `{Module}DbContext.cs`
     - `{Module}UnitOfWork.cs`
     - Database entities under `Entities/`
-    - Repositories under `Repositories/` implementing domain interfaces
-    - Query implementations under `Queries/` (implementing interfaces from Contracts)
-    - Projections under `Projections/`
-    - Mappers under `Mappers/`
-    - Specifications under `Specifications/`
+    - Optional mappers under `Mappers/`
+    - Optional specifications under `Specifications/`
     - EF Migrations under `Migrations/`
+    - All other infrastructure classes (repositories, queries, projections, services, jobs, event-store helpers) live at
+      the project root
+    - Folder policy: only `Entities/`, `Mappers/`, `Migrations/`, and `Specifications/` are valid subfolders
+    - Namespace policy: namespaces must match file paths exactly (`Records.{Module}.Infrastructure.Sql` for root files,
+      `...Sql.Entities`, `...Sql.Mappers`, `...Sql.Specifications`, `...Sql.Migrations` for foldered files)
     - `DependencyInjection.cs` for service registration
 
-5. `Records.{Module}.Tests`
+5. `Records.{Module}.Presentation`
+    - HTTP controllers under `Controllers/`
+    - API-only concerns (routing, auth attributes, request/response mapping)
+    - No domain persistence logic
+
+6. `Records.{Module}.Tests`
     - Unit tests for the module
+
+`Core` is the shared base module and is the current exception: it does not define a `Presentation` project.
 
 Dependency graph:
 
 ```
-Application ──────► Contracts ◄────── Infrastructure.Sql
-     │                        │                              │
-     └────────► Domain ◄──────┴──────────────────────────────┘
+Presentation ────► Application ──────► Contracts ◄────── Infrastructure.Sql
+       │                   │                        │                              │
+       └───────────────────└────────► Domain ◄──────┴──────────────────────────────┘
 ```
 
 - Domain has no dependencies (pure domain logic)
 - Contracts depends on Domain (for value objects in DTOs)
 - Application depends on Domain and Contracts
+- Presentation depends on Application and Contracts
 - Infrastructure.Sql depends on Domain and Contracts (NOT Application)
 
 ---
@@ -72,8 +82,22 @@ Application ──────► Contracts ◄────── Infrastructure
 
 - EF Core entity classes in `.Infrastructure.Sql` projects end with `Db`.
 - Table names remain unchanged by class renames.
+- `DbContext` should expose `DbSet<*Db>` and map persistence models from `Entities/`; do not persist Domain entities
+  directly in EF models.
 
-## 2.2) Module Composition and Portability
+## 2.2) Unit of Work Convention
+
+- Every module must define a concrete `{Module}UnitOfWork` in its `.Infrastructure.Sql` project.
+- Do not fold unit-of-work responsibilities into repository class naming; keep the unit-of-work type explicit and
+  discoverable.
+
+## 2.3) Migration Reset Workflow
+
+- `Migrations/` is treated as generated infrastructure output, not a hand-maintained source of truth.
+- Prefer resetting and regenerating via `pwsh ./ef-reset.ps1` over manual migration surgery.
+- After migration reset, starting `Records.App.Server` should repopulate baseline development data through
+  `src/Records.App.Server/SeedData.cs`.
+## 2.4) Module Composition and Portability
 
 - Modules are designed to be **portable building blocks**. A Records variant (e.g., "Records for Background Checks")
   should be achievable by composing a different set of modules (e.g., `Orders`, `Services`) and omitting others

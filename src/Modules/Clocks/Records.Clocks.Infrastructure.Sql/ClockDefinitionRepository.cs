@@ -2,7 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using Records.Clocks.Domain.Entities;
 using Records.Clocks.Domain.Interfaces;
 using Records.Clocks.Infrastructure.Sql.Mappers;
+using Records.Clocks.Infrastructure.Sql.Specifications;
 using Records.Core.Domain.ValueObjects;
+using Records.Core.Infrastructure.Sql.Specifications;
 
 namespace Records.Clocks.Infrastructure.Sql;
 
@@ -23,9 +25,11 @@ public sealed class ClockDefinitionRepository(ClocksDbContext context) : IClockD
         CancellationToken cancellationToken
     )
     {
-        var entity = await context.ClockDefinitions
+        var spec = new ClockDefinitionByTenantAndNameSpec(tenantId.ToString(), name);
+        var query = context.ClockDefinitions
             .AsNoTracking()
-            .FirstOrDefaultAsync(d => d.TenantId == tenantId.ToString() && d.Name == name, cancellationToken);
+            .ApplySpecification(spec);
+        var entity = await query.FirstOrDefaultAsync(cancellationToken);
 
         return entity is null ? null : ClockDefinitionMapper.ToDomain(entity);
     }
@@ -35,11 +39,11 @@ public sealed class ClockDefinitionRepository(ClocksDbContext context) : IClockD
         CancellationToken cancellationToken
     )
     {
-        var entities = await context.ClockDefinitions
+        var spec = new ClockDefinitionsByTenantSpec(tenantId.ToString());
+        var query = context.ClockDefinitions
             .AsNoTracking()
-            .Where(d => d.TenantId == tenantId.ToString())
-            .OrderBy(d => d.Name)
-            .ToListAsync(cancellationToken);
+            .ApplySpecification(spec);
+        var entities = await query.ToListAsync(cancellationToken);
 
         return entities.Select(ClockDefinitionMapper.ToDomain).ToList();
     }

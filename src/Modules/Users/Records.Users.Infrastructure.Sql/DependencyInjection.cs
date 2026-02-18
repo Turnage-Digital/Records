@@ -4,8 +4,6 @@ using Records.Users.Contracts;
 using Records.Users.Contracts.Projections;
 using Records.Users.Contracts.Queries;
 using Records.Users.Domain.Interfaces;
-using Records.Users.Infrastructure.Sql.Projections;
-using Records.Users.Infrastructure.Sql.Queries;
 
 namespace Records.Users.Infrastructure.Sql;
 

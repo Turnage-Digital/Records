@@ -24,8 +24,7 @@ public sealed class NotificationRepository(NotificationsDbContext context) : INo
     )
     {
         var spec = new PendingNotificationsSpec(DateTime.UtcNow, limit);
-
-        var query = SpecificationEvaluator.GetQuery(context.Notifications, spec);
+        var query = context.Notifications.ApplySpecification(spec);
 
         var pending = await query
             .ToListAsync(cancellationToken);
@@ -39,7 +38,7 @@ public sealed class NotificationRepository(NotificationsDbContext context) : INo
     )
     {
         var spec = new NotificationsByRecordsetIdSpec(recordsetId.ToString());
-        var query = SpecificationEvaluator.GetQuery(context.Notifications, spec);
+        var query = context.Notifications.ApplySpecification(spec);
 
         var notifications = await query.ToListAsync(cancellationToken);
         return notifications.Select(NotificationMapper.ToDomain).ToList();
@@ -54,7 +53,7 @@ public sealed class NotificationRepository(NotificationsDbContext context) : INo
     {
         var cutoff = DateTime.UtcNow.Subtract(retryAfter);
         var spec = new FailedNotificationsForRetrySpec(maxAttempts, cutoff, limit);
-        var query = SpecificationEvaluator.GetQuery(context.Notifications, spec);
+        var query = context.Notifications.ApplySpecification(spec);
 
         var failed = await query.ToListAsync(cancellationToken);
         return failed.Select(NotificationMapper.ToDomain).ToList();

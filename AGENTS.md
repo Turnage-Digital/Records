@@ -14,6 +14,9 @@
 - Build: `dotnet build Records.sln -c Debug`
 - Test: `dotnet test Records.sln -c Release`
 - Run Host (when available): `dotnet run --project src/Records.App.Server`
+- Migration reset workflow: prefer `pwsh ./ef-reset.ps1` instead of hand-editing `Migrations/` files.
+- Treat `Migrations/` as generated output; after reset, app startup seed logic in
+  `src/Records.App.Server/SeedData.cs` restores baseline data for local/dev use.
 
 ## Coding Style & Naming Conventions
 
