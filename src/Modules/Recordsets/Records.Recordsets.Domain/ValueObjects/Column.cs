@@ -1,5 +1,4 @@
 using System.Text;
-using Records.Recordsets.Domain.Enums;
 
 namespace Records.Recordsets.Domain.ValueObjects;
 

@@ -1,4 +1,4 @@
-using Records.Recordsets.Domain.Enums;
+using Records.Recordsets.Domain;
 
 namespace Records.Recordsets.Infrastructure.Sql.Entities;
 

@@ -1,9 +1,7 @@
 using Records.Core.Domain.ValueObjects;
-using Records.Tenants.Application.Commands.DisableTenant;
-using Records.Tenants.Contracts;
+using Records.Tenants.Application.Commands;
+using Records.Tenants.Contracts.Projections;
 using Records.Tenants.Domain;
-using Records.Tenants.Domain.Entities;
-using Records.Tenants.Domain.Interfaces;
 
 namespace Records.Tenants.Tests.Commands;
 

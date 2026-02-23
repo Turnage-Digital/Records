@@ -3,10 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Records.Core.Contracts.Security;
 using Records.Core.Domain.ValueObjects;
-using Records.Recordsets.Application.Commands.CreateRecord;
-using Records.Recordsets.Application.Commands.CreateRecordset;
-using Records.Recordsets.Application.Commands.UpdateRecord;
-using Records.Recordsets.Application.Commands.UpdateRecordsetSchema;
+using Records.Recordsets.Application.Commands;
 using Records.Recordsets.Contracts.Dtos;
 using Records.Recordsets.Contracts.Queries;
 

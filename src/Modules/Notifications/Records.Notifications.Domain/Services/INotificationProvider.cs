@@ -1,6 +1,6 @@
 using Records.Notifications.Domain.ValueObjects;
 
-namespace Records.Notifications.Domain;
+namespace Records.Notifications.Domain.Services;
 
 public interface INotificationProvider
 {

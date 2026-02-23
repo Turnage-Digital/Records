@@ -5,8 +5,8 @@ using Records.Core.Application;
 using Records.Core.Contracts.Security;
 using Records.Core.Domain.ValueObjects;
 using Records.Notifications.Application.Commands;
-using Records.Notifications.Contracts;
 using Records.Notifications.Contracts.Dtos;
+using Records.Notifications.Contracts.Queries;
 
 namespace Records.Notifications.Presentation.Controllers;
 

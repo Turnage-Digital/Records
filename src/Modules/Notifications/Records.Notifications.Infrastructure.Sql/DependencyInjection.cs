@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Records.Notifications.Contracts;
+using Records.Notifications.Contracts.Projections;
+using Records.Notifications.Contracts.Queries;
 using Records.Notifications.Domain;
 using Records.Notifications.Domain.Services;
 

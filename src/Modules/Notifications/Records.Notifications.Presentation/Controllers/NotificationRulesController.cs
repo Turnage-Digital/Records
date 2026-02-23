@@ -3,11 +3,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Records.Core.Contracts.Security;
 using Records.Core.Domain.ValueObjects;
-using Records.Notifications.Application.Commands.NotificationRules.Create;
-using Records.Notifications.Application.Commands.NotificationRules.Delete;
-using Records.Notifications.Application.Commands.NotificationRules.Update;
-using Records.Notifications.Contracts;
+using Records.Notifications.Application.Commands;
 using Records.Notifications.Contracts.Dtos;
+using Records.Notifications.Contracts.Queries;
 
 namespace Records.Notifications.Presentation.Controllers;
 

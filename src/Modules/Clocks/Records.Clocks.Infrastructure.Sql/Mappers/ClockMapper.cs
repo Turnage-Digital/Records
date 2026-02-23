@@ -1,5 +1,4 @@
 using Records.Clocks.Domain;
-using Records.Clocks.Domain.Entities;
 using Records.Clocks.Infrastructure.Sql.Entities;
 using Records.Core.Domain.ValueObjects;
 

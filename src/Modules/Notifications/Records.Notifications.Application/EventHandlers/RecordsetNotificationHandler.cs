@@ -16,60 +16,6 @@ public sealed class RecordsetNotificationHandler(
     INotificationHandler<RecordUpdatedIntegrationEvent>,
     INotificationHandler<RecordDeletedIntegrationEvent>
 {
-    public async Task Handle(RecordsetUpdatedIntegrationEvent notification, CancellationToken cancellationToken)
-    {
-        var rules = await unitOfWork.NotificationRules.ListActiveByRecordsetAsync(
-            notification.RecordsetId,
-            cancellationToken);
-
-        var matchingRules = rules
-            .Where(r => r.Trigger.Type == NotificationTriggerType.RecordsetUpdated)
-            .ToList();
-
-        if (matchingRules.Count == 0)
-        {
-            return;
-        }
-
-        var context = new Dictionary<string, object>
-        {
-            ["RecordsetId"] = notification.RecordsetId.ToString(),
-            ["UpdatedBy"] = notification.UpdatedBy.ToString(),
-            ["UpdatedAt"] = notification.UpdatedAt
-        };
-
-        var createdCount = 0;
-
-        foreach (var rule in matchingRules)
-        {
-            var trigger = NotificationTrigger.RecordsetUpdated(rule.TenantId, notification.RecordsetId);
-
-            if (!await triggerEvaluator.ShouldTriggerAsync(rule, trigger, context, cancellationToken))
-            {
-                continue;
-            }
-
-            var content = BuildContent(
-                rule,
-                "Recordset Updated",
-                $"Recordset {notification.RecordsetId} was updated by {notification.UpdatedBy}.",
-                context);
-
-            createdCount += await CreateNotificationsAsync(
-                rule,
-                trigger,
-                content,
-                notification.OccurredOn,
-                notification.EventId.ToString(),
-                cancellationToken);
-        }
-
-        if (createdCount > 0)
-        {
-            await unitOfWork.SaveChangesAsync(cancellationToken);
-        }
-    }
-
     public async Task Handle(RecordCreatedIntegrationEvent notification, CancellationToken cancellationToken)
     {
         var rules = await unitOfWork.NotificationRules.ListActiveByRecordsetAsync(
@@ -114,6 +60,121 @@ public sealed class RecordsetNotificationHandler(
                 rule,
                 "Record Created",
                 $"A record was created by {notification.CreatedBy}.",
+                context);
+
+            createdCount += await CreateNotificationsAsync(
+                rule,
+                trigger,
+                content,
+                notification.OccurredOn,
+                notification.EventId.ToString(),
+                cancellationToken);
+        }
+
+        if (createdCount > 0)
+        {
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    public async Task Handle(RecordDeletedIntegrationEvent notification, CancellationToken cancellationToken)
+    {
+        var rules = await unitOfWork.NotificationRules.ListActiveByRecordsetAsync(
+            notification.RecordsetId,
+            cancellationToken);
+
+        var matchingRules = rules
+            .Where(r => r.Trigger.Type == NotificationTriggerType.RecordDeleted)
+            .ToList();
+
+        if (matchingRules.Count == 0)
+        {
+            return;
+        }
+
+        var context = new Dictionary<string, object>
+        {
+            ["RecordsetId"] = notification.RecordsetId.ToString(),
+            ["RecordId"] = notification.RecordId ?? 0,
+            ["DeletedBy"] = notification.DeletedBy.ToString(),
+            ["DeletedAt"] = notification.DeletedAt
+        };
+
+        var createdCount = 0;
+
+        foreach (var rule in matchingRules)
+        {
+            var trigger = new NotificationTrigger
+            {
+                Type = NotificationTriggerType.RecordDeleted,
+                TenantId = rule.TenantId,
+                RecordsetId = notification.RecordsetId,
+                RecordId = notification.RecordId
+            };
+
+            if (!await triggerEvaluator.ShouldTriggerAsync(rule, trigger, context, cancellationToken))
+            {
+                continue;
+            }
+
+            var content = BuildContent(
+                rule,
+                "Record Deleted",
+                $"Record {notification.RecordId} was deleted by {notification.DeletedBy}.",
+                context);
+
+            createdCount += await CreateNotificationsAsync(
+                rule,
+                trigger,
+                content,
+                notification.OccurredOn,
+                notification.EventId.ToString(),
+                cancellationToken);
+        }
+
+        if (createdCount > 0)
+        {
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    public async Task Handle(RecordsetUpdatedIntegrationEvent notification, CancellationToken cancellationToken)
+    {
+        var rules = await unitOfWork.NotificationRules.ListActiveByRecordsetAsync(
+            notification.RecordsetId,
+            cancellationToken);
+
+        var matchingRules = rules
+            .Where(r => r.Trigger.Type == NotificationTriggerType.RecordsetUpdated)
+            .ToList();
+
+        if (matchingRules.Count == 0)
+        {
+            return;
+        }
+
+        var context = new Dictionary<string, object>
+        {
+            ["RecordsetId"] = notification.RecordsetId.ToString(),
+            ["UpdatedBy"] = notification.UpdatedBy.ToString(),
+            ["UpdatedAt"] = notification.UpdatedAt
+        };
+
+        var createdCount = 0;
+
+        foreach (var rule in matchingRules)
+        {
+            var trigger = NotificationTrigger.RecordsetUpdated(rule.TenantId, notification.RecordsetId);
+
+            if (!await triggerEvaluator.ShouldTriggerAsync(rule, trigger, context, cancellationToken))
+            {
+                continue;
+            }
+
+            var content = BuildContent(
+                rule,
+                "Recordset Updated",
+                $"Recordset {notification.RecordsetId} was updated by {notification.UpdatedBy}.",
                 context);
 
             createdCount += await CreateNotificationsAsync(
@@ -181,67 +242,6 @@ public sealed class RecordsetNotificationHandler(
 
                 break;
             }
-        }
-
-        if (createdCount > 0)
-        {
-            await unitOfWork.SaveChangesAsync(cancellationToken);
-        }
-    }
-
-    public async Task Handle(RecordDeletedIntegrationEvent notification, CancellationToken cancellationToken)
-    {
-        var rules = await unitOfWork.NotificationRules.ListActiveByRecordsetAsync(
-            notification.RecordsetId,
-            cancellationToken);
-
-        var matchingRules = rules
-            .Where(r => r.Trigger.Type == NotificationTriggerType.RecordDeleted)
-            .ToList();
-
-        if (matchingRules.Count == 0)
-        {
-            return;
-        }
-
-        var context = new Dictionary<string, object>
-        {
-            ["RecordsetId"] = notification.RecordsetId.ToString(),
-            ["RecordId"] = notification.RecordId ?? 0,
-            ["DeletedBy"] = notification.DeletedBy.ToString(),
-            ["DeletedAt"] = notification.DeletedAt
-        };
-
-        var createdCount = 0;
-
-        foreach (var rule in matchingRules)
-        {
-            var trigger = new NotificationTrigger
-            {
-                Type = NotificationTriggerType.RecordDeleted,
-                TenantId = rule.TenantId,
-                RecordsetId = notification.RecordsetId,
-                RecordId = notification.RecordId
-            };
-
-            if (!await triggerEvaluator.ShouldTriggerAsync(rule, trigger, context, cancellationToken))
-            {
-                continue;
-            }
-
-            var content = BuildContent(
-                rule,
-                "Record Deleted",
-                $"Record {notification.RecordId} was deleted by {notification.DeletedBy}.",
-                context);
-
-            createdCount += await CreateNotificationsAsync(
-                rule,
-                trigger,
-                content,
-                notification.OccurredOn,
-                notification.EventId.ToString(),
-                cancellationToken);
         }
 
         if (createdCount > 0)
@@ -456,30 +456,35 @@ public sealed class RecordsetNotificationHandler(
                     {
                         recipients.Add(NotificationRecipient.InApp(rule.UserId));
                     }
+
                     break;
                 case NotificationChannel.Email:
                     if (!string.IsNullOrWhiteSpace(channel.Address))
                     {
                         recipients.Add(NotificationRecipient.Email(channel.Address, userId: rule.UserId));
                     }
+
                     break;
                 case NotificationChannel.Sms:
                     if (!string.IsNullOrWhiteSpace(channel.Address))
                     {
                         recipients.Add(NotificationRecipient.Sms(channel.Address, userId: rule.UserId));
                     }
+
                     break;
                 case NotificationChannel.Push:
                     if (!string.IsNullOrWhiteSpace(channel.Address))
                     {
                         recipients.Add(NotificationRecipient.Push(channel.Address, rule.UserId));
                     }
+
                     break;
                 case NotificationChannel.Webhook:
                     if (!string.IsNullOrWhiteSpace(channel.Address))
                     {
                         recipients.Add(NotificationRecipient.Webhook(channel.Address, channel.Settings));
                     }
+
                     break;
             }
         }

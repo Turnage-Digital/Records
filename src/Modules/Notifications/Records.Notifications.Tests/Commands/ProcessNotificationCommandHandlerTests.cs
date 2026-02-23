@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Records.Core.Domain.ValueObjects;
 using Records.Notifications.Application.Commands;
 using Records.Notifications.Domain;
+using Records.Notifications.Domain.Services;
 using Records.Notifications.Domain.ValueObjects;
 
 namespace Records.Notifications.Tests.Commands;
@@ -136,7 +137,10 @@ public sealed class ProcessNotificationCommandHandlerTests
             return Task.FromResult(id == notification.Id ? notification : null);
         }
 
-        public Task<IReadOnlyList<Notification>> GetPendingAsync(int limit, CancellationToken cancellationToken = default)
+        public Task<IReadOnlyList<Notification>> GetPendingAsync(
+            int limit,
+            CancellationToken cancellationToken = default
+        )
         {
             throw new NotSupportedException();
         }

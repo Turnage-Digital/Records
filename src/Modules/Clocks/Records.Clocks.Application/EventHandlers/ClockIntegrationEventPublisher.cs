@@ -1,7 +1,7 @@
 using MediatR;
 using Records.Clocks.Contracts.IntegrationEvents;
+using Records.Clocks.Domain;
 using Records.Clocks.Domain.Events;
-using Records.Clocks.Domain.Interfaces;
 
 namespace Records.Clocks.Application.EventHandlers;
 

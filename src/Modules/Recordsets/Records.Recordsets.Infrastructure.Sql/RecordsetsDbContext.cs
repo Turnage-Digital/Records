@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Records.Recordsets.Domain.Enums;
+using Records.Recordsets.Domain;
 using Records.Recordsets.Infrastructure.Sql.Entities;
 
 namespace Records.Recordsets.Infrastructure.Sql;

@@ -1,8 +1,7 @@
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Records.Core.Domain.ValueObjects;
-using Records.Recordsets.Domain.Enums;
-using Records.Recordsets.Domain.Interfaces;
+using Records.Recordsets.Domain;
 using Records.Recordsets.Infrastructure.Sql;
 using Records.Recordsets.Infrastructure.Sql.Entities;
 

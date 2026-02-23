@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using Records.Notifications.Contracts;
 using Records.Notifications.Contracts.Dtos;
+using Records.Notifications.Contracts.Queries;
 using Records.Notifications.Domain.ValueObjects;
 using Records.Notifications.Infrastructure.Sql.Entities;
 

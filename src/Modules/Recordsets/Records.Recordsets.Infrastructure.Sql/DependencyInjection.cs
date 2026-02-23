@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Records.Recordsets.Contracts.Jobs;
 using Records.Recordsets.Contracts.Projections;
 using Records.Recordsets.Contracts.Queries;
-using Records.Recordsets.Domain.Interfaces;
+using Records.Recordsets.Domain;
 
 namespace Records.Recordsets.Infrastructure.Sql;
 

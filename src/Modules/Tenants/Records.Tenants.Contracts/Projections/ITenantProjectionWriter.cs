@@ -1,7 +1,7 @@
 using Records.Core.Domain.ValueObjects;
 using Records.Tenants.Domain;
 
-namespace Records.Tenants.Contracts;
+namespace Records.Tenants.Contracts.Projections;
 
 /// <summary>
 ///     Writes tenant projection data for read model queries.

@@ -1,6 +1,5 @@
 using MediatR;
-using Records.Clocks.Application.Commands.Clocks.MarkAtRisk;
-using Records.Clocks.Application.Commands.Clocks.MarkBreached;
+using Records.Clocks.Application.Commands;
 using Records.Clocks.Contracts.Queries;
 using Records.Core.Domain.ValueObjects;
 

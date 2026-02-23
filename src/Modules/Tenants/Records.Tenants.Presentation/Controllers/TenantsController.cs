@@ -3,8 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Records.Core.Contracts.Security;
 using Records.Core.Domain.ValueObjects;
-using Records.Tenants.Application.Commands.CreateTenant;
-using Records.Tenants.Application.Commands.DisableTenant;
+using Records.Tenants.Application.Commands;
 using Records.Tenants.Contracts.Dtos;
 using Records.Tenants.Contracts.Queries;
 

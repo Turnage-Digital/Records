@@ -13,28 +13,28 @@ internal static class BackgroundServiceTelemetry
 
     public static readonly Counter<long> Runs = Meter.CreateCounter<long>(
         "records.background.run.count",
-        unit: "{run}",
-        description: "Number of background processing loops executed.");
+        "{run}",
+        "Number of background processing loops executed.");
 
     public static readonly Counter<long> Failures = Meter.CreateCounter<long>(
         "records.background.run.failures",
-        unit: "{failure}",
-        description: "Number of background processing loops that failed.");
+        "{failure}",
+        "Number of background processing loops that failed.");
 
     public static readonly Counter<long> RetriesScheduled = Meter.CreateCounter<long>(
         "records.background.retry.scheduled",
-        unit: "{retry}",
-        description: "Number of retries scheduled by background services.");
+        "{retry}",
+        "Number of retries scheduled by background services.");
 
     public static readonly Counter<long> ItemsProcessed = Meter.CreateCounter<long>(
         "records.background.items.processed",
-        unit: "{item}",
-        description: "Number of items processed by background services.");
+        "{item}",
+        "Number of items processed by background services.");
 
     public static readonly Histogram<double> RunDuration = Meter.CreateHistogram<double>(
         "records.background.run.duration",
-        unit: "ms",
-        description: "Background processing loop duration in milliseconds.");
+        "ms",
+        "Background processing loop duration in milliseconds.");
 
     public static void RecordRun(string service, string outcome, int processed, double durationMs)
     {

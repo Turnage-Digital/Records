@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using Records.Core.Infrastructure.Sql.Specifications;
 using Records.Core.Domain.ValueObjects;
+using Records.Core.Infrastructure.Sql.QueryCriteria;
 using Records.Recordsets.Contracts.Projections;
 using Records.Recordsets.Infrastructure.Sql.Entities;
-using Records.Recordsets.Infrastructure.Sql.Specifications;
+using Records.Recordsets.Infrastructure.Sql.QueryCriteria;
 
 namespace Records.Recordsets.Infrastructure.Sql;
 
@@ -71,7 +71,7 @@ public sealed class RecordsetProjectionWriter(RecordsetsDbContext dbContext) : I
     private Task<RecordsetProjectionDb?> GetByRecordsetIdAsync(string recordsetId, CancellationToken cancellationToken)
     {
         return dbContext.RecordsetProjections
-            .ApplySpecification(new RecordsetProjectionByRecordsetIdSpec(recordsetId))
+            .ApplyCriteria(new RecordsetProjectionByRecordsetIdCriteria(recordsetId))
             .FirstOrDefaultAsync(cancellationToken);
     }
 }

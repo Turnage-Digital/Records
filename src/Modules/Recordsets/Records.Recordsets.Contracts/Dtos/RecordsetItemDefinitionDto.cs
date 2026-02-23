@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 using Records.Core.Domain.ValueObjects;
-using Records.Recordsets.Domain.Enums;
+using Records.Recordsets.Domain;
 
 namespace Records.Recordsets.Contracts.Dtos;
 

@@ -97,6 +97,7 @@ Presentation ────► Application ──────► Contracts ◄─�
 - Prefer resetting and regenerating via `pwsh ./ef-reset.ps1` over manual migration surgery.
 - After migration reset, starting `Records.App.Server` should repopulate baseline development data through
   `src/Records.App.Server/SeedData.cs`.
+
 ## 2.4) Module Composition and Portability
 
 - Modules are designed to be **portable building blocks**. A Records variant (e.g., "Records for Background Checks")

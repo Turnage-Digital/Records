@@ -7,6 +7,7 @@ public interface IRecordQueries
 {
     Task<RecordDto?> GetByIdAsync(UlidId recordsetId, int recordId, CancellationToken cancellationToken);
     Task<IReadOnlyList<RecordDto>> ListAsync(UlidId recordsetId, CancellationToken cancellationToken);
+
     Task<RecordsetPagedRecordsDto?> GetPageAsync(
         UlidId recordsetId,
         int page,
@@ -16,13 +17,16 @@ public interface IRecordQueries
         string? sort,
         CancellationToken cancellationToken
     );
+
     Task<RecordItemDetailsDto?> GetDetailsAsync(UlidId recordsetId, int recordId, CancellationToken cancellationToken);
+
     Task<HistoryPageDto> GetRecordsetHistoryAsync(
         UlidId recordsetId,
         int page,
         int pageSize,
         CancellationToken cancellationToken
     );
+
     Task<HistoryPageDto?> GetRecordHistoryAsync(
         UlidId recordsetId,
         int recordId,

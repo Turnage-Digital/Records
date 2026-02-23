@@ -58,7 +58,8 @@ public sealed class TenantsEndpointTests
         var listResponse = await client.GetAsync("/api/tenants");
         Assert.That(listResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         var tenants =
-            await listResponse.Content.ReadFromJsonAsync<IReadOnlyList<TenantSummaryDto>>(EndpointTestSupport.JsonOptions);
+            await listResponse.Content.ReadFromJsonAsync<IReadOnlyList<TenantSummaryDto>>(EndpointTestSupport
+                .JsonOptions);
         Assert.That(tenants, Is.Not.Null);
         Assert.That(tenants!.Any(t => t.TenantId == created.TenantId), Is.True);
 

@@ -1,7 +1,7 @@
 using MediatR;
 using Records.Recordsets.Contracts.Projections;
+using Records.Recordsets.Domain;
 using Records.Recordsets.Domain.Events;
-using Records.Recordsets.Domain.Interfaces;
 
 namespace Records.Recordsets.Application.EventHandlers;
 

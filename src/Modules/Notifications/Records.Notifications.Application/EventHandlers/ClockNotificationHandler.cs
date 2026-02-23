@@ -169,30 +169,35 @@ public sealed class ClockNotificationHandler(
                     {
                         recipients.Add(NotificationRecipient.InApp(rule.UserId));
                     }
+
                     break;
                 case NotificationChannel.Email:
                     if (!string.IsNullOrWhiteSpace(channel.Address))
                     {
                         recipients.Add(NotificationRecipient.Email(channel.Address, userId: rule.UserId));
                     }
+
                     break;
                 case NotificationChannel.Sms:
                     if (!string.IsNullOrWhiteSpace(channel.Address))
                     {
                         recipients.Add(NotificationRecipient.Sms(channel.Address, userId: rule.UserId));
                     }
+
                     break;
                 case NotificationChannel.Push:
                     if (!string.IsNullOrWhiteSpace(channel.Address))
                     {
                         recipients.Add(NotificationRecipient.Push(channel.Address, rule.UserId));
                     }
+
                     break;
                 case NotificationChannel.Webhook:
                     if (!string.IsNullOrWhiteSpace(channel.Address))
                     {
                         recipients.Add(NotificationRecipient.Webhook(channel.Address, channel.Settings));
                     }
+
                     break;
             }
         }

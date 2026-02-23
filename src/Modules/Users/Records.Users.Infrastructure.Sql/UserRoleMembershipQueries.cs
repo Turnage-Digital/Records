@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using Records.Core.Infrastructure.Sql.Specifications;
 using Records.Core.Domain.ValueObjects;
+using Records.Core.Infrastructure.Sql.QueryCriteria;
 using Records.Users.Contracts.Dtos;
 using Records.Users.Contracts.Queries;
-using Records.Users.Infrastructure.Sql.Specifications;
+using Records.Users.Infrastructure.Sql.QueryCriteria;
 
 namespace Records.Users.Infrastructure.Sql;
 
@@ -15,11 +15,9 @@ public sealed class UserRoleMembershipQueries(UsersDbContext dbContext) : IUserR
     )
     {
         var userKey = userId.ToString();
-        var query = dbContext.UserRoleMemberships
+        return await dbContext.UserRoleMemberships
             .AsNoTracking()
-            .ApplySpecification(new UserRoleMembershipsByUserSpec(userKey));
-
-        return await query
+            .ApplyCriteria(new UserRoleMembershipsByUserCriteria(userKey))
             .Select(x => new UserRoleMembershipDto(
                 UlidId.Parse(x.UserId),
                 x.Role,

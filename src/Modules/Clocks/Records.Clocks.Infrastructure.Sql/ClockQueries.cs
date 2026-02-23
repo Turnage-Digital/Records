@@ -3,9 +3,9 @@ using Records.Clocks.Contracts.Dtos;
 using Records.Clocks.Contracts.Queries;
 using Records.Clocks.Domain;
 using Records.Clocks.Infrastructure.Sql.Entities;
-using Records.Clocks.Infrastructure.Sql.Specifications;
+using Records.Clocks.Infrastructure.Sql.QueryCriteria;
 using Records.Core.Domain.ValueObjects;
-using Records.Core.Infrastructure.Sql.Specifications;
+using Records.Core.Infrastructure.Sql.QueryCriteria;
 
 namespace Records.Clocks.Infrastructure.Sql;
 
@@ -27,14 +27,14 @@ public sealed class ClockQueries(ClocksDbContext dbContext) : IClockQueries
         CancellationToken cancellationToken
     )
     {
-        var spec = new ClockByRecordAndDefinitionSpec(
+        var spec = new ClockByRecordAndDefinitionCriteria(
             recordsetId.ToString(),
             recordId,
             definitionId.ToString());
-        var query = dbContext.Clocks
+        var entity = await dbContext.Clocks
             .AsNoTracking()
-            .ApplySpecification(spec);
-        var entity = await query.FirstOrDefaultAsync(cancellationToken);
+            .ApplyCriteria(spec)
+            .FirstOrDefaultAsync(cancellationToken);
 
         return entity is null ? null : Map(entity);
     }
@@ -45,11 +45,11 @@ public sealed class ClockQueries(ClocksDbContext dbContext) : IClockQueries
         CancellationToken cancellationToken
     )
     {
-        var spec = new ClocksByRecordSpec(recordsetId.ToString(), recordId);
-        var query = dbContext.Clocks
+        var spec = new ClocksByRecordCriteria(recordsetId.ToString(), recordId);
+        var entities = await dbContext.Clocks
             .AsNoTracking()
-            .ApplySpecification(spec);
-        var entities = await query.ToListAsync(cancellationToken);
+            .ApplyCriteria(spec)
+            .ToListAsync(cancellationToken);
 
         return entities.Select(Map).ToList();
     }
@@ -59,11 +59,10 @@ public sealed class ClockQueries(ClocksDbContext dbContext) : IClockQueries
         CancellationToken cancellationToken
     )
     {
-        var spec = new RunningClocksPastThresholdSpec(asOf.UtcDateTime);
-        var query = dbContext.Clocks
+        var spec = new RunningClocksPastThresholdCriteria(asOf.UtcDateTime);
+        return await dbContext.Clocks
             .AsNoTracking()
-            .ApplySpecification(spec);
-        return await query
+            .ApplyCriteria(spec)
             .Select(c => new ClockWatchdogDto(
                 c.Id,
                 c.RecordsetId,
@@ -83,11 +82,10 @@ public sealed class ClockQueries(ClocksDbContext dbContext) : IClockQueries
         CancellationToken cancellationToken
     )
     {
-        var spec = new RunningClocksPastDeadlineSpec(asOf.UtcDateTime);
-        var query = dbContext.Clocks
+        var spec = new RunningClocksPastDeadlineCriteria(asOf.UtcDateTime);
+        return await dbContext.Clocks
             .AsNoTracking()
-            .ApplySpecification(spec);
-        return await query
+            .ApplyCriteria(spec)
             .Select(c => new ClockWatchdogDto(
                 c.Id,
                 c.RecordsetId,

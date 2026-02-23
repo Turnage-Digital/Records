@@ -1,6 +1,6 @@
 using Records.Notifications.Domain;
 
-namespace Records.Notifications.Contracts;
+namespace Records.Notifications.Contracts.Projections;
 
 public interface INotificationProjectionWriter
 {

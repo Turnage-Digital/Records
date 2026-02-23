@@ -2,9 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using Records.Clocks.Contracts.Dtos;
 using Records.Clocks.Contracts.Queries;
 using Records.Clocks.Domain;
-using Records.Clocks.Infrastructure.Sql.Specifications;
+using Records.Clocks.Infrastructure.Sql.QueryCriteria;
 using Records.Core.Domain.ValueObjects;
-using Records.Core.Infrastructure.Sql.Specifications;
+using Records.Core.Infrastructure.Sql.QueryCriteria;
 
 namespace Records.Clocks.Infrastructure.Sql;
 
@@ -37,11 +37,11 @@ public sealed class ClockDefinitionQueries(ClocksDbContext dbContext) : IClockDe
         CancellationToken cancellationToken
     )
     {
-        var spec = new ClockDefinitionsByTenantSpec(tenantId.ToString());
-        var query = dbContext.ClockDefinitions
+        var spec = new ClockDefinitionsByTenantCriteria(tenantId.ToString());
+        var entities = await dbContext.ClockDefinitions
             .AsNoTracking()
-            .ApplySpecification(spec);
-        var entities = await query.ToListAsync(cancellationToken);
+            .ApplyCriteria(spec)
+            .ToListAsync(cancellationToken);
 
         return entities.Select(entity => new ClockDefinitionDto(
                 UlidId.Parse(entity.Id),

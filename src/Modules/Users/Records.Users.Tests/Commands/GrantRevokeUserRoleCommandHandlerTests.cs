@@ -1,10 +1,7 @@
 using Records.Core.Domain.ValueObjects;
-using Records.Users.Application.Commands.GrantUserRole;
-using Records.Users.Application.Commands.RevokeUserRole;
-using Records.Users.Contracts;
+using Records.Users.Application.Commands;
+using Records.Users.Contracts.Queries;
 using Records.Users.Domain;
-using Records.Users.Domain.Entities;
-using Records.Users.Domain.Interfaces;
 
 namespace Records.Users.Tests.Commands;
 

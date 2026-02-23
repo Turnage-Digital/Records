@@ -10,10 +10,10 @@ namespace Records.App.Server.Tests.Services;
 public sealed class DeferredDispatchProcessorTests
 {
     private Mock<IEventStore> eventStore = null!;
-    private Mock<IDomainEventSerializer> serializer = null!;
-    private Mock<IMediator> mediator = null!;
     private Mock<ILogger<DeferredDispatchProcessor>> logger = null!;
+    private Mock<IMediator> mediator = null!;
     private IServiceScopeFactory scopeFactory = null!;
+    private Mock<IDomainEventSerializer> serializer = null!;
 
     [SetUp]
     public void SetUp()
@@ -111,8 +111,6 @@ public sealed class DeferredDispatchProcessorTests
             Times.Once);
     }
 
-    private sealed class TestDomainEvent : INotification;
-
     private static StoredEvent CreateStoredEvent(
         long position,
         string streamId,
@@ -133,4 +131,6 @@ public sealed class DeferredDispatchProcessorTests
             null,
             null);
     }
+
+    private sealed class TestDomainEvent : INotification;
 }

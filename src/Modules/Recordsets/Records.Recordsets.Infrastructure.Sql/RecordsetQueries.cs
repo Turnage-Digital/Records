@@ -1,10 +1,10 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using Records.Core.Infrastructure.Sql.Specifications;
 using Records.Core.Domain.ValueObjects;
+using Records.Core.Infrastructure.Sql.QueryCriteria;
 using Records.Recordsets.Contracts.Dtos;
 using Records.Recordsets.Contracts.Queries;
-using Records.Recordsets.Infrastructure.Sql.Specifications;
+using Records.Recordsets.Infrastructure.Sql.QueryCriteria;
 
 namespace Records.Recordsets.Infrastructure.Sql;
 
@@ -13,11 +13,9 @@ public sealed class RecordsetQueries(RecordsetsDbContext dbContext) : IRecordset
     public async Task<RecordsetSummaryDto?> GetByIdAsync(UlidId recordsetId, CancellationToken cancellationToken)
     {
         var recordsetKey = recordsetId.ToString();
-        var query = dbContext.RecordsetProjections
+        return await dbContext.RecordsetProjections
             .AsNoTracking()
-            .ApplySpecification(new RecordsetProjectionByRecordsetIdSpec(recordsetKey));
-
-        return await query
+            .ApplyCriteria(new RecordsetProjectionByRecordsetIdCriteria(recordsetKey))
             .Select(x => new RecordsetSummaryDto(
                 UlidId.Parse(x.RecordsetId),
                 x.Name,
@@ -29,11 +27,9 @@ public sealed class RecordsetQueries(RecordsetsDbContext dbContext) : IRecordset
 
     public async Task<IReadOnlyList<RecordsetSummaryDto>> ListAsync(CancellationToken cancellationToken)
     {
-        var query = dbContext.RecordsetProjections
+        return await dbContext.RecordsetProjections
             .AsNoTracking()
-            .ApplySpecification(new RecordsetProjectionsOrderedByNameSpec());
-
-        return await query
+            .ApplyCriteria(new RecordsetProjectionsOrderedByNameCriteria())
             .Select(x => new RecordsetSummaryDto(
                 UlidId.Parse(x.RecordsetId),
                 x.Name,
@@ -45,11 +41,9 @@ public sealed class RecordsetQueries(RecordsetsDbContext dbContext) : IRecordset
 
     public async Task<IReadOnlyList<RecordsetNameDto>> ListNamesAsync(CancellationToken cancellationToken)
     {
-        var query = dbContext.RecordsetProjections
+        return await dbContext.RecordsetProjections
             .AsNoTracking()
-            .ApplySpecification(new RecordsetProjectionsOrderedByNameSpec());
-
-        return await query
+            .ApplyCriteria(new RecordsetProjectionsOrderedByNameCriteria())
             .Select(x => new RecordsetNameDto
             {
                 Id = UlidId.Parse(x.RecordsetId),
@@ -67,7 +61,7 @@ public sealed class RecordsetQueries(RecordsetsDbContext dbContext) : IRecordset
         var recordsetKey = recordsetId.ToString();
         var recordset = await dbContext.Recordsets
             .AsNoTracking()
-            .ApplySpecification(new RecordsetByIdSpec(recordsetKey))
+            .ApplyCriteria(new RecordsetByIdCriteria(recordsetKey))
             .FirstOrDefaultAsync(cancellationToken);
         if (recordset is null)
         {
@@ -76,7 +70,7 @@ public sealed class RecordsetQueries(RecordsetsDbContext dbContext) : IRecordset
 
         var columnRows = await dbContext.RecordsetColumns
             .AsNoTracking()
-            .ApplySpecification(new RecordsetColumnsByRecordsetIdSpec(recordsetKey))
+            .ApplyCriteria(new RecordsetColumnsByRecordsetIdCriteria(recordsetKey))
             .OrderBy(x => x.Id)
             .ToListAsync(cancellationToken);
 
@@ -97,7 +91,7 @@ public sealed class RecordsetQueries(RecordsetsDbContext dbContext) : IRecordset
 
         var statuses = await dbContext.RecordsetStatuses
             .AsNoTracking()
-            .ApplySpecification(new RecordsetStatusesByRecordsetIdSpec(recordsetKey))
+            .ApplyCriteria(new RecordsetStatusesByRecordsetIdCriteria(recordsetKey))
             .OrderBy(x => x.Id)
             .Select(x => new RecordsetStatusDto
             {
@@ -108,7 +102,7 @@ public sealed class RecordsetQueries(RecordsetsDbContext dbContext) : IRecordset
 
         var transitionRows = await dbContext.RecordsetStatusTransitions
             .AsNoTracking()
-            .ApplySpecification(new RecordsetStatusTransitionsByRecordsetIdSpec(recordsetKey))
+            .ApplyCriteria(new RecordsetStatusTransitionsByRecordsetIdCriteria(recordsetKey))
             .OrderBy(x => x.Id)
             .ToListAsync(cancellationToken);
 

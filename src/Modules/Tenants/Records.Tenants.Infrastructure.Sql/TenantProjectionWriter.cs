@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using Records.Core.Infrastructure.Sql.Specifications;
 using Records.Core.Domain.ValueObjects;
-using Records.Tenants.Contracts;
+using Records.Core.Infrastructure.Sql.QueryCriteria;
+using Records.Tenants.Contracts.Projections;
 using Records.Tenants.Domain;
 using Records.Tenants.Infrastructure.Sql.Entities;
-using Records.Tenants.Infrastructure.Sql.Specifications;
+using Records.Tenants.Infrastructure.Sql.QueryCriteria;
 
 namespace Records.Tenants.Infrastructure.Sql;
 
@@ -66,7 +66,7 @@ public sealed class TenantProjectionWriter(TenantsDbContext dbContext) : ITenant
     private Task<TenantProjectionDb?> GetByTenantIdAsync(string tenantId, CancellationToken cancellationToken)
     {
         return dbContext.TenantProjections
-            .ApplySpecification(new TenantProjectionByTenantIdSpec(tenantId))
+            .ApplyCriteria(new TenantProjectionByTenantIdCriteria(tenantId))
             .FirstOrDefaultAsync(cancellationToken);
     }
 }

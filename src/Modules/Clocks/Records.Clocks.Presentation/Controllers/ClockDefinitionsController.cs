@@ -1,9 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Records.Clocks.Application.Commands.ClockDefinitions.Create;
-using Records.Clocks.Application.Commands.ClockDefinitions.Disable;
-using Records.Clocks.Application.Commands.ClockDefinitions.Update;
+using Records.Clocks.Application.Commands;
 using Records.Clocks.Contracts.Dtos;
 using Records.Clocks.Contracts.Queries;
 using Records.Core.Contracts.Security;

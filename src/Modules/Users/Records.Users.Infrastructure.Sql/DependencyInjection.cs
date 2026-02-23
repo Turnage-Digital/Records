@@ -1,9 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Records.Users.Contracts;
 using Records.Users.Contracts.Projections;
 using Records.Users.Contracts.Queries;
-using Records.Users.Domain.Interfaces;
+using Records.Users.Domain;
 
 namespace Records.Users.Infrastructure.Sql;
 

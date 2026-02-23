@@ -1,6 +1,6 @@
 using Records.Notifications.Contracts.Dtos;
 
-namespace Records.Notifications.Contracts;
+namespace Records.Notifications.Contracts.Queries;
 
 public interface INotificationQueries
 {

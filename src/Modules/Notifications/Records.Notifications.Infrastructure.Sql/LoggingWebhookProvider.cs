@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Records.Notifications.Domain;
+using Records.Notifications.Domain.Services;
 using Records.Notifications.Domain.ValueObjects;
 
 namespace Records.Notifications.Infrastructure.Sql;

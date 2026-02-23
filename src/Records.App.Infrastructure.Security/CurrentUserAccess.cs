@@ -2,7 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Records.Core.Contracts.Security;
 using Records.Core.Domain.ValueObjects;
-using Records.Users.Contracts;
+using Records.Users.Contracts.Queries;
 
 namespace Records.App.Infrastructure.Security;
 

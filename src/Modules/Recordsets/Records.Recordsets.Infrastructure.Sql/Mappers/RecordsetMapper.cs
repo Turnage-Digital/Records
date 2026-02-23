@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Records.Core.Domain.ValueObjects;
-using Records.Recordsets.Domain.Entities;
+using Records.Recordsets.Domain;
 using Records.Recordsets.Domain.ValueObjects;
 using Records.Recordsets.Infrastructure.Sql.Entities;
 

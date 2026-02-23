@@ -1,5 +1,5 @@
 using Records.Core.Domain.ValueObjects;
-using Records.Tenants.Domain.Entities;
+using Records.Tenants.Domain;
 using Records.Tenants.Infrastructure.Sql.Entities;
 
 namespace Records.Tenants.Infrastructure.Sql.Mappers;

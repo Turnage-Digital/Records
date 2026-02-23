@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Records.Core.Contracts.Security;
 using Records.Core.Domain.ValueObjects;
-using Records.Recordsets.Application.Commands.Migrations;
-using Records.Recordsets.Application.Queries.Migrations;
+using Records.Recordsets.Application.Commands;
+using Records.Recordsets.Application.Queries;
 
 namespace Records.Recordsets.Presentation.Controllers;
 

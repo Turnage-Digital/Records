@@ -1,11 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Records.Clocks.Domain;
-using Records.Clocks.Domain.Entities;
-using Records.Clocks.Domain.Interfaces;
 using Records.Clocks.Infrastructure.Sql.Mappers;
-using Records.Clocks.Infrastructure.Sql.Specifications;
+using Records.Clocks.Infrastructure.Sql.QueryCriteria;
 using Records.Core.Domain.ValueObjects;
-using Records.Core.Infrastructure.Sql.Specifications;
+using Records.Core.Infrastructure.Sql.QueryCriteria;
 
 namespace Records.Clocks.Infrastructure.Sql;
 
@@ -27,14 +25,14 @@ public sealed class ClockRepository(ClocksDbContext context) : IClockRepository
         CancellationToken cancellationToken
     )
     {
-        var spec = new ClockByRecordAndDefinitionSpec(
+        var spec = new ClockByRecordAndDefinitionCriteria(
             recordsetId.ToString(),
             recordId,
             definitionId.ToString());
-        var query = context.Clocks
+        var entity = await context.Clocks
             .AsNoTracking()
-            .ApplySpecification(spec);
-        var entity = await query.FirstOrDefaultAsync(cancellationToken);
+            .ApplyCriteria(spec)
+            .FirstOrDefaultAsync(cancellationToken);
 
         return entity is null ? null : ClockMapper.ToDomain(entity);
     }
@@ -45,11 +43,11 @@ public sealed class ClockRepository(ClocksDbContext context) : IClockRepository
         CancellationToken cancellationToken
     )
     {
-        var spec = new ClocksByRecordSpec(recordsetId.ToString(), recordId);
-        var query = context.Clocks
+        var spec = new ClocksByRecordCriteria(recordsetId.ToString(), recordId);
+        var entities = await context.Clocks
             .AsNoTracking()
-            .ApplySpecification(spec);
-        var entities = await query.ToListAsync(cancellationToken);
+            .ApplyCriteria(spec)
+            .ToListAsync(cancellationToken);
 
         return entities.Select(ClockMapper.ToDomain).ToList();
     }
@@ -59,11 +57,11 @@ public sealed class ClockRepository(ClocksDbContext context) : IClockRepository
         CancellationToken cancellationToken
     )
     {
-        var spec = new RunningClocksPastThresholdSpec(asOf.UtcDateTime);
-        var query = context.Clocks
+        var spec = new RunningClocksPastThresholdCriteria(asOf.UtcDateTime);
+        var entities = await context.Clocks
             .AsNoTracking()
-            .ApplySpecification(spec);
-        var entities = await query.ToListAsync(cancellationToken);
+            .ApplyCriteria(spec)
+            .ToListAsync(cancellationToken);
 
         return entities.Select(ClockMapper.ToDomain).ToList();
     }
@@ -73,11 +71,11 @@ public sealed class ClockRepository(ClocksDbContext context) : IClockRepository
         CancellationToken cancellationToken
     )
     {
-        var spec = new RunningClocksPastDeadlineSpec(asOf.UtcDateTime);
-        var query = context.Clocks
+        var spec = new RunningClocksPastDeadlineCriteria(asOf.UtcDateTime);
+        var entities = await context.Clocks
             .AsNoTracking()
-            .ApplySpecification(spec);
-        var entities = await query.ToListAsync(cancellationToken);
+            .ApplyCriteria(spec)
+            .ToListAsync(cancellationToken);
 
         return entities.Select(ClockMapper.ToDomain).ToList();
     }

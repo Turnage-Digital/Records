@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Records.Core.Domain.ValueObjects;
-using Records.Core.Infrastructure.Sql.Specifications;
+using Records.Core.Infrastructure.Sql.QueryCriteria;
 using Records.Notifications.Domain;
 using Records.Notifications.Infrastructure.Sql.Mappers;
-using Records.Notifications.Infrastructure.Sql.Specifications;
+using Records.Notifications.Infrastructure.Sql.QueryCriteria;
 
 namespace Records.Notifications.Infrastructure.Sql;
 
@@ -23,10 +23,10 @@ public sealed class NotificationRepository(NotificationsDbContext context) : INo
         CancellationToken cancellationToken = default
     )
     {
-        var spec = new PendingNotificationsSpec(DateTime.UtcNow, limit);
-        var query = context.Notifications.ApplySpecification(spec);
+        var spec = new PendingNotificationsCriteria(DateTime.UtcNow, limit);
 
-        var pending = await query
+        var pending = await context.Notifications
+            .ApplyCriteria(spec)
             .ToListAsync(cancellationToken);
 
         return pending.Select(NotificationMapper.ToDomain).ToList();
@@ -37,10 +37,12 @@ public sealed class NotificationRepository(NotificationsDbContext context) : INo
         CancellationToken cancellationToken = default
     )
     {
-        var spec = new NotificationsByRecordsetIdSpec(recordsetId.ToString());
-        var query = context.Notifications.ApplySpecification(spec);
+        var spec = new NotificationsByRecordsetIdCriteria(recordsetId.ToString());
 
-        var notifications = await query.ToListAsync(cancellationToken);
+        var notifications = await context.Notifications
+            .ApplyCriteria(spec)
+            .ToListAsync(cancellationToken);
+
         return notifications.Select(NotificationMapper.ToDomain).ToList();
     }
 
@@ -52,10 +54,12 @@ public sealed class NotificationRepository(NotificationsDbContext context) : INo
     )
     {
         var cutoff = DateTime.UtcNow.Subtract(retryAfter);
-        var spec = new FailedNotificationsForRetrySpec(maxAttempts, cutoff, limit);
-        var query = context.Notifications.ApplySpecification(spec);
+        var spec = new FailedNotificationsForRetryCriteria(maxAttempts, cutoff, limit);
 
-        var failed = await query.ToListAsync(cancellationToken);
+        var failed = await context.Notifications
+            .ApplyCriteria(spec)
+            .ToListAsync(cancellationToken);
+
         return failed.Select(NotificationMapper.ToDomain).ToList();
     }
 

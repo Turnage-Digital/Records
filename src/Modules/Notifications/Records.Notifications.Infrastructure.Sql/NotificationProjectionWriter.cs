@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Records.Notifications.Contracts;
+using Records.Notifications.Contracts.Projections;
 using Records.Notifications.Domain;
 using Records.Notifications.Infrastructure.Sql.Entities;
 

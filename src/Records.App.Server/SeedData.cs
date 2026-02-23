@@ -7,7 +7,6 @@ using Records.Tenants.Domain;
 using Records.Tenants.Infrastructure.Sql;
 using Records.Tenants.Infrastructure.Sql.Entities;
 using Records.Users.Domain;
-using Records.Users.Domain.Entities;
 using Records.Users.Infrastructure.Sql;
 using Records.Users.Infrastructure.Sql.Entities;
 

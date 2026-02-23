@@ -2,9 +2,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Records.Core.Domain.ValueObjects;
 using Records.Recordsets.Contracts.Projections;
-using Records.Recordsets.Domain.Entities;
-using Records.Recordsets.Domain.Interfaces;
-using Records.Recordsets.Domain.Services.Migrations;
+using Records.Recordsets.Domain;
 using Records.Recordsets.Infrastructure.Sql;
 using Records.Recordsets.Infrastructure.Sql.Entities;
 

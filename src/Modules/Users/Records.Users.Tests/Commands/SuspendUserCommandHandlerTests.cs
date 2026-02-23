@@ -1,9 +1,7 @@
 using Records.Core.Domain.ValueObjects;
-using Records.Users.Application.Commands.SuspendUser;
+using Records.Users.Application.Commands;
 using Records.Users.Contracts.Projections;
 using Records.Users.Domain;
-using Records.Users.Domain.Entities;
-using Records.Users.Domain.Interfaces;
 
 namespace Records.Users.Tests.Commands;
 

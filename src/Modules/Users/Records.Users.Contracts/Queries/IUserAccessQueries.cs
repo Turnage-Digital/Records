@@ -1,6 +1,6 @@
 using Records.Core.Domain.ValueObjects;
 
-namespace Records.Users.Contracts;
+namespace Records.Users.Contracts.Queries;
 
 /// <summary>
 ///     Query interface for user access checks. Used by security infrastructure

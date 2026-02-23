@@ -7,7 +7,7 @@ public sealed class ModuleLayoutRulesTests
         "Entities",
         "Mappers",
         "Migrations",
-        "Specifications"
+        "QueryCriteria"
     };
 
     private static readonly string[] FeatureModuleProjectSuffixes =
@@ -132,7 +132,7 @@ public sealed class ModuleLayoutRulesTests
     }
 
     [Test]
-    public void Domain_repository_and_uow_interfaces_live_under_interfaces_folder()
+    public void Domain_repository_and_uow_interfaces_are_root_level()
     {
         var repoRoot = FindRepoRoot();
         var modulesRoot = Path.Combine(repoRoot, "src", "Modules");
@@ -160,18 +160,26 @@ public sealed class ModuleLayoutRulesTests
                 continue;
             }
 
-            if (normalized.Contains(".Domain/Interfaces/", StringComparison.Ordinal))
+            const string marker = ".Domain/";
+            var markerIndex = normalized.IndexOf(marker, StringComparison.Ordinal);
+            if (markerIndex < 0)
             {
                 continue;
             }
 
-            violations.Add($"{Path.GetRelativePath(repoRoot, file)} should be under Interfaces/");
+            var pathAfterDomain = normalized[(markerIndex + marker.Length)..];
+            if (!pathAfterDomain.Contains('/', StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            violations.Add($"{Path.GetRelativePath(repoRoot, file)} should be at the Domain project root.");
         }
 
         Assert.That(
             violations,
             Is.Empty,
-            "Domain repository and unit-of-work interfaces are not in Interfaces/.\n" +
+            "Domain repository and unit-of-work interfaces are not root-level.\n" +
             string.Join(Environment.NewLine, violations));
     }
 
@@ -201,7 +209,8 @@ public sealed class ModuleLayoutRulesTests
                     continue;
                 }
 
-                violations.Add($"{Path.GetRelativePath(repoRoot, directory)} is not an allowed Infrastructure.Sql folder.");
+                violations.Add(
+                    $"{Path.GetRelativePath(repoRoot, directory)} is not an allowed Infrastructure.Sql folder.");
             }
         }
 
@@ -257,8 +266,10 @@ public sealed class ModuleLayoutRulesTests
                 {
                     var path when path.StartsWith("Entities/", StringComparison.Ordinal) => baseNamespace + ".Entities",
                     var path when path.StartsWith("Mappers/", StringComparison.Ordinal) => baseNamespace + ".Mappers",
-                    var path when path.StartsWith("Migrations/", StringComparison.Ordinal) => baseNamespace + ".Migrations",
-                    var path when path.StartsWith("Specifications/", StringComparison.Ordinal) => baseNamespace + ".Specifications",
+                    var path when path.StartsWith("Migrations/", StringComparison.Ordinal) => baseNamespace +
+                        ".Migrations",
+                    var path when path.StartsWith("QueryCriteria/", StringComparison.Ordinal) => baseNamespace +
+                        ".QueryCriteria",
                     _ => baseNamespace
                 };
 
@@ -302,7 +313,8 @@ public sealed class ModuleLayoutRulesTests
         Assert.That(
             violations,
             Is.Empty,
-            "Infrastructure.Sql projects missing explicit UnitOfWork.\n" + string.Join(Environment.NewLine, violations));
+            "Infrastructure.Sql projects missing explicit UnitOfWork.\n" +
+            string.Join(Environment.NewLine, violations));
     }
 
     private static string FindRepoRoot()

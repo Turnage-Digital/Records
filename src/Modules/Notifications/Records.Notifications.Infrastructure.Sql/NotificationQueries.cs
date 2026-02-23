@@ -1,11 +1,11 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using Records.Core.Infrastructure.Sql.Specifications;
-using Records.Notifications.Contracts;
+using Records.Core.Infrastructure.Sql.QueryCriteria;
 using Records.Notifications.Contracts.Dtos;
+using Records.Notifications.Contracts.Queries;
 using Records.Notifications.Domain;
 using Records.Notifications.Infrastructure.Sql.Entities;
-using Records.Notifications.Infrastructure.Sql.Specifications;
+using Records.Notifications.Infrastructure.Sql.QueryCriteria;
 
 namespace Records.Notifications.Infrastructure.Sql;
 
@@ -158,12 +158,10 @@ public sealed class NotificationQueries(NotificationsDbContext dbContext)
         CancellationToken cancellationToken
     )
     {
-        var spec = new PendingNotificationsSpec(DateTime.UtcNow, limit);
-        var query = dbContext.Notifications
+        var spec = new PendingNotificationsCriteria(DateTime.UtcNow, limit);
+        return await dbContext.Notifications
             .AsNoTracking()
-            .ApplySpecification(spec);
-
-        return await query
+            .ApplyCriteria(spec)
             .Select(n => new NotificationPendingDto(
                 n.Id,
                 n.TenantId,

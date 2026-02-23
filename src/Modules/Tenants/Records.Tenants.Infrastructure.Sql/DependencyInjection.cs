@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Records.Tenants.Contracts;
+using Records.Tenants.Contracts.Projections;
 using Records.Tenants.Contracts.Queries;
-using Records.Tenants.Domain.Interfaces;
+using Records.Tenants.Domain;
 
 namespace Records.Tenants.Infrastructure.Sql;
 

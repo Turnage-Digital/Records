@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using Records.Core.Infrastructure.Sql.Specifications;
 using Records.Core.Domain.ValueObjects;
+using Records.Core.Infrastructure.Sql.QueryCriteria;
 using Records.Users.Contracts.Projections;
 using Records.Users.Domain;
 using Records.Users.Infrastructure.Sql.Entities;
-using Records.Users.Infrastructure.Sql.Specifications;
+using Records.Users.Infrastructure.Sql.QueryCriteria;
 
 namespace Records.Users.Infrastructure.Sql;
 
@@ -77,7 +77,7 @@ public sealed class UserProjectionWriter(UsersDbContext dbContext) : IUserProjec
     private Task<UserProjectionDb?> GetByUserIdAsync(string userId, CancellationToken cancellationToken)
     {
         return dbContext.UserProjections
-            .ApplySpecification(new UserProjectionByUserIdSpec(userId))
+            .ApplyCriteria(new UserProjectionByUserIdCriteria(userId))
             .FirstOrDefaultAsync(cancellationToken);
     }
 }

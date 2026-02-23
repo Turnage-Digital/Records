@@ -6,12 +6,11 @@ using Records.Core.Contracts.Events;
 using Records.Core.Domain;
 using Records.Core.Domain.ValueObjects;
 using Records.Core.Infrastructure.Sql;
-using Records.Core.Infrastructure.Sql.Specifications;
-using Records.Recordsets.Domain.Entities;
-using Records.Recordsets.Domain.Interfaces;
+using Records.Core.Infrastructure.Sql.QueryCriteria;
+using Records.Recordsets.Domain;
 using Records.Recordsets.Infrastructure.Sql.Entities;
 using Records.Recordsets.Infrastructure.Sql.Mappers;
-using Records.Recordsets.Infrastructure.Sql.Specifications;
+using Records.Recordsets.Infrastructure.Sql.QueryCriteria;
 
 namespace Records.Recordsets.Infrastructure.Sql;
 
@@ -37,7 +36,7 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
         var recordsetKey = recordsetId.ToString();
         var recordset = await dbContext.Recordsets
             .AsNoTracking()
-            .ApplySpecification(new RecordsetByIdSpec(recordsetKey))
+            .ApplyCriteria(new RecordsetByIdCriteria(recordsetKey))
             .FirstOrDefaultAsync(cancellationToken);
 
         if (recordset is null)
@@ -47,15 +46,15 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
 
         var columns = await dbContext.RecordsetColumns
             .AsNoTracking()
-            .ApplySpecification(new RecordsetColumnsByRecordsetIdSpec(recordsetKey))
+            .ApplyCriteria(new RecordsetColumnsByRecordsetIdCriteria(recordsetKey))
             .ToListAsync(cancellationToken);
         var statuses = await dbContext.RecordsetStatuses
             .AsNoTracking()
-            .ApplySpecification(new RecordsetStatusesByRecordsetIdSpec(recordsetKey))
+            .ApplyCriteria(new RecordsetStatusesByRecordsetIdCriteria(recordsetKey))
             .ToListAsync(cancellationToken);
         var transitions = await dbContext.RecordsetStatusTransitions
             .AsNoTracking()
-            .ApplySpecification(new RecordsetStatusTransitionsByRecordsetIdSpec(recordsetKey))
+            .ApplyCriteria(new RecordsetStatusTransitionsByRecordsetIdCriteria(recordsetKey))
             .ToListAsync(cancellationToken);
 
         return RecordsetMapper.ToDomain(recordset, columns, statuses, transitions);
@@ -93,7 +92,7 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
     {
         var recordsetKey = recordsetId.ToString();
         var recordset = await dbContext.Recordsets
-            .ApplySpecification(new RecordsetByIdSpec(recordsetKey))
+            .ApplyCriteria(new RecordsetByIdCriteria(recordsetKey))
             .FirstOrDefaultAsync(cancellationToken);
         if (recordset is null)
         {
@@ -101,27 +100,27 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
         }
 
         var items = await dbContext.RecordsetItems
-            .ApplySpecification(new RecordsetItemsByRecordsetIdSpec(recordsetKey))
+            .ApplyCriteria(new RecordsetItemsByRecordsetIdCriteria(recordsetKey))
             .ToListAsync(cancellationToken);
         dbContext.RecordsetItems.RemoveRange(items);
 
         var columns = await dbContext.RecordsetColumns
-            .ApplySpecification(new RecordsetColumnsByRecordsetIdSpec(recordsetKey))
+            .ApplyCriteria(new RecordsetColumnsByRecordsetIdCriteria(recordsetKey))
             .ToListAsync(cancellationToken);
         dbContext.RecordsetColumns.RemoveRange(columns);
 
         var statuses = await dbContext.RecordsetStatuses
-            .ApplySpecification(new RecordsetStatusesByRecordsetIdSpec(recordsetKey))
+            .ApplyCriteria(new RecordsetStatusesByRecordsetIdCriteria(recordsetKey))
             .ToListAsync(cancellationToken);
         dbContext.RecordsetStatuses.RemoveRange(statuses);
 
         var transitions = await dbContext.RecordsetStatusTransitions
-            .ApplySpecification(new RecordsetStatusTransitionsByRecordsetIdSpec(recordsetKey))
+            .ApplyCriteria(new RecordsetStatusTransitionsByRecordsetIdCriteria(recordsetKey))
             .ToListAsync(cancellationToken);
         dbContext.RecordsetStatusTransitions.RemoveRange(transitions);
 
         var projections = await dbContext.RecordsetProjections
-            .ApplySpecification(new RecordsetProjectionByRecordsetIdSpec(recordsetKey))
+            .ApplyCriteria(new RecordsetProjectionByRecordsetIdCriteria(recordsetKey))
             .ToListAsync(cancellationToken);
         dbContext.RecordsetProjections.RemoveRange(projections);
 
@@ -144,7 +143,7 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
     public async Task UpdateRecordAsync(Record record, CancellationToken cancellationToken)
     {
         var existing = await dbContext.RecordsetItems
-            .ApplySpecification(new RecordsetItemByRecordsetIdAndIdSpec(record.RecordsetId.ToString(), record.Id))
+            .ApplyCriteria(new RecordsetItemByRecordsetIdAndIdCriteria(record.RecordsetId.ToString(), record.Id))
             .FirstOrDefaultAsync(cancellationToken);
 
         if (existing is null)
@@ -161,7 +160,7 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
     {
         var item = await dbContext.RecordsetItems
             .AsNoTracking()
-            .ApplySpecification(new RecordsetItemByRecordsetIdAndIdSpec(recordsetId.ToString(), recordId))
+            .ApplyCriteria(new RecordsetItemByRecordsetIdAndIdCriteria(recordsetId.ToString(), recordId))
             .FirstOrDefaultAsync(cancellationToken);
 
         if (item is null)
@@ -186,7 +185,7 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
     {
         var recordsetKey = recordsetId.ToString();
         return dbContext.RecordsetItems
-            .ApplySpecification(new RecordsetItemsByRecordsetIdSpec(recordsetKey))
+            .ApplyCriteria(new RecordsetItemsByRecordsetIdCriteria(recordsetKey))
             .CountAsync(cancellationToken);
     }
 
@@ -226,17 +225,17 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
         var recordsetId = recordset.Id.ToString();
 
         var existingColumns = await dbContext.RecordsetColumns
-            .ApplySpecification(new RecordsetColumnsByRecordsetIdSpec(recordsetId))
+            .ApplyCriteria(new RecordsetColumnsByRecordsetIdCriteria(recordsetId))
             .ToListAsync(cancellationToken);
         dbContext.RecordsetColumns.RemoveRange(existingColumns);
 
         var existingStatuses = await dbContext.RecordsetStatuses
-            .ApplySpecification(new RecordsetStatusesByRecordsetIdSpec(recordsetId))
+            .ApplyCriteria(new RecordsetStatusesByRecordsetIdCriteria(recordsetId))
             .ToListAsync(cancellationToken);
         dbContext.RecordsetStatuses.RemoveRange(existingStatuses);
 
         var existingTransitions = await dbContext.RecordsetStatusTransitions
-            .ApplySpecification(new RecordsetStatusTransitionsByRecordsetIdSpec(recordsetId))
+            .ApplyCriteria(new RecordsetStatusTransitionsByRecordsetIdCriteria(recordsetId))
             .ToListAsync(cancellationToken);
         dbContext.RecordsetStatusTransitions.RemoveRange(existingTransitions);
 

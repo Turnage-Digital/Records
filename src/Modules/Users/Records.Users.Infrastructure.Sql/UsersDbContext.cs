@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Records.Users.Domain.Entities;
+using Records.Users.Domain;
 using Records.Users.Infrastructure.Sql.Entities;
 
 namespace Records.Users.Infrastructure.Sql;

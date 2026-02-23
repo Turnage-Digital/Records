@@ -3,7 +3,7 @@ using MediatR;
 using Records.Core.Domain;
 using Records.Core.Domain.ValueObjects;
 using Records.Notifications.Application.Commands;
-using Records.Notifications.Contracts;
+using Records.Notifications.Contracts.Queries;
 
 namespace Records.App.Server.Services;
 

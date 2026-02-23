@@ -30,6 +30,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{C8
 		AGENTS.md = AGENTS.md
 		README.md = README.md
 		.gitignore = .gitignore
+		docker-compose.yml = docker-compose.yml
+		LICENSE = LICENSE
+		Dockerfile = Dockerfile
+		ef-reset.ps1 = ef-reset.ps1
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Records.App.Server", "src\Records.App.Server\Records.App.Server.csproj", "{EB68BDB0-8C42-4AF2-9749-4A62A5985364}"

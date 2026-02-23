@@ -63,7 +63,9 @@ public sealed class UsersEndpointTests
 
         var listResponse = await client.GetAsync("/api/users");
         Assert.That(listResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        var users = await listResponse.Content.ReadFromJsonAsync<IReadOnlyList<UserSummaryDto>>(EndpointTestSupport.JsonOptions);
+        var users =
+            await listResponse.Content
+                .ReadFromJsonAsync<IReadOnlyList<UserSummaryDto>>(EndpointTestSupport.JsonOptions);
         Assert.That(users, Is.Not.Null);
         Assert.That(users!.Any(x => x.UserId == invited.UserId), Is.True);
     }
@@ -155,7 +157,8 @@ public sealed class UsersEndpointTests
                 DateTimeOffset.UtcNow));
 
         Assert.That(grantResponse.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
-        var membershipCount = await factory.CountRoleMembershipsAsync(targetUserId, UserRole.Operations, managedTenantId);
+        var membershipCount =
+            await factory.CountRoleMembershipsAsync(targetUserId, UserRole.Operations, managedTenantId);
         Assert.That(membershipCount, Is.EqualTo(1));
     }
 
@@ -204,7 +207,9 @@ public sealed class UsersEndpointTests
 
         var rolesResponse = await client.GetAsync($"/api/users/{invited!.UserId}/roles");
         Assert.That(rolesResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        var roles = await rolesResponse.Content.ReadFromJsonAsync<IReadOnlyList<UserRoleMembershipDto>>(EndpointTestSupport.JsonOptions);
+        var roles =
+            await rolesResponse.Content.ReadFromJsonAsync<IReadOnlyList<UserRoleMembershipDto>>(EndpointTestSupport
+                .JsonOptions);
         Assert.That(roles, Is.Not.Null);
         Assert.That(roles!.Any(x => x.Role == UserRole.Operations && x.TenantId == tenantId), Is.True);
     }

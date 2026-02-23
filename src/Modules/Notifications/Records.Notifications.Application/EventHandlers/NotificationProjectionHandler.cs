@@ -1,5 +1,5 @@
 using MediatR;
-using Records.Notifications.Contracts;
+using Records.Notifications.Contracts.Projections;
 using Records.Notifications.Domain;
 using Records.Notifications.Domain.Events;
 

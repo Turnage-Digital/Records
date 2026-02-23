@@ -1,9 +1,6 @@
 using Records.Core.Domain.ValueObjects;
-using Records.Recordsets.Application.Commands.UpdateRecordsetSchema;
-using Records.Recordsets.Domain.Entities;
-using Records.Recordsets.Domain.Enums;
-using Records.Recordsets.Domain.Exceptions;
-using Records.Recordsets.Domain.Interfaces;
+using Records.Recordsets.Application.Commands;
+using Records.Recordsets.Domain;
 using Records.Recordsets.Domain.ValueObjects;
 
 namespace Records.Recordsets.Tests.Commands;
@@ -163,5 +160,4 @@ public class UpdateRecordsetSchemaCommandHandlerTests
         {
         }
     }
-
 }

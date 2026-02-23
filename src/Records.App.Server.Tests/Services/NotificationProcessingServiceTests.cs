@@ -5,18 +5,18 @@ using Moq;
 using Records.App.Server.Services;
 using Records.Core.Application;
 using Records.Notifications.Application.Commands;
-using Records.Notifications.Contracts;
 using Records.Notifications.Contracts.Dtos;
+using Records.Notifications.Contracts.Queries;
 using Records.Notifications.Domain;
 
 namespace Records.App.Server.Tests.Services;
 
 public sealed class NotificationProcessingServiceTests
 {
-    private Mock<INotificationQueries> notificationQueries = null!;
-    private Mock<ISender> sender = null!;
     private Mock<ILogger<NotificationProcessingService>> logger = null!;
+    private Mock<INotificationQueries> notificationQueries = null!;
     private IServiceScopeFactory scopeFactory = null!;
+    private Mock<ISender> sender = null!;
 
     [SetUp]
     public void SetUp()

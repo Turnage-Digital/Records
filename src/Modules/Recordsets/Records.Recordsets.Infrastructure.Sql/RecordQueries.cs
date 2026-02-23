@@ -2,11 +2,11 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
-using Records.Core.Infrastructure.Sql.Specifications;
 using Records.Core.Domain.ValueObjects;
+using Records.Core.Infrastructure.Sql.QueryCriteria;
 using Records.Recordsets.Contracts.Dtos;
 using Records.Recordsets.Contracts.Queries;
-using Records.Recordsets.Infrastructure.Sql.Specifications;
+using Records.Recordsets.Infrastructure.Sql.QueryCriteria;
 
 namespace Records.Recordsets.Infrastructure.Sql;
 
@@ -19,11 +19,9 @@ public sealed class RecordQueries(RecordsetsDbContext dbContext) : IRecordQuerie
     public async Task<RecordDto?> GetByIdAsync(UlidId recordsetId, int recordId, CancellationToken cancellationToken)
     {
         var recordsetKey = recordsetId.ToString();
-        var query = dbContext.RecordsetItems
+        return await dbContext.RecordsetItems
             .AsNoTracking()
-            .ApplySpecification(new RecordsetItemByRecordsetIdAndIdSpec(recordsetKey, recordId));
-
-        return await query
+            .ApplyCriteria(new RecordsetItemByRecordsetIdAndIdCriteria(recordsetKey, recordId))
             .Select(x => new RecordDto(
                 (int)x.Id,
                 UlidId.Parse(x.RecordsetId),
@@ -37,11 +35,9 @@ public sealed class RecordQueries(RecordsetsDbContext dbContext) : IRecordQuerie
     public async Task<IReadOnlyList<RecordDto>> ListAsync(UlidId recordsetId, CancellationToken cancellationToken)
     {
         var recordsetKey = recordsetId.ToString();
-        var query = dbContext.RecordsetItems
+        return await dbContext.RecordsetItems
             .AsNoTracking()
-            .ApplySpecification(new RecordsetItemsByRecordsetIdSpec(recordsetKey));
-
-        return await query
+            .ApplyCriteria(new RecordsetItemsByRecordsetIdCriteria(recordsetKey))
             .OrderByDescending(x => x.CreatedAt)
             .Select(x => new RecordDto(
                 (int)x.Id,
@@ -132,11 +128,9 @@ public sealed class RecordQueries(RecordsetsDbContext dbContext) : IRecordQuerie
     )
     {
         var recordsetKey = recordsetId.ToString();
-        var itemQuery = dbContext.RecordsetItems
+        var item = await dbContext.RecordsetItems
             .AsNoTracking()
-            .ApplySpecification(new RecordsetItemByRecordsetIdAndIdSpec(recordsetKey, recordId));
-
-        var item = await itemQuery
+            .ApplyCriteria(new RecordsetItemByRecordsetIdAndIdCriteria(recordsetKey, recordId))
             .Select(x => new { x.Id, x.BagJson })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -163,7 +157,7 @@ public sealed class RecordQueries(RecordsetsDbContext dbContext) : IRecordQuerie
         var recordsetKey = recordsetId.ToString();
         var recordset = await dbContext.Recordsets
             .AsNoTracking()
-            .ApplySpecification(new RecordsetByIdSpec(recordsetKey))
+            .ApplyCriteria(new RecordsetByIdCriteria(recordsetKey))
             .FirstOrDefaultAsync(cancellationToken);
         if (recordset is null)
         {
@@ -219,7 +213,7 @@ public sealed class RecordQueries(RecordsetsDbContext dbContext) : IRecordQuerie
         var recordsetKey = recordsetId.ToString();
         var item = await dbContext.RecordsetItems
             .AsNoTracking()
-            .ApplySpecification(new RecordsetItemByRecordsetIdAndIdSpec(recordsetKey, recordId))
+            .ApplyCriteria(new RecordsetItemByRecordsetIdAndIdCriteria(recordsetKey, recordId))
             .FirstOrDefaultAsync(cancellationToken);
         if (item is null)
         {
