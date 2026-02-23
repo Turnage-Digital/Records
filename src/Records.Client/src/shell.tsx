@@ -286,6 +286,26 @@ const Shell = () => {
     selectedNav = "users";
   }
 
+  const tenantsTab = canManageGlobalAdminAreas ? (
+    <Tab
+      value="tenants"
+      label="Tenants"
+      component={RouterLink}
+      to="/admin/tenants"
+      sx={{ minHeight: 48, textTransform: "none" }}
+    />
+  ) : null;
+
+  const usersTab = canManageGlobalAdminAreas ? (
+    <Tab
+      value="users"
+      label="Users"
+      component={RouterLink}
+      to="/admin/users"
+      sx={{ minHeight: 48, textTransform: "none" }}
+    />
+  ) : null;
+
   return (
     <>
       <Box sx={{ minHeight: "100vh" }}>
@@ -322,24 +342,8 @@ const Shell = () => {
                 to="/"
                 sx={{ minHeight: 48, textTransform: "none" }}
               />
-              {canManageGlobalAdminAreas ? (
-                <Tab
-                  value="tenants"
-                  label="Tenants"
-                  component={RouterLink}
-                  to="/admin/tenants"
-                  sx={{ minHeight: 48, textTransform: "none" }}
-                />
-              ) : null}
-              {canManageGlobalAdminAreas ? (
-                <Tab
-                  value="users"
-                  label="Users"
-                  component={RouterLink}
-                  to="/admin/users"
-                  sx={{ minHeight: 48, textTransform: "none" }}
-                />
-              ) : null}
+              {tenantsTab}
+              {usersTab}
             </Tabs>
 
             <NotificationsBell />

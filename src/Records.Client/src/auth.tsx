@@ -65,10 +65,8 @@ const createCheckingState = (username?: string): AuthState => ({
   access: { isGlobalAdmin: false, canAccessOps: false },
 });
 
-const readBoolean = (
-  payload: Record<string, unknown>,
-  key: string,
-): boolean => payload[key] === true;
+const readBoolean = (payload: Record<string, unknown>, key: string): boolean =>
+  payload[key] === true;
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [state, setState] = React.useState<AuthState>(() =>
@@ -179,7 +177,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       logout,
       refresh,
     }),
-    [state.status, state.username, state.user, state.access, login, logout, refresh],
+    [
+      state.status,
+      state.username,
+      state.user,
+      state.access,
+      login,
+      logout,
+      refresh,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

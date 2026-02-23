@@ -11,8 +11,8 @@ import {
   ForgotPasswordPage,
   getRecordsetSearch,
   RecordDetailsPage,
-  RecordsPage,
   RecordsetsPage,
+  RecordsPage,
   ResetPasswordPage,
   SignInPage,
   SignUpPage,
@@ -20,11 +20,11 @@ import {
   UsersAdminPage,
 } from "./pages";
 import {
+  notificationRulesQueryOptions,
+  pagedRecordsQueryOptions,
   recordQueryOptions,
   recordsetItemDefinitionQueryOptions,
   tenantSummariesQueryOptions,
-  notificationRulesQueryOptions,
-  pagedRecordsQueryOptions,
   userSummariesQueryOptions,
 } from "./query-options";
 import Shell from "./shell";

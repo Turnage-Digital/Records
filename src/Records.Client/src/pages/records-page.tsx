@@ -21,15 +21,15 @@ import {
   ConfirmDeleteDialog,
   NotificationsDrawer,
   RecordsDesktopView,
-  RecordsMobileView,
   RecordsetHistoryDrawer,
+  RecordsMobileView,
   Titlebar,
   useSideDrawer,
 } from "../components";
 import { RecordsetSearch } from "../models";
 import {
-  recordsetItemDefinitionQueryOptions,
   pagedRecordsQueryOptions,
+  recordsetItemDefinitionQueryOptions,
 } from "../query-options";
 
 export const getRecordsetSearch = (
