@@ -1,5 +1,5 @@
 using MediatR;
-using Records.Clocks.Contracts.Services;
+using Records.Clocks.Contracts;
 using Records.Clocks.Domain;
 using Records.Core.Domain.ValueObjects;
 

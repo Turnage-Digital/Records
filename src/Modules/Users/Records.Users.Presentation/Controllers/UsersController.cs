@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Records.Core.Contracts.Security;
+using Records.Core.Contracts;
 using Records.Core.Domain.ValueObjects;
 using Records.Users.Application.Commands;
 using Records.Users.Contracts.Dtos;

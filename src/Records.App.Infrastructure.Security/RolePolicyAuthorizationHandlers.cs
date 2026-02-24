@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Records.Core.Contracts.Security;
+using Records.Core.Contracts;
 
 namespace Records.App.Infrastructure.Security;
 

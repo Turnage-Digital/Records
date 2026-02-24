@@ -1,5 +1,5 @@
 using Records.Core.Application;
-using Records.Core.Contracts.Security;
+using Records.Core.Contracts;
 using Records.Core.Domain.ValueObjects;
 
 namespace Records.App.Infrastructure.Security;

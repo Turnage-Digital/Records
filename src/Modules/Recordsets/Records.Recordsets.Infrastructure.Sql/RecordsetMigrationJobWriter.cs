@@ -1,4 +1,4 @@
-using Records.Recordsets.Contracts.Jobs;
+using Records.Recordsets.Contracts;
 using Records.Recordsets.Infrastructure.Sql.Entities;
 
 namespace Records.Recordsets.Infrastructure.Sql;

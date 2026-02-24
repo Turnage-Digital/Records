@@ -16,40 +16,38 @@ read models for internal and external clients.
 ## 2) Module Architecture (Target)
 
 Records is a .NET 9 **Modular Monolith** using **Clean Architecture** and **Domain-Driven Design**. Each bounded
-context is a self-contained module under `src/Modules/{ModuleName}/` with six projects:
+context is a self-contained module under `src/Modules/{ModuleName}/` with the following project conventions:
 
 1. `Records.{Module}.Domain`
-    - Aggregate roots
-    - Value objects under `ValueObjects/`
-    - Domain events under `Events/`
-    - Repository interfaces (`I{Entity}Repository.cs`)
-    - Unit of Work interface (`I{Module}UnitOfWork.cs`)
-    - Enums for entity states
+    - Keep only `Events/` and `ValueObjects/` as domain subfolders (flat, no nested subfolders).
+    - Keep aggregates/entities, enums, repository interfaces, and module unit-of-work interface at project root.
+    - Exception: `Records.Notifications.Domain` may also keep `Services/`.
 
 2. `Records.{Module}.Application`
-    - Commands under `Commands/` (CQRS command handlers)
-    - Queries under `Queries/` (CQRS query handlers)
-    - Event handlers under `EventHandlers/` for domain event projections and side effects
+    - Keep `Commands/`, `EventHandlers/`, and `Queries/` (`Queries/` may be omitted if unused).
+    - `Commands/` and `Queries/` must be flat (no nested folders).
+    - Command/query files are named by request type and contain both request and handler in the same file.
+    - Exception: `Records.Core.Application` may also keep `Behaviors/`.
 
 3. `Records.{Module}.Contracts`
     - DTOs under `Dtos/`
-    - Query interfaces under `Queries/` (e.g., `I{Entity}Queries.cs`)
+    - Integration event contracts under `IntegrationEvents/`
     - Projection writer interfaces under `Projections/`
-    - Service interfaces under `Services/`
-    - Notification/broadcaster interfaces under `Notifications/`
+    - Query interfaces under `Queries/` (e.g., `I{Entity}Queries.cs`)
+    - All other contracts live at project root.
 
 4. `Records.{Module}.Infrastructure.Sql`
     - `{Module}DbContext.cs`
     - `{Module}UnitOfWork.cs`
     - Database entities under `Entities/`
     - Optional mappers under `Mappers/`
-    - Optional specifications under `Specifications/`
+    - Optional query criteria under `QueryCriteria/`
     - EF Migrations under `Migrations/`
     - All other infrastructure classes (repositories, queries, projections, services, jobs, event-store helpers) live at
       the project root
-    - Folder policy: only `Entities/`, `Mappers/`, `Migrations/`, and `Specifications/` are valid subfolders
+    - Folder policy: only `Entities/`, `Mappers/`, `Migrations/`, and `QueryCriteria/` are valid subfolders
     - Namespace policy: namespaces must match file paths exactly (`Records.{Module}.Infrastructure.Sql` for root files,
-      `...Sql.Entities`, `...Sql.Mappers`, `...Sql.Specifications`, `...Sql.Migrations` for foldered files)
+      `...Sql.Entities`, `...Sql.Mappers`, `...Sql.QueryCriteria`, `...Sql.Migrations` for foldered files)
     - `DependencyInjection.cs` for service registration
 
 5. `Records.{Module}.Presentation`

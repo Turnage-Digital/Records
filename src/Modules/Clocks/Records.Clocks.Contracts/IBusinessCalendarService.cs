@@ -1,7 +1,7 @@
 using Records.Clocks.Domain;
 using Records.Core.Domain.ValueObjects;
 
-namespace Records.Clocks.Contracts.Services;
+namespace Records.Clocks.Contracts;
 
 public interface IBusinessCalendarService
 {

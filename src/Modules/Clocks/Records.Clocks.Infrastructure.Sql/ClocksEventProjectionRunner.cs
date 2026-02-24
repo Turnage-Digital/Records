@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Records.Core.Contracts.Events;
+using Records.Core.Contracts;
 using Records.Core.Infrastructure.Sql;
 
 namespace Records.Clocks.Infrastructure.Sql;

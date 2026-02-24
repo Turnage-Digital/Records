@@ -1,4 +1,4 @@
-namespace Records.Core.Contracts.Security;
+namespace Records.Core.Contracts;
 
 public static class AuthorizationPolicies
 {

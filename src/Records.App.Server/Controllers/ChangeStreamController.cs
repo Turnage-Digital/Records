@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Records.App.Server.Services;
-using Records.Core.Contracts.Security;
+using Records.Core.Contracts;
 
 namespace Records.App.Server.Controllers;
 

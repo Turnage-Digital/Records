@@ -1,6 +1,6 @@
 using MediatR;
 
-namespace Records.Core.Contracts.Events;
+namespace Records.Core.Contracts;
 
 /// <summary>
 ///     Serializes and deserializes domain events for persistence.

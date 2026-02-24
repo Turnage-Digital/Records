@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Records.Clocks.Application.Commands;
 using Records.Clocks.Contracts.Dtos;
 using Records.Clocks.Contracts.Queries;
-using Records.Core.Contracts.Security;
+using Records.Core.Contracts;
 using Records.Core.Domain.ValueObjects;
 
 namespace Records.Clocks.Presentation.Controllers;

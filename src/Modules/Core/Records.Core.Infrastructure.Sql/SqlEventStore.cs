@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Records.Core.Contracts.Events;
+using Records.Core.Contracts;
 using Records.Core.Infrastructure.Sql.Entities;
 
 namespace Records.Core.Infrastructure.Sql;

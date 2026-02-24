@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Records.Core.Contracts.Events;
+using Records.Core.Contracts;
 
 namespace Records.Core.Infrastructure.Sql;
 

@@ -1,4 +1,4 @@
-namespace Records.Core.Contracts.Events;
+namespace Records.Core.Contracts;
 
 /// <summary>
 ///     Append-only event store for persisting domain events.

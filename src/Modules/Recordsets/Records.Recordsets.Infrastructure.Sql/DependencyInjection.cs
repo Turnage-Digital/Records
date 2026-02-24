@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Records.Recordsets.Contracts.Jobs;
+using Records.Recordsets.Contracts;
 using Records.Recordsets.Contracts.Projections;
 using Records.Recordsets.Contracts.Queries;
 using Records.Recordsets.Domain;

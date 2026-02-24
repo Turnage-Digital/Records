@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using MediatR;
-using Records.Core.Contracts.Events;
+using Records.Core.Contracts;
 
 namespace Records.App.Server.Services;
 

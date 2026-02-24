@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Records.App.Server.Services;
-using Records.Core.Contracts.Events;
+using Records.Core.Contracts;
 
 namespace Records.App.Server.Tests.Services;
 

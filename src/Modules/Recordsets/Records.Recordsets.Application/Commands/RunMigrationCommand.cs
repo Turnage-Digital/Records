@@ -1,7 +1,7 @@
 using System.Text.Json;
 using MediatR;
 using Records.Core.Domain.ValueObjects;
-using Records.Recordsets.Contracts.Jobs;
+using Records.Recordsets.Contracts;
 using Records.Recordsets.Domain;
 
 namespace Records.Recordsets.Application.Commands;

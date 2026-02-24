@@ -1,7 +1,6 @@
 using MediatR;
 using Records.Clocks.Domain;
 using Records.Core.Contracts;
-using Records.Core.Contracts.Events;
 using Records.Core.Infrastructure.Sql;
 
 namespace Records.Clocks.Infrastructure.Sql;

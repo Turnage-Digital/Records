@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Records.Core.Application;
-using Records.Core.Contracts.Security;
+using Records.Core.Contracts;
 
 namespace Records.App.Infrastructure.Security;
 

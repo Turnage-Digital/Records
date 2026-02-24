@@ -12,7 +12,7 @@ using Records.App.Server.Services;
 using Records.Clocks.Application.Commands;
 using Records.Clocks.Infrastructure.Sql;
 using Records.Clocks.Presentation.Controllers;
-using Records.Core.Contracts.Security;
+using Records.Core.Contracts;
 using Records.Core.Domain.ValueObjects;
 using Records.Core.Infrastructure.Sql;
 using Records.Notifications.Application.Commands;

@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Records.Clocks.Contracts;
 using Records.Clocks.Contracts.Projections;
 using Records.Clocks.Contracts.Queries;
-using Records.Clocks.Contracts.Services;
 using Records.Clocks.Domain;
 
 namespace Records.Clocks.Infrastructure.Sql;

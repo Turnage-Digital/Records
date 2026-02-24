@@ -2,7 +2,6 @@ using System.Diagnostics;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Records.Core.Contracts;
-using Records.Core.Contracts.Events;
 using Records.Core.Domain;
 
 namespace Records.Core.Infrastructure.Sql;

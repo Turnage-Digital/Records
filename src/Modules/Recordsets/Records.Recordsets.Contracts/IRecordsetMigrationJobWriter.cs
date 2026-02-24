@@ -1,7 +1,7 @@
 using Records.Core.Domain.ValueObjects;
 using Records.Recordsets.Domain;
 
-namespace Records.Recordsets.Contracts.Jobs;
+namespace Records.Recordsets.Contracts;
 
 public interface IRecordsetMigrationJobWriter
 {

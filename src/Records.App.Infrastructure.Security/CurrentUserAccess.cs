@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
-using Records.Core.Contracts.Security;
+using Records.Core.Contracts;
 using Records.Core.Domain.ValueObjects;
 using Records.Users.Contracts.Queries;
 

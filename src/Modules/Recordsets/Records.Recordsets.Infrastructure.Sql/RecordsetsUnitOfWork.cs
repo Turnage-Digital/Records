@@ -2,7 +2,6 @@ using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Records.Core.Contracts;
-using Records.Core.Contracts.Events;
 using Records.Core.Domain;
 using Records.Core.Domain.ValueObjects;
 using Records.Core.Infrastructure.Sql;
