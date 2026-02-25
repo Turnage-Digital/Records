@@ -7,9 +7,9 @@ namespace Records.Recordsets.Domain;
 
 public sealed class Recordset : AggregateRoot
 {
-    private readonly List<Column> columns = [];
-    private readonly List<Status> statuses = [];
-    private readonly List<StatusTransition> transitions = [];
+    private readonly List<Column> _columns = [];
+    private readonly List<Status> _statuses = [];
+    private readonly List<StatusTransition> _transitions = [];
 
     private Recordset()
     {
@@ -30,9 +30,9 @@ public sealed class Recordset : AggregateRoot
     public UlidId? UpdatedBy { get; private set; }
     public DateTimeOffset? UpdatedAt { get; private set; }
 
-    public IReadOnlyList<Column> Columns => columns;
-    public IReadOnlyList<Status> Statuses => statuses;
-    public IReadOnlyList<StatusTransition> StatusTransitions => transitions;
+    public IReadOnlyList<Column> Columns => _columns;
+    public IReadOnlyList<Status> Statuses => _statuses;
+    public IReadOnlyList<StatusTransition> StatusTransitions => _transitions;
 
     public static Recordset Create(
         UlidId id,
@@ -45,9 +45,9 @@ public sealed class Recordset : AggregateRoot
     )
     {
         var recordset = new Recordset(id, name, createdBy, createdAt);
-        recordset.columns.AddRange(AssignStorageKeys(initialColumns));
-        recordset.statuses.AddRange(initialStatuses);
-        recordset.transitions.AddRange(initialTransitions);
+        recordset._columns.AddRange(AssignStorageKeys(initialColumns));
+        recordset._statuses.AddRange(initialStatuses);
+        recordset._transitions.AddRange(initialTransitions);
         recordset.AddDomainEvent(new RecordsetCreated(id, name, createdBy, createdAt));
         return recordset;
     }
@@ -104,12 +104,12 @@ public sealed class Recordset : AggregateRoot
         bool assignStorageKeys
     )
     {
-        columns.Clear();
-        columns.AddRange(assignStorageKeys ? AssignStorageKeys(nextColumns) : nextColumns);
-        statuses.Clear();
-        statuses.AddRange(nextStatuses);
-        transitions.Clear();
-        transitions.AddRange(nextTransitions);
+        _columns.Clear();
+        _columns.AddRange(assignStorageKeys ? AssignStorageKeys(nextColumns) : nextColumns);
+        _statuses.Clear();
+        _statuses.AddRange(nextStatuses);
+        _transitions.Clear();
+        _transitions.AddRange(nextTransitions);
 
         UpdatedBy = updatedBy;
         UpdatedAt = updatedAt;

@@ -4,16 +4,16 @@ using Records.Core.Contracts;
 
 namespace Records.App.Server.Services;
 
-public sealed class DeferredDispatchProcessor(
+public sealed class DeferredDispatchService(
     IServiceScopeFactory scopeFactory,
-    ILogger<DeferredDispatchProcessor> logger
+    ILogger<DeferredDispatchService> logger
 ) : BackgroundService
 {
     private const int BatchSize = 100;
     private static readonly TimeSpan PollingInterval = TimeSpan.FromMilliseconds(100);
     private static readonly TimeSpan IdleInterval = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan MaxRetryBackoff = TimeSpan.FromMinutes(5);
-    private readonly Dictionary<long, FailedDispatchState> failedDispatches = new();
+    private readonly Dictionary<long, FailedDispatchState> _failedDispatches = new();
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -72,9 +72,9 @@ public sealed class DeferredDispatchProcessor(
         var pending = await eventStore.ReadUndispatchedAsync(BatchSize, cancellationToken);
         if (pending.Count == 0)
         {
-            if (failedDispatches.Count > 0)
+            if (_failedDispatches.Count > 0)
             {
-                failedDispatches.Clear();
+                _failedDispatches.Clear();
             }
 
             return 0;
@@ -90,7 +90,7 @@ public sealed class DeferredDispatchProcessor(
 
         foreach (var storedEvent in pending)
         {
-            if (failedDispatches.TryGetValue(storedEvent.Position, out var failedState) &&
+            if (_failedDispatches.TryGetValue(storedEvent.Position, out var failedState) &&
                 now < failedState.NextAttemptAt)
             {
                 continue;
@@ -101,7 +101,7 @@ public sealed class DeferredDispatchProcessor(
                 var domainEvent = serializer.Deserialize(storedEvent.Payload, storedEvent.EventName);
                 await mediator.Publish(domainEvent, cancellationToken);
                 successfulPositions.Add(storedEvent.Position);
-                failedDispatches.Remove(storedEvent.Position);
+                _failedDispatches.Remove(storedEvent.Position);
 
                 logger.LogTrace(
                     "Dispatched event {EventName} at position {Position}",
@@ -110,10 +110,10 @@ public sealed class DeferredDispatchProcessor(
             }
             catch (Exception ex)
             {
-                var nextState = failedDispatches.TryGetValue(storedEvent.Position, out failedState)
+                var nextState = _failedDispatches.TryGetValue(storedEvent.Position, out failedState)
                     ? failedState.Next(ex.Message)
                     : FailedDispatchState.Initial(ex.Message);
-                failedDispatches[storedEvent.Position] = nextState;
+                _failedDispatches[storedEvent.Position] = nextState;
                 BackgroundServiceTelemetry.RecordRetryScheduled(
                     "deferred-dispatch",
                     "publish-failure");
@@ -142,16 +142,16 @@ public sealed class DeferredDispatchProcessor(
 
     private void PruneFailedDispatchState(IReadOnlyCollection<StoredEvent> pending)
     {
-        if (failedDispatches.Count == 0)
+        if (_failedDispatches.Count == 0)
         {
             return;
         }
 
         var activePositions = pending.Select(e => e.Position).ToHashSet();
-        var stale = failedDispatches.Keys.Where(key => !activePositions.Contains(key)).ToList();
+        var stale = _failedDispatches.Keys.Where(key => !activePositions.Contains(key)).ToList();
         foreach (var key in stale)
         {
-            failedDispatches.Remove(key);
+            _failedDispatches.Remove(key);
         }
     }
 

@@ -37,8 +37,7 @@ public sealed class RecordsetMigrationsController(
             recordsetUlid,
             request.Plan,
             request.Mode,
-            currentUserAccess.GetCurrentUserIdOrThrow(),
-            DateTimeOffset.UtcNow);
+            currentUserAccess.GetCurrentUserIdOrThrow());
 
         var result = await mediator.Send(command, cancellationToken);
         return Ok(result);

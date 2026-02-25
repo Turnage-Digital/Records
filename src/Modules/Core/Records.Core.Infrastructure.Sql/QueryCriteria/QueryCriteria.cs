@@ -6,7 +6,6 @@ public abstract class QueryCriteria<T> : IQueryCriteria<T>
 {
     public Expression<Func<T, bool>>? Criteria { get; protected set; }
     public List<Expression<Func<T, object>>> Includes { get; } = [];
-    public List<string> IncludeStrings { get; } = [];
     public Func<IQueryable<T>, IOrderedQueryable<T>>? OrderBy { get; protected set; }
     public Func<IQueryable<T>, IOrderedQueryable<T>>? OrderByDescending { get; protected set; }
     public int? Take { get; protected set; }
@@ -21,11 +20,6 @@ public abstract class QueryCriteria<T> : IQueryCriteria<T>
     protected void AddInclude(Expression<Func<T, object>> includeExpression)
     {
         Includes.Add(includeExpression);
-    }
-
-    protected void AddInclude(string includeString)
-    {
-        IncludeStrings.Add(includeString);
     }
 
     protected void ApplyOrderBy(Expression<Func<T, object>> orderByExpression)
@@ -65,18 +59,18 @@ public abstract class QueryCriteria<T> : IQueryCriteria<T>
 
     private sealed class ParameterReplaceVisitor : ExpressionVisitor
     {
-        private readonly ParameterExpression source;
-        private readonly ParameterExpression target;
+        private readonly ParameterExpression _source;
+        private readonly ParameterExpression _target;
 
         public ParameterReplaceVisitor(ParameterExpression source, ParameterExpression target)
         {
-            this.source = source;
-            this.target = target;
+            _source = source;
+            _target = target;
         }
 
         protected override Expression VisitParameter(ParameterExpression node)
         {
-            return node == source ? target : base.VisitParameter(node);
+            return node == _source ? _target : base.VisitParameter(node);
         }
     }
 }

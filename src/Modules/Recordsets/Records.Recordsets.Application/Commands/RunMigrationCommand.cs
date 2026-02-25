@@ -24,16 +24,13 @@ public class RunMigrationRequest
 {
     public MigrationPlan Plan { get; init; } = new();
     public MigrationMode Mode { get; init; } = MigrationMode.DryRun;
-    public UlidId RequestedBy { get; init; }
-    public DateTimeOffset RequestedAt { get; init; } = DateTimeOffset.UtcNow;
 }
 
 public record RunMigrationCommand(
     UlidId RecordsetId,
     MigrationPlan Plan,
     MigrationMode Mode,
-    UlidId RequestedBy,
-    DateTimeOffset RequestedAt
+    UlidId RequestedBy
 ) : IRequest<MigrationResult>;
 
 public interface IMigrationValidator

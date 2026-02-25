@@ -7,29 +7,29 @@ using Records.Core.Contracts;
 
 namespace Records.App.Server.Tests.Services;
 
-public sealed class DeferredDispatchProcessorTests
+public sealed class DeferredDispatchServiceTests
 {
-    private Mock<IEventStore> eventStore = null!;
-    private Mock<ILogger<DeferredDispatchProcessor>> logger = null!;
-    private Mock<IMediator> mediator = null!;
-    private IServiceScopeFactory scopeFactory = null!;
-    private Mock<IDomainEventSerializer> serializer = null!;
+    private Mock<IEventStore> _eventStore = null!;
+    private Mock<ILogger<DeferredDispatchService>> _logger = null!;
+    private Mock<IMediator> _mediator = null!;
+    private IServiceScopeFactory _scopeFactory = null!;
+    private Mock<IDomainEventSerializer> _serializer = null!;
 
     [SetUp]
     public void SetUp()
     {
-        eventStore = new Mock<IEventStore>();
-        serializer = new Mock<IDomainEventSerializer>();
-        mediator = new Mock<IMediator>();
-        logger = new Mock<ILogger<DeferredDispatchProcessor>>();
+        _eventStore = new Mock<IEventStore>();
+        _serializer = new Mock<IDomainEventSerializer>();
+        _mediator = new Mock<IMediator>();
+        _logger = new Mock<ILogger<DeferredDispatchService>>();
 
         var services = new ServiceCollection();
-        services.AddSingleton(eventStore.Object);
-        services.AddSingleton(serializer.Object);
-        services.AddSingleton(mediator.Object);
+        services.AddSingleton(_eventStore.Object);
+        services.AddSingleton(_serializer.Object);
+        services.AddSingleton(_mediator.Object);
 
         var serviceProvider = services.BuildServiceProvider();
-        scopeFactory = serviceProvider.GetRequiredService<IServiceScopeFactory>();
+        _scopeFactory = serviceProvider.GetRequiredService<IServiceScopeFactory>();
     }
 
     [Test]
@@ -40,7 +40,7 @@ public sealed class DeferredDispatchProcessorTests
         var markedPositions = new List<long>();
         var readCount = 0;
 
-        eventStore
+        _eventStore
             .Setup(s => s.ReadUndispatchedAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() =>
             {
@@ -50,20 +50,20 @@ public sealed class DeferredDispatchProcessorTests
                     : [];
             });
 
-        serializer
+        _serializer
             .Setup(s => s.Deserialize(storedEvent.Payload, storedEvent.EventName))
             .Returns(domainEvent);
 
-        mediator
+        _mediator
             .Setup(m => m.Publish(It.IsAny<INotification>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        eventStore
+        _eventStore
             .Setup(s => s.MarkDispatchedBatchAsync(It.IsAny<IEnumerable<long>>(), It.IsAny<CancellationToken>()))
             .Callback<IEnumerable<long>, CancellationToken>((positions, _) => markedPositions.AddRange(positions))
             .Returns(Task.CompletedTask);
 
-        var processor = new DeferredDispatchProcessor(scopeFactory, logger.Object);
+        var processor = new DeferredDispatchService(_scopeFactory, _logger.Object);
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(400));
 
         await processor.StartAsync(cts.Token);
@@ -72,7 +72,7 @@ public sealed class DeferredDispatchProcessorTests
         await processor.StopAsync(CancellationToken.None);
 
         Assert.That(markedPositions, Is.EquivalentTo(new[] { 1L }));
-        mediator.Verify(
+        _mediator.Verify(
             m => m.Publish(It.IsAny<INotification>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -83,19 +83,19 @@ public sealed class DeferredDispatchProcessorTests
         var storedEvent = CreateStoredEvent(1, "Recordset:abc", "RecordCreated", "{\"id\":1}");
         var domainEvent = new TestDomainEvent();
 
-        eventStore
+        _eventStore
             .Setup(s => s.ReadUndispatchedAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([storedEvent]);
 
-        serializer
+        _serializer
             .Setup(s => s.Deserialize(storedEvent.Payload, storedEvent.EventName))
             .Returns(domainEvent);
 
-        mediator
+        _mediator
             .Setup(m => m.Publish(It.IsAny<INotification>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("publish failed"));
 
-        var processor = new DeferredDispatchProcessor(scopeFactory, logger.Object);
+        var processor = new DeferredDispatchService(_scopeFactory, _logger.Object);
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(450));
 
         await processor.StartAsync(cts.Token);
@@ -103,10 +103,10 @@ public sealed class DeferredDispatchProcessorTests
         await cts.CancelAsync();
         await processor.StopAsync(CancellationToken.None);
 
-        eventStore.Verify(
+        _eventStore.Verify(
             s => s.MarkDispatchedBatchAsync(It.IsAny<IEnumerable<long>>(), It.IsAny<CancellationToken>()),
             Times.Never);
-        mediator.Verify(
+        _mediator.Verify(
             m => m.Publish(It.IsAny<INotification>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }

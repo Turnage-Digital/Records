@@ -8,20 +8,20 @@ namespace Records.Tenants.Infrastructure.Sql;
 
 public sealed class TenantsUnitOfWork(TenantsDbContext dbContext) : ITenantsUnitOfWork
 {
-    private readonly Dictionary<string, (Tenant Domain, TenantDb Entity)> trackedTenants = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, (Tenant Domain, TenantDb Entity)> _trackedTenants = new(StringComparer.Ordinal);
 
     public void AddTenant(Tenant tenant)
     {
         var entity = TenantMapper.ToDb(tenant);
         dbContext.Tenants.Add(entity);
-        trackedTenants[entity.Id] = (tenant, entity);
+        _trackedTenants[entity.Id] = (tenant, entity);
     }
 
     public async Task<Tenant?> GetTenantByIdAsync(UlidId tenantId, CancellationToken cancellationToken)
     {
         var key = tenantId.ToString();
 
-        if (trackedTenants.TryGetValue(key, out var tracked))
+        if (_trackedTenants.TryGetValue(key, out var tracked))
         {
             return tracked.Domain;
         }
@@ -35,13 +35,13 @@ public sealed class TenantsUnitOfWork(TenantsDbContext dbContext) : ITenantsUnit
         }
 
         var domain = TenantMapper.ToDomain(entity);
-        trackedTenants[key] = (domain, entity);
+        _trackedTenants[key] = (domain, entity);
         return domain;
     }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken)
     {
-        foreach (var tracked in trackedTenants.Values)
+        foreach (var tracked in _trackedTenants.Values)
         {
             TenantMapper.UpdateDb(tracked.Domain, tracked.Entity);
         }

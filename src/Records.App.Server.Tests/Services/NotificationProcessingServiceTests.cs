@@ -13,24 +13,24 @@ namespace Records.App.Server.Tests.Services;
 
 public sealed class NotificationProcessingServiceTests
 {
-    private Mock<ILogger<NotificationProcessingService>> logger = null!;
-    private Mock<INotificationQueries> notificationQueries = null!;
-    private IServiceScopeFactory scopeFactory = null!;
-    private Mock<ISender> sender = null!;
+    private Mock<ILogger<NotificationProcessingService>> _logger = null!;
+    private Mock<INotificationQueries> _notificationQueries = null!;
+    private IServiceScopeFactory _scopeFactory = null!;
+    private Mock<ISender> _sender = null!;
 
     [SetUp]
     public void SetUp()
     {
-        notificationQueries = new Mock<INotificationQueries>();
-        sender = new Mock<ISender>();
-        logger = new Mock<ILogger<NotificationProcessingService>>();
+        _notificationQueries = new Mock<INotificationQueries>();
+        _sender = new Mock<ISender>();
+        _logger = new Mock<ILogger<NotificationProcessingService>>();
 
         var services = new ServiceCollection();
-        services.AddSingleton(notificationQueries.Object);
-        services.AddSingleton(sender.Object);
+        services.AddSingleton(_notificationQueries.Object);
+        services.AddSingleton(_sender.Object);
 
         var serviceProvider = services.BuildServiceProvider();
-        scopeFactory = serviceProvider.GetRequiredService<IServiceScopeFactory>();
+        _scopeFactory = serviceProvider.GetRequiredService<IServiceScopeFactory>();
     }
 
     [Test]
@@ -40,7 +40,7 @@ public sealed class NotificationProcessingServiceTests
         var idB = Ulid.NewUlid().ToString();
 
         var pendingCalls = 0;
-        notificationQueries
+        _notificationQueries
             .Setup(q => q.GetPendingAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() =>
             {
@@ -51,7 +51,7 @@ public sealed class NotificationProcessingServiceTests
             });
 
         var retryCalls = 0;
-        notificationQueries
+        _notificationQueries
             .Setup(q => q.GetFailedForRetryAsync(
                 It.IsAny<int>(),
                 It.IsAny<TimeSpan>(),
@@ -66,7 +66,7 @@ public sealed class NotificationProcessingServiceTests
             });
 
         var processedIds = new HashSet<string>(StringComparer.Ordinal);
-        sender
+        _sender
             .Setup(s => s.Send(It.IsAny<ProcessNotificationCommand>(), It.IsAny<CancellationToken>()))
             .Callback<IRequest<Result>, CancellationToken>((request, _) =>
             {
@@ -77,7 +77,7 @@ public sealed class NotificationProcessingServiceTests
             })
             .ReturnsAsync(Result.Success());
 
-        var service = new NotificationProcessingService(scopeFactory, logger.Object);
+        var service = new NotificationProcessingService(_scopeFactory, _logger.Object);
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(450));
 
         await service.StartAsync(cts.Token);
@@ -91,11 +91,11 @@ public sealed class NotificationProcessingServiceTests
     [Test]
     public async Task ExecuteAsync_WhenNoWork_DoesNotSendCommands()
     {
-        notificationQueries
+        _notificationQueries
             .Setup(q => q.GetPendingAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        notificationQueries
+        _notificationQueries
             .Setup(q => q.GetFailedForRetryAsync(
                 It.IsAny<int>(),
                 It.IsAny<TimeSpan>(),
@@ -103,7 +103,7 @@ public sealed class NotificationProcessingServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        var service = new NotificationProcessingService(scopeFactory, logger.Object);
+        var service = new NotificationProcessingService(_scopeFactory, _logger.Object);
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
 
         await service.StartAsync(cts.Token);
@@ -111,7 +111,7 @@ public sealed class NotificationProcessingServiceTests
         await cts.CancelAsync();
         await service.StopAsync(CancellationToken.None);
 
-        sender.Verify(
+        _sender.Verify(
             s => s.Send(It.IsAny<ProcessNotificationCommand>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }

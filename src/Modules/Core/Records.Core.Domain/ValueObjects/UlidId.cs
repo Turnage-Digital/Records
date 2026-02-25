@@ -14,11 +14,6 @@ public readonly record struct UlidId
         return new UlidId(Ulid.NewUlid());
     }
 
-    public static UlidId FromUlid(Ulid value)
-    {
-        return new UlidId(value);
-    }
-
     public static bool TryParse(string? value, out UlidId ulid)
     {
         if (!string.IsNullOrWhiteSpace(value) && Ulid.TryParse(value, out var parsed))

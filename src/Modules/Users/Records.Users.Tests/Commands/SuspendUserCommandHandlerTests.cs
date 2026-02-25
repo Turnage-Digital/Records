@@ -24,16 +24,16 @@ public class SuspendUserCommandHandlerTests
 
     private sealed class FakeUsersUnitOfWork : IUsersUnitOfWork
     {
-        private readonly User? user;
+        private readonly User? _user;
 
         public FakeUsersUnitOfWork(User? user)
         {
-            this.user = user;
+            _user = user;
         }
 
         public Task<User?> GetUserByIdAsync(UlidId userId, CancellationToken cancellationToken)
         {
-            return Task.FromResult(user);
+            return Task.FromResult(_user);
         }
 
         public Task<User?> GetUserByEmailAsync(string normalizedEmail, CancellationToken cancellationToken)

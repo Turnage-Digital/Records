@@ -34,11 +34,11 @@ public class DisableTenantCommandHandlerTests
 
     private sealed class FakeTenantsUnitOfWork : ITenantsUnitOfWork
     {
-        private readonly Tenant? tenant;
+        private readonly Tenant? _tenant;
 
         public FakeTenantsUnitOfWork(Tenant? tenant)
         {
-            this.tenant = tenant;
+            _tenant = tenant;
         }
 
         public void AddTenant(Tenant tenant)
@@ -47,7 +47,7 @@ public class DisableTenantCommandHandlerTests
 
         public Task<Tenant?> GetTenantByIdAsync(UlidId tenantId, CancellationToken cancellationToken)
         {
-            return Task.FromResult(tenant);
+            return Task.FromResult(_tenant);
         }
 
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken)

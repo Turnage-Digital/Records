@@ -15,8 +15,8 @@ namespace Records.Recordsets.Infrastructure.Sql;
 
 public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRecordsetsUnitOfWork
 {
-    private readonly RecordsetsDbContext dbContext;
-    private readonly List<(Record Record, RecordDb Entity)> pendingRecords = [];
+    private readonly RecordsetsDbContext _dbContext;
+    private readonly List<(Record Record, RecordDb Entity)> _pendingRecords = [];
 
     public RecordsetsUnitOfWork(
         RecordsetsDbContext dbContext,
@@ -27,13 +27,13 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
     )
         : base(dbContext, mediator, eventStore, serializer, tenantContext)
     {
-        this.dbContext = dbContext;
+        _dbContext = dbContext;
     }
 
     public async Task<Recordset?> GetRecordsetByIdAsync(UlidId recordsetId, CancellationToken cancellationToken)
     {
         var recordsetKey = recordsetId.ToString();
-        var recordset = await dbContext.Recordsets
+        var recordset = await _dbContext.Recordsets
             .AsNoTracking()
             .ApplyCriteria(new RecordsetByIdCriteria(recordsetKey))
             .FirstOrDefaultAsync(cancellationToken);
@@ -43,15 +43,15 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
             return null;
         }
 
-        var columns = await dbContext.RecordsetColumns
+        var columns = await _dbContext.RecordsetColumns
             .AsNoTracking()
             .ApplyCriteria(new RecordsetColumnsByRecordsetIdCriteria(recordsetKey))
             .ToListAsync(cancellationToken);
-        var statuses = await dbContext.RecordsetStatuses
+        var statuses = await _dbContext.RecordsetStatuses
             .AsNoTracking()
             .ApplyCriteria(new RecordsetStatusesByRecordsetIdCriteria(recordsetKey))
             .ToListAsync(cancellationToken);
-        var transitions = await dbContext.RecordsetStatusTransitions
+        var transitions = await _dbContext.RecordsetStatusTransitions
             .AsNoTracking()
             .ApplyCriteria(new RecordsetStatusTransitionsByRecordsetIdCriteria(recordsetKey))
             .ToListAsync(cancellationToken);
@@ -61,7 +61,7 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
 
     public async Task<Recordset?> GetRecordsetByNameAsync(string name, CancellationToken cancellationToken)
     {
-        var recordset = await dbContext.Recordsets
+        var recordset = await _dbContext.Recordsets
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Name == name, cancellationToken);
 
@@ -76,21 +76,21 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
     public async Task AddRecordsetAsync(Recordset recordset, CancellationToken cancellationToken)
     {
         var recordsetDb = RecordsetMapper.ToDb(recordset);
-        await dbContext.Recordsets.AddAsync(recordsetDb, cancellationToken);
+        await _dbContext.Recordsets.AddAsync(recordsetDb, cancellationToken);
 
         await ReplaceSchemaAsync(recordset, cancellationToken);
     }
 
     public Task UpdateRecordsetAsync(Recordset recordset, CancellationToken cancellationToken)
     {
-        dbContext.Recordsets.Update(RecordsetMapper.ToDb(recordset));
+        _dbContext.Recordsets.Update(RecordsetMapper.ToDb(recordset));
         return ReplaceSchemaAsync(recordset, cancellationToken);
     }
 
     public async Task DeleteRecordsetAsync(UlidId recordsetId, CancellationToken cancellationToken)
     {
         var recordsetKey = recordsetId.ToString();
-        var recordset = await dbContext.Recordsets
+        var recordset = await _dbContext.Recordsets
             .ApplyCriteria(new RecordsetByIdCriteria(recordsetKey))
             .FirstOrDefaultAsync(cancellationToken);
         if (recordset is null)
@@ -98,32 +98,32 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
             return;
         }
 
-        var items = await dbContext.RecordsetItems
+        var items = await _dbContext.RecordsetItems
             .ApplyCriteria(new RecordsetItemsByRecordsetIdCriteria(recordsetKey))
             .ToListAsync(cancellationToken);
-        dbContext.RecordsetItems.RemoveRange(items);
+        _dbContext.RecordsetItems.RemoveRange(items);
 
-        var columns = await dbContext.RecordsetColumns
+        var columns = await _dbContext.RecordsetColumns
             .ApplyCriteria(new RecordsetColumnsByRecordsetIdCriteria(recordsetKey))
             .ToListAsync(cancellationToken);
-        dbContext.RecordsetColumns.RemoveRange(columns);
+        _dbContext.RecordsetColumns.RemoveRange(columns);
 
-        var statuses = await dbContext.RecordsetStatuses
+        var statuses = await _dbContext.RecordsetStatuses
             .ApplyCriteria(new RecordsetStatusesByRecordsetIdCriteria(recordsetKey))
             .ToListAsync(cancellationToken);
-        dbContext.RecordsetStatuses.RemoveRange(statuses);
+        _dbContext.RecordsetStatuses.RemoveRange(statuses);
 
-        var transitions = await dbContext.RecordsetStatusTransitions
+        var transitions = await _dbContext.RecordsetStatusTransitions
             .ApplyCriteria(new RecordsetStatusTransitionsByRecordsetIdCriteria(recordsetKey))
             .ToListAsync(cancellationToken);
-        dbContext.RecordsetStatusTransitions.RemoveRange(transitions);
+        _dbContext.RecordsetStatusTransitions.RemoveRange(transitions);
 
-        var projections = await dbContext.RecordsetProjections
+        var projections = await _dbContext.RecordsetProjections
             .ApplyCriteria(new RecordsetProjectionByRecordsetIdCriteria(recordsetKey))
             .ToListAsync(cancellationToken);
-        dbContext.RecordsetProjections.RemoveRange(projections);
+        _dbContext.RecordsetProjections.RemoveRange(projections);
 
-        dbContext.Recordsets.Remove(recordset);
+        _dbContext.Recordsets.Remove(recordset);
     }
 
     public async Task AddRecordAsync(Record record, CancellationToken cancellationToken)
@@ -135,13 +135,13 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
             CreatedBy = record.CreatedBy.ToString(),
             CreatedAt = record.CreatedAt
         };
-        await dbContext.RecordsetItems.AddAsync(entity, cancellationToken);
-        pendingRecords.Add((record, entity));
+        await _dbContext.RecordsetItems.AddAsync(entity, cancellationToken);
+        _pendingRecords.Add((record, entity));
     }
 
     public async Task UpdateRecordAsync(Record record, CancellationToken cancellationToken)
     {
-        var existing = await dbContext.RecordsetItems
+        var existing = await _dbContext.RecordsetItems
             .ApplyCriteria(new RecordsetItemByRecordsetIdAndIdCriteria(record.RecordsetId.ToString(), record.Id))
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -157,7 +157,7 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
 
     public async Task<Record?> GetRecordByIdAsync(UlidId recordsetId, int recordId, CancellationToken cancellationToken)
     {
-        var item = await dbContext.RecordsetItems
+        var item = await _dbContext.RecordsetItems
             .AsNoTracking()
             .ApplyCriteria(new RecordsetItemByRecordsetIdAndIdCriteria(recordsetId.ToString(), recordId))
             .FirstOrDefaultAsync(cancellationToken);
@@ -183,7 +183,7 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
     public Task<int> GetRecordCountAsync(UlidId recordsetId, CancellationToken cancellationToken)
     {
         var recordsetKey = recordsetId.ToString();
-        return dbContext.RecordsetItems
+        return _dbContext.RecordsetItems
             .ApplyCriteria(new RecordsetItemsByRecordsetIdCriteria(recordsetKey))
             .CountAsync(cancellationToken);
     }
@@ -202,12 +202,12 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
     {
         var result = await base.SaveChangesAsync(deferDispatch, cancellationToken);
 
-        if (pendingRecords.Count == 0)
+        if (_pendingRecords.Count == 0)
         {
             return result;
         }
 
-        foreach (var (record, entity) in pendingRecords)
+        foreach (var (record, entity) in _pendingRecords)
         {
             if (entity.Id > 0)
             {
@@ -215,7 +215,7 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
             }
         }
 
-        pendingRecords.Clear();
+        _pendingRecords.Clear();
         return result;
     }
 
@@ -223,34 +223,34 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
     {
         var recordsetId = recordset.Id.ToString();
 
-        var existingColumns = await dbContext.RecordsetColumns
+        var existingColumns = await _dbContext.RecordsetColumns
             .ApplyCriteria(new RecordsetColumnsByRecordsetIdCriteria(recordsetId))
             .ToListAsync(cancellationToken);
-        dbContext.RecordsetColumns.RemoveRange(existingColumns);
+        _dbContext.RecordsetColumns.RemoveRange(existingColumns);
 
-        var existingStatuses = await dbContext.RecordsetStatuses
+        var existingStatuses = await _dbContext.RecordsetStatuses
             .ApplyCriteria(new RecordsetStatusesByRecordsetIdCriteria(recordsetId))
             .ToListAsync(cancellationToken);
-        dbContext.RecordsetStatuses.RemoveRange(existingStatuses);
+        _dbContext.RecordsetStatuses.RemoveRange(existingStatuses);
 
-        var existingTransitions = await dbContext.RecordsetStatusTransitions
+        var existingTransitions = await _dbContext.RecordsetStatusTransitions
             .ApplyCriteria(new RecordsetStatusTransitionsByRecordsetIdCriteria(recordsetId))
             .ToListAsync(cancellationToken);
-        dbContext.RecordsetStatusTransitions.RemoveRange(existingTransitions);
+        _dbContext.RecordsetStatusTransitions.RemoveRange(existingTransitions);
 
         foreach (var column in recordset.Columns)
         {
-            dbContext.RecordsetColumns.Add(RecordsetMapper.ToDb(recordsetId, column));
+            _dbContext.RecordsetColumns.Add(RecordsetMapper.ToDb(recordsetId, column));
         }
 
         foreach (var status in recordset.Statuses)
         {
-            dbContext.RecordsetStatuses.Add(RecordsetMapper.ToDb(recordsetId, status));
+            _dbContext.RecordsetStatuses.Add(RecordsetMapper.ToDb(recordsetId, status));
         }
 
         foreach (var transition in recordset.StatusTransitions)
         {
-            dbContext.RecordsetStatusTransitions.Add(RecordsetMapper.ToDb(recordsetId, transition));
+            _dbContext.RecordsetStatusTransitions.Add(RecordsetMapper.ToDb(recordsetId, transition));
         }
     }
 }

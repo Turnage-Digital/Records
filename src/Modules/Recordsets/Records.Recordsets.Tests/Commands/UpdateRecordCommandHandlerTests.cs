@@ -27,11 +27,11 @@ public class UpdateRecordCommandHandlerTests
 
     private sealed class FakeRecordsetsUnitOfWork : IRecordsetsUnitOfWork
     {
-        private readonly Record record;
+        private readonly Record _record;
 
         public FakeRecordsetsUnitOfWork(Record record)
         {
-            this.record = record;
+            _record = record;
         }
 
         public Record? UpdatedRecord { get; private set; }
@@ -39,7 +39,7 @@ public class UpdateRecordCommandHandlerTests
         public Task<Recordset?> GetRecordsetByIdAsync(UlidId recordsetId, CancellationToken cancellationToken)
         {
             return Task.FromResult<Recordset?>(Recordset.Create(
-                record.RecordsetId,
+                _record.RecordsetId,
                 "Test",
                 UlidId.NewUlid(),
                 DateTimeOffset.UtcNow,
@@ -82,7 +82,7 @@ public class UpdateRecordCommandHandlerTests
 
         public Task<Record?> GetRecordByIdAsync(UlidId recordsetId, int recordId, CancellationToken cancellationToken)
         {
-            return Task.FromResult<Record?>(record);
+            return Task.FromResult<Record?>(_record);
         }
 
         public Task<int> GetRecordCountAsync(UlidId recordsetId, CancellationToken cancellationToken)

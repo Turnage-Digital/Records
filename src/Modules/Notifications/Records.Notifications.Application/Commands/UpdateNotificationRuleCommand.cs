@@ -24,7 +24,6 @@ public sealed class UpdateNotificationRuleRequest
     public NotificationSchedule Schedule { get; set; } = null!;
     public string? TemplateId { get; set; }
     public bool IsActive { get; set; } = true;
-    public string UserId { get; set; } = string.Empty;
 }
 
 public sealed class UpdateNotificationRuleCommandHandler(
@@ -36,6 +35,15 @@ public sealed class UpdateNotificationRuleCommandHandler(
         CancellationToken cancellationToken
     )
     {
+        var channels = request.Channels
+            .Select(channel => new NotificationChannelConfig
+            {
+                Type = channel.Type,
+                Address = channel.Address,
+                Settings = new Dictionary<string, string>(channel.Settings)
+            })
+            .ToArray();
+
         var rule = await unitOfWork.NotificationRules.GetByIdAsync(request.RuleId, cancellationToken);
         if (rule is null)
         {
@@ -44,7 +52,7 @@ public sealed class UpdateNotificationRuleCommandHandler(
 
         rule.Update(
             request.Trigger,
-            request.Channels,
+            channels,
             request.Schedule,
             request.TemplateId,
             request.IsActive,

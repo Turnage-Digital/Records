@@ -8,7 +8,7 @@ namespace Records.Clocks.Infrastructure.Sql;
 
 public sealed class ClocksEventProjectionRunner : EventProjectionRunner
 {
-    private readonly ClocksDbContext clocksDbContext;
+    private readonly ClocksDbContext _clocksDbContext;
 
     public ClocksEventProjectionRunner(
         ClocksDbContext clocksDbContext,
@@ -20,7 +20,7 @@ public sealed class ClocksEventProjectionRunner : EventProjectionRunner
     )
         : base(coreDbContext, eventStore, serializer, publisher, logger)
     {
-        this.clocksDbContext = clocksDbContext;
+        _clocksDbContext = clocksDbContext;
     }
 
     protected override string ProjectionName => "clocks.projections.events";
@@ -29,18 +29,18 @@ public sealed class ClocksEventProjectionRunner : EventProjectionRunner
 
     protected override async Task ResetProjectionAsync(CancellationToken cancellationToken)
     {
-        if (clocksDbContext.Database.IsRelational())
+        if (_clocksDbContext.Database.IsRelational())
         {
-            await clocksDbContext.ClockProjections.ExecuteDeleteAsync(cancellationToken);
-            await clocksDbContext.ClockDefinitionProjections.ExecuteDeleteAsync(cancellationToken);
+            await _clocksDbContext.ClockProjections.ExecuteDeleteAsync(cancellationToken);
+            await _clocksDbContext.ClockDefinitionProjections.ExecuteDeleteAsync(cancellationToken);
         }
         else
         {
-            clocksDbContext.ClockProjections.RemoveRange(clocksDbContext.ClockProjections);
-            clocksDbContext.ClockDefinitionProjections.RemoveRange(clocksDbContext.ClockDefinitionProjections);
-            await clocksDbContext.SaveChangesAsync(cancellationToken);
+            _clocksDbContext.ClockProjections.RemoveRange(_clocksDbContext.ClockProjections);
+            _clocksDbContext.ClockDefinitionProjections.RemoveRange(_clocksDbContext.ClockDefinitionProjections);
+            await _clocksDbContext.SaveChangesAsync(cancellationToken);
         }
 
-        clocksDbContext.ChangeTracker.Clear();
+        _clocksDbContext.ChangeTracker.Clear();
     }
 }

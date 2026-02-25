@@ -8,17 +8,6 @@ namespace Records.Core.Domain;
 public static class SystemActors
 {
     /// <summary>
-    ///     General system actor for automated processes that don't
-    ///     have a more specific identity.
-    /// </summary>
-    public const string System = "SYSTEM:Automated";
-
-    /// <summary>
-    ///     Background service that marks record clocks at-risk/breached.
-    /// </summary>
-    public const string ClockWatchdog = "SYSTEM:ClockWatchdog";
-
-    /// <summary>
     ///     Background service that processes queued notifications.
     /// </summary>
     public const string NotificationProcessor = "SYSTEM:NotificationProcessor";

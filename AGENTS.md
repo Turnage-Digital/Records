@@ -12,30 +12,31 @@
 ### Module Project Layout Standards
 
 - `Records.{Module}.Domain`
-  - Keep `Events/` and `ValueObjects/` only (flat, no nested subfolders).
-  - Keep domain entities, enums, repository interfaces, and module unit-of-work interface at project root.
-  - `Notifications.Domain` may also keep `Services/`.
+    - Keep `Events/` and `ValueObjects/` only (flat, no nested subfolders).
+    - Keep domain entities, enums, repository interfaces, and module unit-of-work interface at project root.
+    - `Notifications.Domain` may also keep `Services/`.
 
 - `Records.{Module}.Application`
-  - Keep `Commands/`, `EventHandlers/`, and `Queries/` (omit `Queries/` if unused).
-  - `Core.Application` may also keep `Behaviors/`.
-  - `Commands/` and `Queries/` are flat (no subfolders).
-  - Each command/query file is named by command/query type (for example, `CreateRecordCommand.cs`) and contains both request and handler.
+    - Keep `Commands/`, `EventHandlers/`, and `Queries/` (omit `Queries/` if unused).
+    - `Core.Application` may also keep `Behaviors/`.
+    - `Commands/` and `Queries/` are flat (no subfolders).
+    - Each command/query file is named by command/query type (for example, `CreateRecordCommand.cs`) and contains both
+      request and handler.
 
 - `Records.{Module}.Contracts`
-  - Keep only `Dtos/`, `IntegrationEvents/`, `Projections/`, and `Queries/`.
-  - Place all other contracts at project root.
+    - Keep only `Dtos/`, `IntegrationEvents/`, `Projections/`, and `Queries/`.
+    - Place all other contracts at project root.
 
 - `Records.{Module}.Infrastructure.Sql`
-  - Keep only `Entities/`, `Mappers/`, `Migrations/`, and `QueryCriteria/`.
-  - Place repositories, queries, projection writers, and unit of work at project root.
-  - Namespace must match directory path.
+    - Keep only `Entities/`, `Mappers/`, `Migrations/`, and `QueryCriteria/`.
+    - Place repositories, queries, projection writers, and unit of work at project root.
+    - Namespace must match directory path.
 
 - `Records.{Module}.Presentation`
-  - Controllers under `Controllers/` only.
+    - Controllers under `Controllers/` only.
 
 - `Records.{Module}.Tests`
-  - Organize by module conventions; keep naming and coverage consistent with neighboring module tests.
+    - Organize by module conventions; keep naming and coverage consistent with neighboring module tests.
 
 ## Build, Test, and Development Commands
 
@@ -52,8 +53,8 @@
 - C#/.NET 9 with nullable and implicit usings enabled.
 - Indentation 4 spaces; `using` directives at top.
 - Keep one primary concern per file, with two explicit exceptions:
-  - Application command/query files contain both request and handler.
-  - Some Contracts files intentionally group closely related DTO/projection records.
+    - Application command/query files contain both request and handler.
+    - Some Contracts files intentionally group closely related DTO/projection records.
 - Naming: PascalCase (types/methods), camelCase (locals/params), interfaces prefixed with `I`, async methods end with
   `Async`.
 - EF Core entity classes in `.Infrastructure.Sql` projects end with `Db` (tables unchanged).

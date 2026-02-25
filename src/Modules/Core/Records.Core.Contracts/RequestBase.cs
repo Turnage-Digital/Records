@@ -11,22 +11,6 @@ public interface IUserContextRequest
     UlidId GetUserUlid();
 }
 
-public abstract record RequestBase : IRequest, IUserContextRequest
-{
-    [JsonIgnore]
-    public string? UserId { get; set; }
-
-    public UlidId GetUserUlid()
-    {
-        if (string.IsNullOrWhiteSpace(UserId))
-        {
-            throw new InvalidOperationException("UserId was not populated.");
-        }
-
-        return UlidId.Parse(UserId);
-    }
-}
-
 public abstract record RequestBase<T> : IRequest<T>, IUserContextRequest
 {
     [JsonIgnore]

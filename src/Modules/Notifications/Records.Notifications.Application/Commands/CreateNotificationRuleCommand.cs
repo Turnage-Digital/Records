@@ -22,7 +22,6 @@ public sealed class CreateNotificationRuleRequest
 {
     public string RecordsetId { get; set; } = string.Empty;
     public string TenantId { get; set; } = string.Empty;
-    public string UserId { get; set; } = string.Empty;
     public NotificationTrigger Trigger { get; set; } = null!;
     public NotificationChannelConfig[] Channels { get; set; } = [];
     public NotificationSchedule Schedule { get; set; } = null!;
@@ -39,12 +38,21 @@ public sealed class CreateNotificationRuleCommandHandler(
         CancellationToken cancellationToken
     )
     {
+        var channels = request.Channels
+            .Select(channel => new NotificationChannelConfig
+            {
+                Type = channel.Type,
+                Address = channel.Address,
+                Settings = new Dictionary<string, string>(channel.Settings)
+            })
+            .ToArray();
+
         var rule = NotificationRule.Create(
             request.TenantId,
             request.RecordsetId,
             request.UserId,
             request.Trigger,
-            request.Channels,
+            channels,
             request.Schedule,
             request.TemplateId,
             request.IsActive,

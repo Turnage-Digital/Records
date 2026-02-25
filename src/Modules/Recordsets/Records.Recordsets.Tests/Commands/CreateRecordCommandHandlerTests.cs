@@ -37,23 +37,23 @@ public class CreateRecordCommandHandlerTests
 
     private sealed class FakeRecordsetsUnitOfWork : IRecordsetsUnitOfWork
     {
-        private readonly Recordset recordset;
+        private readonly Recordset _recordset;
 
         public FakeRecordsetsUnitOfWork(Recordset recordset)
         {
-            this.recordset = recordset;
+            _recordset = recordset;
         }
 
         public Record? AddedRecord { get; private set; }
 
         public Task<Recordset?> GetRecordsetByIdAsync(UlidId recordsetId, CancellationToken cancellationToken)
         {
-            return Task.FromResult<Recordset?>(recordset);
+            return Task.FromResult<Recordset?>(_recordset);
         }
 
         public Task<Recordset?> GetRecordsetByNameAsync(string name, CancellationToken cancellationToken)
         {
-            return Task.FromResult<Recordset?>(recordset);
+            return Task.FromResult<Recordset?>(_recordset);
         }
 
         public Task AddRecordsetAsync(Recordset recordset, CancellationToken cancellationToken)
