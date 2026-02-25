@@ -1,6 +1,6 @@
 using MediatR;
 
-namespace Records.App.Server.Services;
+namespace Records.App.ChangeFeed.EventHandlers;
 
 public sealed class ChangeFeedNotificationHandler<TNotification>(
     ChangeFeed feed

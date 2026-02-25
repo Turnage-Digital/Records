@@ -3,12 +3,12 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Threading.Channels;
 
-namespace Records.App.Server.Services;
+namespace Records.App.ChangeFeed;
 
 public sealed class ChangeFeed
 {
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
-    private readonly ConcurrentDictionary<Guid, Channel<string>> subscribers = new();
+    private readonly ConcurrentDictionary<Guid, Channel<string>> _subscribers = new();
 
     public async IAsyncEnumerable<string> Subscribe(
         [EnumeratorCancellation] CancellationToken cancellationToken = default
@@ -22,7 +22,7 @@ public sealed class ChangeFeed
             AllowSynchronousContinuations = false
         });
 
-        subscribers[subscriberId] = channel;
+        _subscribers[subscriberId] = channel;
 
         try
         {
@@ -39,7 +39,7 @@ public sealed class ChangeFeed
 
     public ValueTask PublishAsync(object @event, CancellationToken cancellationToken = default)
     {
-        if (subscribers.IsEmpty)
+        if (_subscribers.IsEmpty)
         {
             return ValueTask.CompletedTask;
         }
@@ -50,7 +50,7 @@ public sealed class ChangeFeed
             DateTimeOffset.UtcNow);
         var json = JsonSerializer.Serialize(payload, SerializerOptions);
 
-        foreach (var subscriber in subscribers.Values)
+        foreach (var subscriber in _subscribers.Values)
         {
             _ = subscriber.Writer.TryWrite(json);
         }
@@ -60,7 +60,7 @@ public sealed class ChangeFeed
 
     private void RemoveSubscriber(Guid subscriberId)
     {
-        if (subscribers.TryRemove(subscriberId, out var channel))
+        if (_subscribers.TryRemove(subscriberId, out var channel))
         {
             channel.Writer.TryComplete();
         }

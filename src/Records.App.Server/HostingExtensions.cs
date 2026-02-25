@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Records.App.ChangeFeed.Controllers;
+using Records.App.ChangeFeed.EventHandlers;
 using Records.App.Infrastructure.Security;
 using Records.App.Server.Services;
 using Records.Clocks.Application.Commands;
@@ -91,7 +93,8 @@ internal static class HostingExtensions
             .AddApplicationPart(typeof(UsersController).Assembly)
             .AddApplicationPart(typeof(RecordsetsController).Assembly)
             .AddApplicationPart(typeof(ClockDefinitionsController).Assembly)
-            .AddApplicationPart(typeof(NotificationsController).Assembly);
+            .AddApplicationPart(typeof(NotificationsController).Assembly)
+            .AddApplicationPart(typeof(ChangeStreamController).Assembly);
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
                                ?? throw new InvalidOperationException("Missing DefaultConnection connection string.");
@@ -121,7 +124,7 @@ internal static class HostingExtensions
             .AddEntityFrameworkStores<UsersDbContext>()
             .AddDefaultTokenProviders();
 
-        builder.Services.AddSingleton<ChangeFeed>();
+        builder.Services.AddSingleton<Records.App.ChangeFeed.ChangeFeed>();
         builder.Services.AddTransient(typeof(INotificationHandler<>), typeof(ChangeFeedNotificationHandler<>));
 
         builder.Services.AddRecordsAppSecurity();
@@ -153,14 +156,14 @@ internal static class HostingExtensions
                 .AddEndpointsApiExplorer()
                 .AddSwaggerGen();
 
-            builder.Services.AddHostedService<SeedData>();
+            builder.Services.AddHostedService<SeedDataService>();
         }
 
         if (!isTestingEnvironment)
         {
             builder.Services.AddHostedService<RecordsetMigrationDispatcherService>();
             builder.Services.AddHostedService<ClockWatchdogService>();
-            builder.Services.AddHostedService<DeferredDispatchProcessor>();
+            builder.Services.AddHostedService<DeferredDispatchService>();
             builder.Services.AddHostedService<NotificationProcessingService>();
         }
 

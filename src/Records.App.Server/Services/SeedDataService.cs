@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Records.App.Server.Services;
 using Records.Core.Domain.ValueObjects;
 using Records.Tenants.Domain;
 using Records.Tenants.Infrastructure.Sql;
@@ -10,13 +9,13 @@ using Records.Users.Domain;
 using Records.Users.Infrastructure.Sql;
 using Records.Users.Infrastructure.Sql.Entities;
 
-namespace Records.App.Server;
+namespace Records.App.Server.Services;
 
-public sealed class SeedData(
+public sealed class SeedDataService(
     IServiceScopeFactory scopeFactory,
     IHostEnvironment hostEnvironment,
     IOptions<DevelopmentSeedOptions> seedOptions,
-    ILogger<SeedData> logger
+    ILogger<SeedDataService> logger
 ) : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -196,4 +195,13 @@ public sealed class SeedData(
 
         await tenantsDbContext.SaveChangesAsync(cancellationToken);
     }
+}
+
+public sealed class DevelopmentSeedOptions
+{
+    public bool Enabled { get; set; }
+    public string GlobalAdminEmail { get; set; } = "admin@records.local";
+    public string GlobalAdminPassword { get; set; } = "ChangeMe123!";
+    public string GlobalAdminDisplayName { get; set; } = "Records Admin";
+    public string? TenantName { get; set; } = "Demo Tenant";
 }
