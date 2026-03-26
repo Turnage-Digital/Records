@@ -224,7 +224,6 @@ const CreateRecordsetPage = () => {
   const createRecordsetMutation = useMutation({
     mutationFn: async (result: RecordsetEditorSubmitResult) => {
       const { definition } = result;
-      const actorId = resolveActorUlid(auth.user);
       const request = new Request("/api/recordsets", {
         headers: {
           "Content-Type": "application/json",
@@ -235,8 +234,6 @@ const CreateRecordsetPage = () => {
           columns: definition.columns,
           statuses: definition.statuses,
           statusTransitions: definition.transitions,
-          createdBy: actorId,
-          createdAt: new Date().toISOString(),
         }),
       });
       const response = await fetch(request);

@@ -12,7 +12,7 @@ using Records.Clocks.Infrastructure.Sql;
 namespace Records.Clocks.Infrastructure.Sql.Migrations
 {
     [DbContext(typeof(ClocksDbContext))]
-    [Migration("20260326201248_InitialClocks")]
+    [Migration("20260326204939_InitialClocks")]
     partial class InitialClocks
     {
         /// <inheritdoc />

@@ -6,5 +6,5 @@ public sealed record RecordsetSummaryDto(
     UlidId RecordsetId,
     string Name,
     int ItemCount,
-    DateTimeOffset UpdatedAt
+    DateTimeOffset LastChangedAt
 );

@@ -55,6 +55,6 @@ public sealed class UpdateRecordCommandHandler(
                 request.Bag),
             cancellationToken);
 
-        await projectionWriter.UpdateLastUpdatedAsync(record.RecordsetId, request.UpdatedAt, cancellationToken);
+        await projectionWriter.UpdateLastChangedAsync(record.RecordsetId, request.UpdatedAt, cancellationToken);
     }
 }

@@ -13,7 +13,7 @@ public sealed class FailedNotificationsForRetryCriteria : QueryCriteria<Notifica
             n.DeliveryAttempts.Count < maxAttempts &&
             n.DeliveryAttempts.Max(a => a.AttemptedAt) < lastAttemptBefore);
 
-        ApplyOrderBy(n => n.CreatedAt);
+        ApplyOrderBy(n => n.Id);
         ApplyPaging(0, limit);
         AddInclude(n => n.DeliveryAttempts);
     }

@@ -20,10 +20,7 @@ public class NotificationDb
     public string ScheduleJson { get; set; } = "{}";
     public int Priority { get; set; }
     public int Status { get; set; }
-    public DateTime CreatedAt { get; set; }
     public DateTime? ScheduledFor { get; set; }
-    public DateTime? ProcessedAt { get; set; }
-    public DateTime? DeliveredAt { get; set; }
     public DateTime? ReadAt { get; set; }
     public string? CorrelationId { get; set; }
 

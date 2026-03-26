@@ -12,7 +12,7 @@ using Records.Notifications.Infrastructure.Sql;
 namespace Records.Notifications.Infrastructure.Sql.Migrations
 {
     [DbContext(typeof(NotificationsDbContext))]
-    [Migration("20260326201252_InitialNotifications")]
+    [Migration("20260326204944_InitialNotifications")]
     partial class InitialNotifications
     {
         /// <inheritdoc />
@@ -100,21 +100,12 @@ namespace Records.Notifications.Infrastructure.Sql.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("varchar(64)");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("DeliveredAt")
-                        .HasColumnType("datetime(6)");
-
                     b.Property<string>("NotificationRuleId")
                         .HasMaxLength(26)
                         .HasColumnType("varchar(26)");
 
                     b.Property<int>("Priority")
                         .HasColumnType("int");
-
-                    b.Property<DateTime?>("ProcessedAt")
-                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime?>("ReadAt")
                         .HasColumnType("datetime(6)");
@@ -176,8 +167,6 @@ namespace Records.Notifications.Infrastructure.Sql.Migrations
                     b.HasIndex("TenantId");
 
                     b.HasIndex("RecipientUserId", "ReadAt");
-
-                    b.HasIndex("Status", "CreatedAt");
 
                     b.HasIndex("Status", "ScheduledFor");
 

@@ -155,8 +155,8 @@ Implementation notes:
 
 Current problems:
 
-- several timestamps appear to exist mostly for history/read concerns
-- current state and audit state are mixed together
+- several timestamps existed mostly for history/read concerns
+- current state and audit state were mixed together in the aggregate and write table
 
 Target:
 
@@ -180,6 +180,11 @@ Implementation notes:
 
 - queue, delivery, bounce, cancel, and read history should come from events
 - inbox/read-model views can project whatever timestamps the API needs
+
+Status:
+
+- completed for aggregate state and write-table timestamps
+- notification reads now use projections for timing/history concerns and the write row for content payload only
 
 ## Future Aggregate Work
 
@@ -253,8 +258,18 @@ Completed so far:
 - `NotificationRule` create, update, and delete now emit explicit lifecycle events so audit lands in the event store.
 - notification-rule commands and controllers no longer carry synthetic audit actor/time inputs.
 - `NotificationsUnitOfWork` now persists notification-rule lifecycle events through the event store pipeline.
-- the local database and module migrations were regenerated with `ef-reset.ps1` after the `Clock`, `ClockDefinition`, and `NotificationRule` cleanup.
+- `Notification` no longer stores `CreatedAt`, `ProcessedAt`, or `DeliveredAt` in aggregate state or its write table.
+- notification inbox, detail, pending, retry, and history reads now use `NotificationProjectionDb` for timing/state concerns and use the write row only for content and recipient payload.
+- mark-read no longer pushes actor identity through aggregate state or notification events; ownership is enforced at the command boundary from the current request user.
+- notification query tests were updated to seed projection state explicitly, matching the new read-model contract.
+- `Recordset` no longer stores `CreatedBy`, `CreatedAt`, `UpdatedBy`, or `UpdatedAt` in aggregate state.
+- the `Recordsets` root write table no longer stores generic audit columns.
+- recordset create and schema-update commands/controllers/browser payloads no longer carry synthetic audit actor/time fields.
+- recordset summaries now use projection-only `LastChangedAt` instead of generic `UpdatedAt`.
+- recordset root history now reads the event stream instead of reconstructing history from row-audit columns.
+- recordset migration and seed paths were updated to use the new root contract without reintroducing generic audit.
+- the local database and module migrations were regenerated with `ef-reset.ps1` after the `Clock`, `ClockDefinition`, `NotificationRule`, `Notification`, and `Recordset` cleanup.
 
 Active next step:
 
-- apply the same exception test to `Notification`, then move on to `Recordset`
+- apply the same exception test to `Record`, especially row-audit-backed record history and record list DTO timestamps

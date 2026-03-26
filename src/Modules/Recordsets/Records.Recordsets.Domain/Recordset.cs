@@ -15,20 +15,14 @@ public sealed class Recordset : AggregateRoot
     {
     }
 
-    public Recordset(UlidId id, string name, UlidId createdBy, DateTimeOffset createdAt)
+    public Recordset(UlidId id, string name)
     {
         Id = id;
         Name = name;
-        CreatedBy = createdBy;
-        CreatedAt = createdAt;
     }
 
     public UlidId Id { get; }
     public string Name { get; private set; } = string.Empty;
-    public UlidId CreatedBy { get; }
-    public DateTimeOffset CreatedAt { get; }
-    public UlidId? UpdatedBy { get; private set; }
-    public DateTimeOffset? UpdatedAt { get; private set; }
 
     public IReadOnlyList<Column> Columns => _columns;
     public IReadOnlyList<Status> Statuses => _statuses;
@@ -37,18 +31,17 @@ public sealed class Recordset : AggregateRoot
     public static Recordset Create(
         UlidId id,
         string name,
-        UlidId createdBy,
-        DateTimeOffset createdAt,
         IReadOnlyList<Column> initialColumns,
         IReadOnlyList<Status> initialStatuses,
-        IReadOnlyList<StatusTransition> initialTransitions
+        IReadOnlyList<StatusTransition> initialTransitions,
+        DateTimeOffset occurredAt
     )
     {
-        var recordset = new Recordset(id, name, createdBy, createdAt);
+        var recordset = new Recordset(id, name);
         recordset._columns.AddRange(AssignStorageKeys(initialColumns));
         recordset._statuses.AddRange(initialStatuses);
         recordset._transitions.AddRange(initialTransitions);
-        recordset.AddDomainEvent(new RecordsetCreated(id, name, createdBy, createdAt));
+        recordset.AddDomainEvent(new RecordsetCreated(id, name, occurredAt));
         return recordset;
     }
 
@@ -56,32 +49,26 @@ public sealed class Recordset : AggregateRoot
         IReadOnlyList<Column> nextColumns,
         IReadOnlyList<Status> nextStatuses,
         IReadOnlyList<StatusTransition> nextTransitions,
-        UlidId updatedBy,
-        DateTimeOffset updatedAt
+        DateTimeOffset occurredAt
     )
     {
-        ApplySchema(nextColumns, nextStatuses, nextTransitions, updatedBy, updatedAt, true);
-        AddDomainEvent(new RecordsetUpdated(Id, updatedBy, updatedAt));
+        ApplySchema(nextColumns, nextStatuses, nextTransitions, true);
+        AddDomainEvent(new RecordsetUpdated(Id, occurredAt));
     }
 
-    public void Rename(string name, UlidId updatedBy, DateTimeOffset updatedAt)
+    public void Rename(string name, DateTimeOffset occurredAt)
     {
         Name = name;
-        UpdatedBy = updatedBy;
-        UpdatedAt = updatedAt;
-        AddDomainEvent(new RecordsetUpdated(Id, updatedBy, updatedAt));
+        AddDomainEvent(new RecordsetUpdated(Id, occurredAt));
     }
 
     public void LoadSchema(
         IReadOnlyList<Column> nextColumns,
         IReadOnlyList<Status> nextStatuses,
-        IReadOnlyList<StatusTransition> nextTransitions,
-        UlidId? updatedBy,
-        DateTimeOffset? updatedAt
+        IReadOnlyList<StatusTransition> nextTransitions
     )
     {
-        ApplySchema(nextColumns, nextStatuses, nextTransitions, updatedBy ?? CreatedBy, updatedAt ?? CreatedAt,
-            false);
+        ApplySchema(nextColumns, nextStatuses, nextTransitions, false);
         ClearDomainEvents();
     }
 
@@ -99,8 +86,6 @@ public sealed class Recordset : AggregateRoot
         IReadOnlyList<Column> nextColumns,
         IReadOnlyList<Status> nextStatuses,
         IReadOnlyList<StatusTransition> nextTransitions,
-        UlidId updatedBy,
-        DateTimeOffset updatedAt,
         bool assignStorageKeys
     )
     {
@@ -110,9 +95,6 @@ public sealed class Recordset : AggregateRoot
         _statuses.AddRange(nextStatuses);
         _transitions.Clear();
         _transitions.AddRange(nextTransitions);
-
-        UpdatedBy = updatedBy;
-        UpdatedAt = updatedAt;
     }
 
     private static List<Column> AssignStorageKeys(IEnumerable<Column> incoming)

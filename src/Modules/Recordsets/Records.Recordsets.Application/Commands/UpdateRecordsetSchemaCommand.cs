@@ -9,9 +9,7 @@ public sealed record UpdateRecordsetSchemaCommand(
     UlidId RecordsetId,
     IReadOnlyList<Column> Columns,
     IReadOnlyList<Status> Statuses,
-    IReadOnlyList<StatusTransition> StatusTransitions,
-    UlidId UpdatedBy,
-    DateTimeOffset UpdatedAt
+    IReadOnlyList<StatusTransition> StatusTransitions
 ) : IRequest;
 
 public sealed class UpdateRecordsetSchemaCommandHandler(
@@ -37,8 +35,7 @@ public sealed class UpdateRecordsetSchemaCommandHandler(
             request.Columns,
             request.Statuses,
             request.StatusTransitions,
-            request.UpdatedBy,
-            request.UpdatedAt
+            DateTimeOffset.UtcNow
         );
 
         await unitOfWork.UpdateRecordsetAsync(recordset, cancellationToken);

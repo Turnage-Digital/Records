@@ -56,14 +56,7 @@ public sealed class RecordsetsController(
         CancellationToken cancellationToken
     )
     {
-        var actorId = currentUserAccess.GetCurrentUserIdOrThrow();
-        var effectiveCommand = command with
-        {
-            CreatedBy = actorId,
-            CreatedAt = DateTimeOffset.UtcNow
-        };
-
-        var id = await mediator.Send(effectiveCommand, cancellationToken);
+        var id = await mediator.Send(command, cancellationToken);
         var recordset = await recordsetQueries.GetByIdAsync(id, cancellationToken);
 
         return recordset is null
@@ -108,14 +101,7 @@ public sealed class RecordsetsController(
             return BadRequest("Route recordsetId does not match payload.");
         }
 
-        var actorId = currentUserAccess.GetCurrentUserIdOrThrow();
-        var effectiveCommand = command with
-        {
-            UpdatedBy = actorId,
-            UpdatedAt = DateTimeOffset.UtcNow
-        };
-
-        await mediator.Send(effectiveCommand, cancellationToken);
+        await mediator.Send(command, cancellationToken);
         return NoContent();
     }
 

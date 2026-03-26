@@ -5,6 +5,5 @@ namespace Records.Recordsets.Domain.Events;
 
 public sealed record RecordsetUpdated(
     UlidId RecordsetId,
-    UlidId UpdatedBy,
-    DateTimeOffset UpdatedAt
+    DateTimeOffset OccurredAt
 ) : INotification;

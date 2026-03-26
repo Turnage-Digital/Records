@@ -13,11 +13,10 @@ public class UpdateRecordsetSchemaCommandHandlerTests
         var recordset = Recordset.Create(
             UlidId.NewUlid(),
             "Test",
-            UlidId.NewUlid(),
-            DateTimeOffset.UtcNow,
             [new Column { Name = "Name", Type = ColumnType.Text }],
             [new Status { Name = "Open", Color = "green" }],
-            [new StatusTransition { From = "Open", AllowedNext = ["Closed"] }]
+            [new StatusTransition { From = "Open", AllowedNext = ["Closed"] }],
+            DateTimeOffset.UtcNow
         );
 
         var unitOfWork = new FakeRecordsetsUnitOfWork(recordset);
@@ -27,9 +26,7 @@ public class UpdateRecordsetSchemaCommandHandlerTests
             recordset.Id,
             [new Column { Name = "Title", Type = ColumnType.Text }],
             [new Status { Name = "Open", Color = "green" }],
-            [new StatusTransition { From = "Open", AllowedNext = ["Closed"] }],
-            UlidId.NewUlid(),
-            DateTimeOffset.UtcNow
+            [new StatusTransition { From = "Open", AllowedNext = ["Closed"] }]
         ), CancellationToken.None);
 
         Assert.That(unitOfWork.UpdatedRecordset, Is.Not.Null);
@@ -41,11 +38,10 @@ public class UpdateRecordsetSchemaCommandHandlerTests
         var recordset = Recordset.Create(
             UlidId.NewUlid(),
             "Test",
-            UlidId.NewUlid(),
-            DateTimeOffset.UtcNow,
             [new Column { Name = "Amount", Type = ColumnType.Number, StorageKey = "amount" }],
             [new Status { Name = "Open", Color = "green" }],
-            [new StatusTransition { From = "Open", AllowedNext = ["Closed"] }]
+            [new StatusTransition { From = "Open", AllowedNext = ["Closed"] }],
+            DateTimeOffset.UtcNow
         );
 
         var unitOfWork = new FakeRecordsetsUnitOfWork(recordset);
@@ -56,9 +52,7 @@ public class UpdateRecordsetSchemaCommandHandlerTests
                 recordset.Id,
                 [new Column { Name = "Amount", Type = ColumnType.Text, StorageKey = "amount" }],
                 [new Status { Name = "Open", Color = "green" }],
-                [new StatusTransition { From = "Open", AllowedNext = ["Closed"] }],
-                UlidId.NewUlid(),
-                DateTimeOffset.UtcNow
+                [new StatusTransition { From = "Open", AllowedNext = ["Closed"] }]
             ), CancellationToken.None));
     }
 
@@ -68,11 +62,10 @@ public class UpdateRecordsetSchemaCommandHandlerTests
         var recordset = Recordset.Create(
             UlidId.NewUlid(),
             "Test",
-            UlidId.NewUlid(),
-            DateTimeOffset.UtcNow,
             [new Column { Name = "Name", Type = ColumnType.Text, StorageKey = "name" }],
             [new Status { Name = "Open", Color = "green" }, new Status { Name = "Closed", Color = "gray" }],
-            [new StatusTransition { From = "Open", AllowedNext = ["Closed"] }]
+            [new StatusTransition { From = "Open", AllowedNext = ["Closed"] }],
+            DateTimeOffset.UtcNow
         );
 
         var unitOfWork = new FakeRecordsetsUnitOfWork(recordset);
@@ -83,9 +76,7 @@ public class UpdateRecordsetSchemaCommandHandlerTests
                 recordset.Id,
                 [new Column { Name = "Name", Type = ColumnType.Text, StorageKey = "name" }],
                 [new Status { Name = "Open", Color = "green" }],
-                [new StatusTransition { From = "Open", AllowedNext = ["Closed"] }],
-                UlidId.NewUlid(),
-                DateTimeOffset.UtcNow
+                [new StatusTransition { From = "Open", AllowedNext = ["Closed"] }]
             ), CancellationToken.None));
     }
 

@@ -71,21 +71,34 @@ public sealed class NotificationRepository(NotificationsDbContext context) : INo
         CancellationToken cancellationToken = default
     )
     {
-        var query = context.Notifications
+        var projectionQuery = context.NotificationProjections
+            .AsNoTracking()
             .Where(n => n.RecipientUserId == userId && n.ReadAt == null);
 
         if (before.HasValue)
         {
-            query = query.Where(n => n.CreatedAt <= before.Value.UtcDateTime);
+            projectionQuery = projectionQuery.Where(n => n.CreatedAt <= before.Value.UtcDateTime);
         }
 
         if (recordsetId.HasValue)
         {
             var recordsetKey = recordsetId.Value.ToString();
-            query = query.Where(n => n.RecordsetId == recordsetKey);
+            projectionQuery = projectionQuery.Where(n => n.RecordsetId == recordsetKey);
         }
 
-        var notifications = await query.ToListAsync(cancellationToken);
+        var notificationIds = await projectionQuery
+            .Select(n => n.Id)
+            .ToListAsync(cancellationToken);
+
+        if (notificationIds.Count == 0)
+        {
+            return;
+        }
+
+        var notifications = await context.Notifications
+            .Where(n => notificationIds.Contains(n.Id) && n.ReadAt == null)
+            .ToListAsync(cancellationToken);
+
         foreach (var notification in notifications)
         {
             notification.ReadAt = readAt.UtcDateTime;

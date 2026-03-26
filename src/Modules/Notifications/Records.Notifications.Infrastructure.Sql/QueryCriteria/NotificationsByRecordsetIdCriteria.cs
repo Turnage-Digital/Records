@@ -8,7 +8,7 @@ public sealed class NotificationsByRecordsetIdCriteria : QueryCriteria<Notificat
     public NotificationsByRecordsetIdCriteria(string recordsetId)
     {
         AddCriteria(n => n.RecordsetId == recordsetId);
-        ApplyOrderByDescending(n => n.CreatedAt);
+        ApplyOrderByDescending(n => n.Id);
         AddInclude(n => n.DeliveryAttempts);
     }
 }

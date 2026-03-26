@@ -24,10 +24,7 @@ public sealed class Notification : AggregateRoot
     public NotificationSchedule Schedule { get; private set; } = null!;
     public NotificationPriority Priority { get; private set; }
     public DeliveryStatus Status { get; private set; }
-    public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset? ScheduledFor { get; private set; }
-    public DateTimeOffset? ProcessedAt { get; private set; }
-    public DateTimeOffset? DeliveredAt { get; private set; }
     public DateTimeOffset? ReadAt { get; private set; }
     public string? CorrelationId { get; private set; }
     public IReadOnlyList<DeliveryAttempt> DeliveryAttempts => _deliveryAttempts.AsReadOnly();
@@ -44,10 +41,7 @@ public sealed class Notification : AggregateRoot
         NotificationSchedule schedule,
         NotificationPriority priority,
         DeliveryStatus status,
-        DateTimeOffset createdAt,
         DateTimeOffset? scheduledFor,
-        DateTimeOffset? processedAt,
-        DateTimeOffset? deliveredAt,
         DateTimeOffset? readAt,
         string? correlationId,
         IEnumerable<DeliveryAttempt> deliveryAttempts
@@ -66,10 +60,7 @@ public sealed class Notification : AggregateRoot
             Schedule = schedule,
             Priority = priority,
             Status = status,
-            CreatedAt = createdAt,
             ScheduledFor = scheduledFor,
-            ProcessedAt = processedAt,
-            DeliveredAt = deliveredAt,
             ReadAt = readAt,
             CorrelationId = correlationId
         };
@@ -105,7 +96,6 @@ public sealed class Notification : AggregateRoot
             Schedule = effectiveSchedule,
             Priority = priority,
             Status = DeliveryStatus.Pending,
-            CreatedAt = createdAt,
             ScheduledFor = scheduledFor,
             CorrelationId = correlationId
         };
@@ -140,7 +130,6 @@ public sealed class Notification : AggregateRoot
         EnsureCanQueue();
 
         Status = DeliveryStatus.Queued;
-        ProcessedAt = queuedAt;
 
         AddDomainEvent(new NotificationQueued(Id, queuedAt));
     }
@@ -160,7 +149,6 @@ public sealed class Notification : AggregateRoot
 
         _deliveryAttempts.Add(attempt);
         Status = DeliveryStatus.Delivered;
-        DeliveredAt = deliveredAt;
 
         AddDomainEvent(new NotificationDelivered(
             Id,
@@ -207,7 +195,7 @@ public sealed class Notification : AggregateRoot
         AddDomainEvent(new NotificationCancelled(Id, cancelledAt, reason));
     }
 
-    public void MarkRead(string userId, DateTimeOffset readAt)
+    public void MarkRead(DateTimeOffset readAt)
     {
         if (ReadAt.HasValue)
         {
@@ -215,7 +203,7 @@ public sealed class Notification : AggregateRoot
         }
 
         ReadAt = readAt;
-        AddDomainEvent(new NotificationRead(Id, userId, readAt));
+        AddDomainEvent(new NotificationRead(Id, readAt));
     }
 
     private static DateTimeOffset? ComputeScheduledTime(NotificationSchedule schedule, DateTimeOffset createdAt)

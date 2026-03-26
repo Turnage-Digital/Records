@@ -20,7 +20,7 @@ public sealed class RecordsetQueries(RecordsetsDbContext dbContext) : IRecordset
                 UlidId.Parse(x.RecordsetId),
                 x.Name,
                 x.ItemCount,
-                x.UpdatedAt
+                x.LastChangedAt
             ))
             .FirstOrDefaultAsync(cancellationToken);
     }
@@ -34,7 +34,7 @@ public sealed class RecordsetQueries(RecordsetsDbContext dbContext) : IRecordset
                 UlidId.Parse(x.RecordsetId),
                 x.Name,
                 x.ItemCount,
-                x.UpdatedAt
+                x.LastChangedAt
             ))
             .ToListAsync(cancellationToken);
     }

@@ -83,7 +83,7 @@ namespace Records.Recordsets.Infrastructure.Sql.Migrations
                     Name = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ItemCount = table.Column<int>(type: "int", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false)
+                    LastChangedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -98,13 +98,7 @@ namespace Records.Recordsets.Infrastructure.Sql.Migrations
                     Id = table.Column<string>(type: "varchar(26)", maxLength: 26, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Name = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedBy = table.Column<string>(type: "varchar(26)", maxLength: 26, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "varchar(26)", maxLength: 26, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {

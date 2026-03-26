@@ -47,10 +47,7 @@ public static class NotificationMapper
             schedule,
             (NotificationPriority)entity.Priority,
             (DeliveryStatus)entity.Status,
-            new DateTimeOffset(entity.CreatedAt, TimeSpan.Zero),
             entity.ScheduledFor.HasValue ? new DateTimeOffset(entity.ScheduledFor.Value, TimeSpan.Zero) : null,
-            entity.ProcessedAt.HasValue ? new DateTimeOffset(entity.ProcessedAt.Value, TimeSpan.Zero) : null,
-            entity.DeliveredAt.HasValue ? new DateTimeOffset(entity.DeliveredAt.Value, TimeSpan.Zero) : null,
             entity.ReadAt.HasValue ? new DateTimeOffset(entity.ReadAt.Value, TimeSpan.Zero) : null,
             entity.CorrelationId,
             attempts
@@ -79,10 +76,7 @@ public static class NotificationMapper
             ScheduleJson = Serialize(notification.Schedule),
             Priority = (int)notification.Priority,
             Status = (int)notification.Status,
-            CreatedAt = notification.CreatedAt.UtcDateTime,
             ScheduledFor = notification.ScheduledFor?.UtcDateTime,
-            ProcessedAt = notification.ProcessedAt?.UtcDateTime,
-            DeliveredAt = notification.DeliveredAt?.UtcDateTime,
             ReadAt = notification.ReadAt?.UtcDateTime,
             CorrelationId = notification.CorrelationId,
             DeliveryAttempts = notification.DeliveryAttempts
@@ -110,8 +104,6 @@ public static class NotificationMapper
         db.Priority = (int)notification.Priority;
         db.Status = (int)notification.Status;
         db.ScheduledFor = notification.ScheduledFor?.UtcDateTime;
-        db.ProcessedAt = notification.ProcessedAt?.UtcDateTime;
-        db.DeliveredAt = notification.DeliveredAt?.UtcDateTime;
         db.ReadAt = notification.ReadAt?.UtcDateTime;
         db.CorrelationId = notification.CorrelationId;
 

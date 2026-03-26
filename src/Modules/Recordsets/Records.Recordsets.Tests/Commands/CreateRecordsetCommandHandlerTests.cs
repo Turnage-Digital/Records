@@ -13,14 +13,11 @@ public class CreateRecordsetCommandHandlerTests
         var unitOfWork = new FakeRecordsetsUnitOfWork();
         var handler = new CreateRecordsetCommandHandler(unitOfWork);
 
-        var adminId = UlidId.NewUlid();
         var id = await handler.Handle(new CreateRecordsetCommand(
             "Test",
             [new Column { Name = "Name", Type = ColumnType.Text }],
             [new Status { Name = "Open", Color = "green" }],
-            [new StatusTransition { From = "Open", AllowedNext = ["Closed"] }],
-            adminId,
-            DateTimeOffset.UtcNow
+            [new StatusTransition { From = "Open", AllowedNext = ["Closed"] }]
         ), CancellationToken.None);
 
         Assert.That(id, Is.Not.EqualTo(default(UlidId)));

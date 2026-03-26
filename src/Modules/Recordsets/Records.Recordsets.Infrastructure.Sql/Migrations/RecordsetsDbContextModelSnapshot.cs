@@ -123,25 +123,10 @@ namespace Records.Recordsets.Infrastructure.Sql.Migrations
                         .HasMaxLength(26)
                         .HasColumnType("varchar(26)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasMaxLength(26)
-                        .HasColumnType("varchar(26)");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(26)
-                        .HasColumnType("varchar(26)");
 
                     b.HasKey("Id");
 
@@ -231,13 +216,13 @@ namespace Records.Recordsets.Infrastructure.Sql.Migrations
                     b.Property<int>("ItemCount")
                         .HasColumnType("int");
 
+                    b.Property<DateTimeOffset>("LastChangedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
 
                     b.HasKey("RecordsetId");
 

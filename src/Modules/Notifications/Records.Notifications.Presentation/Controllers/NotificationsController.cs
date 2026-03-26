@@ -125,18 +125,18 @@ public sealed class NotificationsController(
             return Unauthorized();
         }
 
-        var command = new MarkNotificationReadCommand(
-            notificationUlid,
-            currentUserId.ToString(),
-            DateTimeOffset.UtcNow);
+        var command = new MarkNotificationReadCommand(notificationUlid, DateTimeOffset.UtcNow);
         command.UserId = currentUserId.ToString();
 
         var result = await mediator.Send(command, cancellationToken);
         if (!result.IsSuccess)
         {
-            return result.Error == ResultErrors.NotFound
-                ? NotFound()
-                : BadRequest(result.Error);
+            return result.Error switch
+            {
+                ResultErrors.NotFound => NotFound(),
+                ResultErrors.Forbidden => Unauthorized(),
+                _ => BadRequest(result.Error)
+            };
         }
 
         return NoContent();

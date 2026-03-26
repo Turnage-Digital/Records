@@ -17,16 +17,12 @@ public static class RecordsetMapper
     {
         var domain = new Recordset(
             UlidId.Parse(recordset.Id),
-            recordset.Name,
-            UlidId.Parse(recordset.CreatedBy),
-            recordset.CreatedAt);
+            recordset.Name);
 
         domain.LoadSchema(
             columns.Select(ToColumn).ToList(),
             statuses.Select(ToStatus).ToList(),
-            transitions.Select(ToTransition).ToList(),
-            recordset.UpdatedBy is null ? null : UlidId.Parse(recordset.UpdatedBy),
-            recordset.UpdatedAt ?? recordset.CreatedAt
+            transitions.Select(ToTransition).ToList()
         );
 
         return domain;
@@ -37,11 +33,7 @@ public static class RecordsetMapper
         return new RecordsetDb
         {
             Id = recordset.Id.ToString(),
-            Name = recordset.Name,
-            CreatedBy = recordset.CreatedBy.ToString(),
-            CreatedAt = recordset.CreatedAt,
-            UpdatedBy = recordset.UpdatedBy?.ToString(),
-            UpdatedAt = recordset.UpdatedAt
+            Name = recordset.Name
         };
     }
 

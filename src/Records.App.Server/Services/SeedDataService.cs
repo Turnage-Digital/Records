@@ -712,11 +712,10 @@ public sealed class SeedDataService(
         var recordset = Recordset.Create(
             UlidId.NewUlid(),
             name,
-            ownerId,
-            createdAt,
             columns,
             statuses,
-            transitions);
+            transitions,
+            createdAt);
 
         await context.RecordsetsUnitOfWork.AddRecordsetAsync(recordset, cancellationToken);
         await context.RecordsetsUnitOfWork.SaveChangesAsync(cancellationToken);
@@ -733,7 +732,7 @@ public sealed class SeedDataService(
             await context.RecordsetsUnitOfWork.SaveChangesAsync(cancellationToken);
             await context.RecordsetProjectionWriter.UpdateItemCountAsync(recordset.Id, records.Count,
                 cancellationToken);
-            await context.RecordsetProjectionWriter.UpdateLastUpdatedAsync(
+            await context.RecordsetProjectionWriter.UpdateLastChangedAsync(
                 recordset.Id,
                 records.Max(x => x.CreatedAt),
                 cancellationToken);
@@ -876,7 +875,7 @@ public sealed class SeedDataService(
 
                 notification.MarkQueued(createdAt.AddHours(1));
                 notification.RecordDeliverySuccess(createdAt.AddHours(1).AddMinutes(1), "seed-inapp-students-002");
-                notification.MarkRead(erika.Id, createdAt.AddHours(9));
+                notification.MarkRead(createdAt.AddHours(9));
                 return notification;
             },
             cancellationToken);
@@ -1047,7 +1046,7 @@ public sealed class SeedDataService(
 
                 notification.MarkQueued(createdAt.AddMinutes(11));
                 notification.RecordDeliverySuccess(createdAt.AddMinutes(12), "seed-inapp-projects-002");
-                notification.MarkRead(erika.Id, createdAt.AddHours(2));
+                notification.MarkRead(createdAt.AddHours(2));
                 return notification;
             },
             cancellationToken);

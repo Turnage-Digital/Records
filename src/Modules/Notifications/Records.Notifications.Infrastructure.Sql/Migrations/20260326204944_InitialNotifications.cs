@@ -116,10 +116,7 @@ namespace Records.Notifications.Infrastructure.Sql.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Priority = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     ScheduledFor = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    ProcessedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    DeliveredAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     ReadAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     CorrelationId = table.Column<string>(type: "varchar(64)", maxLength: 64, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4")
@@ -255,11 +252,6 @@ namespace Records.Notifications.Infrastructure.Sql.Migrations
                 name: "IX_Notifications_Status",
                 table: "Notifications",
                 column: "Status");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Notifications_Status_CreatedAt",
-                table: "Notifications",
-                columns: new[] { "Status", "CreatedAt" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Notifications_Status_ScheduledFor",

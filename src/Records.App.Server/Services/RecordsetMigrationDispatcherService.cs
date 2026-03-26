@@ -303,7 +303,7 @@ public class RecordsetMigrationJobRunner(
 
         var backupName = await BuildUniqueBackupNameAsync(originalName, ct);
         var requestedBy = UlidId.Parse(job.RequestedBy);
-        recordset.Rename(backupName, requestedBy, DateTimeOffset.UtcNow);
+        recordset.Rename(backupName, DateTimeOffset.UtcNow);
         await unitOfWork.UpdateRecordsetAsync(recordset, ct);
         await unitOfWork.SaveChangesAsync(ct);
 
@@ -318,11 +318,10 @@ public class RecordsetMigrationJobRunner(
         var newRecordset = Recordset.Create(
             UlidId.NewUlid(),
             originalName,
-            requestedBy,
-            DateTimeOffset.UtcNow,
             context.Columns,
             context.Statuses,
-            context.StatusTransitions);
+            context.StatusTransitions,
+            DateTimeOffset.UtcNow);
 
         await unitOfWork.AddRecordsetAsync(newRecordset, ct);
         await unitOfWork.SaveChangesAsync(ct);

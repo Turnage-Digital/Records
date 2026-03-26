@@ -97,21 +97,12 @@ namespace Records.Notifications.Infrastructure.Sql.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("varchar(64)");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("DeliveredAt")
-                        .HasColumnType("datetime(6)");
-
                     b.Property<string>("NotificationRuleId")
                         .HasMaxLength(26)
                         .HasColumnType("varchar(26)");
 
                     b.Property<int>("Priority")
                         .HasColumnType("int");
-
-                    b.Property<DateTime?>("ProcessedAt")
-                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime?>("ReadAt")
                         .HasColumnType("datetime(6)");
@@ -173,8 +164,6 @@ namespace Records.Notifications.Infrastructure.Sql.Migrations
                     b.HasIndex("TenantId");
 
                     b.HasIndex("RecipientUserId", "ReadAt");
-
-                    b.HasIndex("Status", "CreatedAt");
 
                     b.HasIndex("Status", "ScheduledFor");
 

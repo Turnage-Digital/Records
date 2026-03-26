@@ -6,6 +6,5 @@ namespace Records.Recordsets.Domain.Events;
 public sealed record RecordsetCreated(
     UlidId RecordsetId,
     string Name,
-    UlidId CreatedBy,
-    DateTimeOffset CreatedAt
+    DateTimeOffset OccurredAt
 ) : INotification;

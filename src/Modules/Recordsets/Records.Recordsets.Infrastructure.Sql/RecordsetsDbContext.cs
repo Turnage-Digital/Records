@@ -34,9 +34,6 @@ public class RecordsetsDbContext(DbContextOptions<RecordsetsDbContext> options)
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).HasMaxLength(26).IsRequired();
         builder.Property(x => x.Name).HasMaxLength(256).IsRequired();
-        builder.Property(x => x.CreatedBy).HasMaxLength(26).IsRequired();
-        builder.Property(x => x.CreatedAt).IsRequired();
-        builder.Property(x => x.UpdatedBy).HasMaxLength(26);
     }
 
     private static void ConfigureRecordsetColumns(EntityTypeBuilder<RecordsetColumnDb> builder)
@@ -90,7 +87,7 @@ public class RecordsetsDbContext(DbContextOptions<RecordsetsDbContext> options)
         builder.Property(x => x.RecordsetId).HasMaxLength(26).IsRequired();
         builder.Property(x => x.Name).HasMaxLength(256).IsRequired();
         builder.Property(x => x.ItemCount).IsRequired();
-        builder.Property(x => x.UpdatedAt).IsRequired();
+        builder.Property(x => x.LastChangedAt).IsRequired();
     }
 
     private static void ConfigureRecordsetMigrationJobs(EntityTypeBuilder<RecordsetMigrationJobDb> builder)

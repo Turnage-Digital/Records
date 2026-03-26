@@ -21,7 +21,7 @@ public sealed class RecordsetProjectionWriter(RecordsetsDbContext dbContext) : I
                 RecordsetId = recordsetKey,
                 Name = model.Name,
                 ItemCount = model.ItemCount,
-                UpdatedAt = model.UpdatedAt
+                LastChangedAt = model.LastChangedAt
             };
             dbContext.RecordsetProjections.Add(record);
         }
@@ -29,7 +29,7 @@ public sealed class RecordsetProjectionWriter(RecordsetsDbContext dbContext) : I
         {
             record.Name = model.Name;
             record.ItemCount = model.ItemCount;
-            record.UpdatedAt = model.UpdatedAt;
+            record.LastChangedAt = model.LastChangedAt;
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -46,13 +46,13 @@ public sealed class RecordsetProjectionWriter(RecordsetsDbContext dbContext) : I
         }
 
         record.ItemCount = itemCount;
-        record.UpdatedAt = DateTimeOffset.UtcNow;
+        record.LastChangedAt = DateTimeOffset.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateLastUpdatedAsync(
+    public async Task UpdateLastChangedAsync(
         UlidId recordsetId,
-        DateTimeOffset updatedAt,
+        DateTimeOffset lastChangedAt,
         CancellationToken cancellationToken
     )
     {
@@ -64,7 +64,7 @@ public sealed class RecordsetProjectionWriter(RecordsetsDbContext dbContext) : I
             return;
         }
 
-        record.UpdatedAt = updatedAt;
+        record.LastChangedAt = lastChangedAt;
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 

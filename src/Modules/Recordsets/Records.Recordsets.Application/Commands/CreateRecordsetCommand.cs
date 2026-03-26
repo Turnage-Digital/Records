@@ -9,9 +9,7 @@ public sealed record CreateRecordsetCommand(
     string Name,
     IReadOnlyList<Column> Columns,
     IReadOnlyList<Status> Statuses,
-    IReadOnlyList<StatusTransition> StatusTransitions,
-    UlidId CreatedBy,
-    DateTimeOffset CreatedAt
+    IReadOnlyList<StatusTransition> StatusTransitions
 ) : IRequest<UlidId>;
 
 public sealed class CreateRecordsetCommandHandler(
@@ -23,11 +21,10 @@ public sealed class CreateRecordsetCommandHandler(
         var recordset = Recordset.Create(
             UlidId.NewUlid(),
             request.Name.Trim(),
-            request.CreatedBy,
-            request.CreatedAt,
             request.Columns,
             request.Statuses,
-            request.StatusTransitions
+            request.StatusTransitions,
+            DateTimeOffset.UtcNow
         );
 
         await unitOfWork.AddRecordsetAsync(recordset, cancellationToken);

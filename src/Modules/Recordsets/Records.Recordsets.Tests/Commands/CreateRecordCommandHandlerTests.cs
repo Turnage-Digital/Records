@@ -15,11 +15,10 @@ public class CreateRecordCommandHandlerTests
         var recordset = Recordset.Create(
             UlidId.NewUlid(),
             "Test",
-            UlidId.NewUlid(),
-            DateTimeOffset.UtcNow,
             [new Column { Name = "Name", Type = ColumnType.Text }],
             [new Status { Name = "Open", Color = "green" }],
-            [new StatusTransition { From = "Open", AllowedNext = ["Closed"] }]
+            [new StatusTransition { From = "Open", AllowedNext = ["Closed"] }],
+            DateTimeOffset.UtcNow
         );
 
         var unitOfWork = new FakeRecordsetsUnitOfWork(recordset);
@@ -122,9 +121,9 @@ public class CreateRecordCommandHandlerTests
             return Task.CompletedTask;
         }
 
-        public Task UpdateLastUpdatedAsync(
+        public Task UpdateLastChangedAsync(
             UlidId recordsetId,
-            DateTimeOffset updatedAt,
+            DateTimeOffset lastChangedAt,
             CancellationToken cancellationToken
         )
         {

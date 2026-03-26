@@ -6,12 +6,12 @@ public interface IRecordsetProjectionWriter
 {
     Task UpsertAsync(RecordsetProjectionModel model, CancellationToken cancellationToken);
     Task UpdateItemCountAsync(UlidId recordsetId, int itemCount, CancellationToken cancellationToken);
-    Task UpdateLastUpdatedAsync(UlidId recordsetId, DateTimeOffset updatedAt, CancellationToken cancellationToken);
+    Task UpdateLastChangedAsync(UlidId recordsetId, DateTimeOffset lastChangedAt, CancellationToken cancellationToken);
 }
 
 public sealed record RecordsetProjectionModel(
     UlidId RecordsetId,
     string Name,
     int ItemCount,
-    DateTimeOffset UpdatedAt
+    DateTimeOffset LastChangedAt
 );

@@ -40,16 +40,12 @@ public class NotificationsDbContext(DbContextOptions<NotificationsDbContext> opt
         builder.Property(e => e.ContentTemplateDataJson).HasColumnType("JSON");
         builder.Property(e => e.ScheduleJson).HasColumnType("JSON");
         builder.Property(e => e.CorrelationId).HasMaxLength(64);
-        builder.Property(e => e.CreatedAt).HasColumnType("datetime(6)");
         builder.Property(e => e.ScheduledFor).HasColumnType("datetime(6)");
-        builder.Property(e => e.ProcessedAt).HasColumnType("datetime(6)");
-        builder.Property(e => e.DeliveredAt).HasColumnType("datetime(6)");
         builder.Property(e => e.ReadAt).HasColumnType("datetime(6)");
 
         builder.HasIndex(e => e.TenantId);
         builder.HasIndex(e => e.RecordsetId);
         builder.HasIndex(e => e.Status);
-        builder.HasIndex(e => new { e.Status, e.CreatedAt });
         builder.HasIndex(e => new { e.Status, e.ScheduledFor });
         builder.HasIndex(e => e.RecipientUserId);
         builder.HasIndex(e => new { e.RecipientUserId, e.ReadAt });

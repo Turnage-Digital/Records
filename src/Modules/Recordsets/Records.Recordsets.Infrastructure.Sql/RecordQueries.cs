@@ -2,15 +2,22 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
+using Records.Core.Contracts;
 using Records.Core.Domain.ValueObjects;
 using Records.Core.Infrastructure.Sql.QueryCriteria;
 using Records.Recordsets.Contracts.Dtos;
 using Records.Recordsets.Contracts.Queries;
+using Records.Recordsets.Domain.Events;
 using Records.Recordsets.Infrastructure.Sql.QueryCriteria;
 
 namespace Records.Recordsets.Infrastructure.Sql;
 
-public sealed class RecordQueries(RecordsetsDbContext dbContext) : IRecordQueries
+public sealed class RecordQueries(
+    RecordsetsDbContext dbContext,
+    IEventStore eventStore,
+    IDomainEventSerializer serializer,
+    ITenantContext? tenantContext = null
+) : IRecordQueries
 {
     private static readonly Regex FieldPathRegex = new(
         "^[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)*$",
@@ -154,45 +161,9 @@ public sealed class RecordQueries(RecordsetsDbContext dbContext) : IRecordQuerie
         CancellationToken cancellationToken
     )
     {
-        var recordsetKey = recordsetId.ToString();
-        var recordset = await dbContext.Recordsets
-            .AsNoTracking()
-            .ApplyCriteria(new RecordsetByIdCriteria(recordsetKey))
-            .FirstOrDefaultAsync(cancellationToken);
-        if (recordset is null)
-        {
-            return new HistoryPageDto
-            {
-                Items = [],
-                Page = page,
-                PageSize = pageSize,
-                Total = 0
-            };
-        }
-
-        var entries = new List<HistoryEntryDto>
-        {
-            new()
-            {
-                Type = "Created",
-                On = recordset.CreatedAt,
-                By = recordset.CreatedBy,
-                Bag = new { name = recordset.Name }
-            }
-        };
-
-        if (recordset.UpdatedAt.HasValue)
-        {
-            entries.Add(new HistoryEntryDto
-            {
-                Type = "Updated",
-                On = recordset.UpdatedAt.Value,
-                By = recordset.UpdatedBy,
-                Bag = new { name = recordset.Name }
-            });
-        }
-
-        var ordered = entries.OrderByDescending(x => x.On).ToArray();
+        var ordered = (await LoadRecordsetHistoryAsync(recordsetId, cancellationToken))
+            .OrderByDescending(x => x.On)
+            .ToArray();
         return new HistoryPageDto
         {
             Items = ordered.Skip(page * pageSize).Take(pageSize).ToArray(),
@@ -295,6 +266,68 @@ public sealed class RecordQueries(RecordsetsDbContext dbContext) : IRecordQuerie
                 .Select(segment => $"\"{segment}\""));
 
         return $"JSON_EXTRACT(i.BagJson, '{path}') {direction}, i.Id {direction}";
+    }
+
+    private async Task<IReadOnlyList<HistoryEntryDto>> LoadRecordsetHistoryAsync(
+        UlidId recordsetId,
+        CancellationToken cancellationToken
+    )
+    {
+        var events = new List<StoredEvent>();
+        var tenantId = string.IsNullOrWhiteSpace(tenantContext?.TenantId)
+            ? "*"
+            : tenantContext!.TenantId;
+        var streamId = $"Recordset:{recordsetId}";
+        long position = 0;
+
+        while (true)
+        {
+            var batch = await eventStore.ReadStreamAsync(tenantId, streamId, position, 128, cancellationToken);
+            if (batch.Count == 0)
+            {
+                break;
+            }
+
+            events.AddRange(batch);
+            position = batch[^1].Position;
+        }
+
+        return events
+            .Select(ToRecordsetHistoryEntry)
+            .Where(entry => entry is not null)
+            .Cast<HistoryEntryDto>()
+            .ToArray();
+    }
+
+    private HistoryEntryDto? ToRecordsetHistoryEntry(StoredEvent storedEvent)
+    {
+        var domainEvent = serializer.Deserialize(storedEvent.Payload, storedEvent.EventName);
+        return domainEvent switch
+        {
+            RecordsetCreated created => new HistoryEntryDto
+            {
+                Type = "Created",
+                On = ToOffset(storedEvent.CreatedAt),
+                By = storedEvent.ActorId,
+                Bag = new { name = created.Name }
+            },
+            RecordsetUpdated => new HistoryEntryDto
+            {
+                Type = "Updated",
+                On = ToOffset(storedEvent.CreatedAt),
+                By = storedEvent.ActorId
+            },
+            _ => null
+        };
+    }
+
+    private static DateTimeOffset ToOffset(DateTime createdAt)
+    {
+        var utcValue = createdAt.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(createdAt, DateTimeKind.Utc)
+            : createdAt.ToUniversalTime();
+
+        return new DateTimeOffset(utcValue);
     }
 
     private sealed class RecordPageRow

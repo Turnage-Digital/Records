@@ -17,7 +17,7 @@ public sealed class RecordsetProjectionHandler(
             notification.RecordsetId,
             notification.Name,
             0,
-            notification.CreatedAt
+            notification.OccurredAt
         );
 
         return projectionWriter.UpsertAsync(model, cancellationToken);
@@ -36,7 +36,7 @@ public sealed class RecordsetProjectionHandler(
             recordset.Id,
             recordset.Name,
             itemCount,
-            notification.UpdatedAt
+            notification.OccurredAt
         );
 
         await projectionWriter.UpsertAsync(model, cancellationToken);

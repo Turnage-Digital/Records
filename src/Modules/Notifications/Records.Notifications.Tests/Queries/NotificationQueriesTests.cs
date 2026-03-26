@@ -28,7 +28,6 @@ public sealed class NotificationQueriesTests
             ScheduleJson = "{}",
             Priority = 1,
             Status = (int)DeliveryStatus.Failed,
-            CreatedAt = now.AddMinutes(-20),
             DeliveryAttempts =
             [
                 new DeliveryAttemptDb
@@ -41,10 +40,21 @@ public sealed class NotificationQueriesTests
                 }
             ]
         });
+        dbContext.NotificationProjections.Add(new NotificationProjectionDb
+        {
+            Id = eligibleId,
+            TenantId = Ulid.NewUlid().ToString(),
+            TriggerType = (int)NotificationTriggerType.RecordUpdated,
+            Channel = (int)NotificationChannel.Email,
+            Status = (int)DeliveryStatus.Failed,
+            CreatedAt = now.AddMinutes(-20),
+            AttemptCount = 1
+        });
 
+        var notDueYetId = Ulid.NewUlid().ToString();
         dbContext.Notifications.Add(new NotificationDb
         {
-            Id = Ulid.NewUlid().ToString(),
+            Id = notDueYetId,
             TenantId = Ulid.NewUlid().ToString(),
             TriggerType = (int)NotificationTriggerType.RecordUpdated,
             Channel = (int)NotificationChannel.Email,
@@ -56,7 +66,6 @@ public sealed class NotificationQueriesTests
             ScheduleJson = "{}",
             Priority = 1,
             Status = (int)DeliveryStatus.Failed,
-            CreatedAt = now.AddMinutes(-19),
             DeliveryAttempts =
             [
                 new DeliveryAttemptDb
@@ -70,10 +79,21 @@ public sealed class NotificationQueriesTests
                 }
             ]
         });
+        dbContext.NotificationProjections.Add(new NotificationProjectionDb
+        {
+            Id = notDueYetId,
+            TenantId = Ulid.NewUlid().ToString(),
+            TriggerType = (int)NotificationTriggerType.RecordUpdated,
+            Channel = (int)NotificationChannel.Email,
+            Status = (int)DeliveryStatus.Failed,
+            CreatedAt = now.AddMinutes(-19),
+            AttemptCount = 1
+        });
 
+        var maxAttemptsId = Ulid.NewUlid().ToString();
         dbContext.Notifications.Add(new NotificationDb
         {
-            Id = Ulid.NewUlid().ToString(),
+            Id = maxAttemptsId,
             TenantId = Ulid.NewUlid().ToString(),
             TriggerType = (int)NotificationTriggerType.RecordUpdated,
             Channel = (int)NotificationChannel.Email,
@@ -85,7 +105,6 @@ public sealed class NotificationQueriesTests
             ScheduleJson = "{}",
             Priority = 1,
             Status = (int)DeliveryStatus.Failed,
-            CreatedAt = now.AddMinutes(-18),
             DeliveryAttempts =
             [
                 new DeliveryAttemptDb
@@ -114,10 +133,21 @@ public sealed class NotificationQueriesTests
                 }
             ]
         });
+        dbContext.NotificationProjections.Add(new NotificationProjectionDb
+        {
+            Id = maxAttemptsId,
+            TenantId = Ulid.NewUlid().ToString(),
+            TriggerType = (int)NotificationTriggerType.RecordUpdated,
+            Channel = (int)NotificationChannel.Email,
+            Status = (int)DeliveryStatus.Failed,
+            CreatedAt = now.AddMinutes(-18),
+            AttemptCount = 3
+        });
 
+        var noAttemptsId = Ulid.NewUlid().ToString();
         dbContext.Notifications.Add(new NotificationDb
         {
-            Id = Ulid.NewUlid().ToString(),
+            Id = noAttemptsId,
             TenantId = Ulid.NewUlid().ToString(),
             TriggerType = (int)NotificationTriggerType.RecordUpdated,
             Channel = (int)NotificationChannel.Email,
@@ -128,8 +158,17 @@ public sealed class NotificationQueriesTests
             RecipientMetadataJson = "{}",
             ScheduleJson = "{}",
             Priority = 1,
+            Status = (int)DeliveryStatus.Failed
+        });
+        dbContext.NotificationProjections.Add(new NotificationProjectionDb
+        {
+            Id = noAttemptsId,
+            TenantId = Ulid.NewUlid().ToString(),
+            TriggerType = (int)NotificationTriggerType.RecordUpdated,
+            Channel = (int)NotificationChannel.Email,
             Status = (int)DeliveryStatus.Failed,
-            CreatedAt = now.AddMinutes(-17)
+            CreatedAt = now.AddMinutes(-17),
+            AttemptCount = 0
         });
 
         await dbContext.SaveChangesAsync();

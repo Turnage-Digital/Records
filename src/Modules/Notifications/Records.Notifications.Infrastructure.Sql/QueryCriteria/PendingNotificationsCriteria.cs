@@ -12,7 +12,7 @@ public sealed class PendingNotificationsCriteria : QueryCriteria<NotificationDb>
             n.Status == (int)DeliveryStatus.Pending &&
             (n.ScheduledFor == null || n.ScheduledFor <= asOfUtc));
 
-        ApplyOrderBy(n => n.CreatedAt);
+        ApplyOrderBy(n => n.Id);
         ApplyPaging(0, limit);
         AddInclude(n => n.DeliveryAttempts);
     }

@@ -5,14 +5,17 @@ This document summarizes how each module exposes read models and how they are ke
 ## Recordsets
 
 - Read models are served from SQL tables in `Records.Recordsets.Infrastructure.Sql`.
-- `RecordsetProjectionDb` is updated by application commands (projection writer) after writes.
-- Record data is stored in `RecordDb` with JSON bags; queries read directly from that table.
+- `RecordsetProjectionDb` is updated by application commands after writes and now stores projection-only recency as `LastChangedAt`.
+- recordset summary queries read from `RecordsetProjectionDb`.
+- recordset root history reads from the event stream, not from the `Recordsets` write table.
+- record data is still stored in `RecordDb` with JSON bags, and record history currently still depends on `RecordDb` row audit.
 
 ## Notifications
 
 - Read models are stored in `NotificationProjectionDb` and delivery attempt tables.
 - `NotificationProjectionHandler` updates the projections from notification domain events.
-- Queries read from projection tables via `INotificationQueries` and `INotificationRuleQueries`.
+- `INotificationQueries` uses `NotificationProjectionDb` for timing, status, paging, and history concerns, and loads content payload from the notification write row by id.
+- `INotificationRuleQueries` reads notification-rule projections directly.
 
 ## Clocks
 

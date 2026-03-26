@@ -8,7 +8,6 @@ namespace Records.Notifications.Application.Commands;
 
 public sealed record MarkNotificationReadCommand(
     UlidId NotificationId,
-    string ReaderUserId,
     DateTimeOffset ReadAt
 ) : RequestBase<Result>;
 
@@ -21,6 +20,11 @@ public sealed class MarkNotificationReadCommandHandler(
         CancellationToken cancellationToken
     )
     {
+        if (string.IsNullOrWhiteSpace(request.UserId))
+        {
+            return Result.Fail(ResultErrors.Forbidden);
+        }
+
         var notification = await unitOfWork.Notifications.GetByIdAsync(
             request.NotificationId,
             cancellationToken);
@@ -30,7 +34,12 @@ public sealed class MarkNotificationReadCommandHandler(
             return Result.Fail(ResultErrors.NotFound);
         }
 
-        notification.MarkRead(request.ReaderUserId, request.ReadAt);
+        if (!string.Equals(notification.Recipient.UserId, request.UserId, StringComparison.Ordinal))
+        {
+            return Result.Fail(ResultErrors.Forbidden);
+        }
+
+        notification.MarkRead(request.ReadAt);
         await unitOfWork.Notifications.UpdateAsync(notification, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

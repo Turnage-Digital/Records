@@ -499,14 +499,11 @@ const EditRecordsetPage = () => {
   const updateRecordsetMutation = useMutation({
     mutationFn: async (result: RecordsetEditorSubmitResult) => {
       const { definition } = result;
-      const actorId = resolveActorUlid(auth.user);
       const updatePayload = {
         recordsetId,
         columns: definition.columns,
         statuses: definition.statuses,
         statusTransitions: definition.transitions,
-        updatedBy: actorId,
-        updatedAt: new Date().toISOString(),
       };
 
       const response = await fetch(`/api/recordsets/${recordsetId}/schema`, {
