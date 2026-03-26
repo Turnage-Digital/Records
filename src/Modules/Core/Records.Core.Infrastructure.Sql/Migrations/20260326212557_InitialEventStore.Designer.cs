@@ -12,7 +12,7 @@ using Records.Core.Infrastructure.Sql;
 namespace Records.Core.Infrastructure.Sql.Migrations
 {
     [DbContext(typeof(CoreDbContext))]
-    [Migration("20260326204918_InitialEventStore")]
+    [Migration("20260326212557_InitialEventStore")]
     partial class InitialEventStore
     {
         /// <inheritdoc />

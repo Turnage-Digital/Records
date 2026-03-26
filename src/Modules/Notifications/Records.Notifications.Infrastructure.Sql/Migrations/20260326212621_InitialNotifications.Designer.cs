@@ -12,7 +12,7 @@ using Records.Notifications.Infrastructure.Sql;
 namespace Records.Notifications.Infrastructure.Sql.Migrations
 {
     [DbContext(typeof(NotificationsDbContext))]
-    [Migration("20260326204944_InitialNotifications")]
+    [Migration("20260326212621_InitialNotifications")]
     partial class InitialNotifications
     {
         /// <inheritdoc />

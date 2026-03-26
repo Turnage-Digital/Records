@@ -7,9 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { useAuth } from "../auth";
 import { RecordEditor, Titlebar } from "../components";
-import { resolveActorUlid } from "../lib/identifiers";
 import { RecordItem } from "../models";
 import {
   recordQueryOptions,
@@ -17,7 +15,6 @@ import {
 } from "../query-options";
 
 const EditRecordPage = () => {
-  const auth = useAuth();
   const { recordsetId, recordId } = useParams<{
     recordsetId: string;
     recordId: string;
@@ -55,7 +52,6 @@ const EditRecordPage = () => {
 
   const updateRecordMutation = useMutation({
     mutationFn: async (recordPayload: RecordItem) => {
-      const actorId = resolveActorUlid(auth.user);
       const request = new Request(
         `/api/recordsets/${recordsetId}/records/${recordId}`,
         {
@@ -67,8 +63,6 @@ const EditRecordPage = () => {
             recordsetId,
             recordId: Number(recordId),
             bag: recordPayload.bag,
-            updatedBy: actorId,
-            updatedAt: new Date().toISOString(),
           }),
         },
       );

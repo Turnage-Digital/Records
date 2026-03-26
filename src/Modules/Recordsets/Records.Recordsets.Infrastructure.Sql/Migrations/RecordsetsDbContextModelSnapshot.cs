@@ -22,6 +22,46 @@ namespace Records.Recordsets.Infrastructure.Sql.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
+            modelBuilder.Entity("Records.Recordsets.Infrastructure.Sql.Entities.RecordActivityDb", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<string>("ActorId")
+                        .HasMaxLength(26)
+                        .HasColumnType("varchar(26)");
+
+                    b.Property<string>("BagJson")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<long>("RecordId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("RecordsetId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("varchar(26)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RecordId");
+
+                    b.HasIndex("RecordsetId", "RecordId", "OccurredAt");
+
+                    b.ToTable("RecordActivities", (string)null);
+                });
+
             modelBuilder.Entity("Records.Recordsets.Infrastructure.Sql.Entities.RecordDb", b =>
                 {
                     b.Property<long>("Id")
@@ -34,23 +74,8 @@ namespace Records.Recordsets.Infrastructure.Sql.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasMaxLength(26)
-                        .HasColumnType("varchar(26)");
-
                     b.Property<string>("RecordsetId")
                         .IsRequired()
-                        .HasMaxLength(26)
-                        .HasColumnType("varchar(26)");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("UpdatedBy")
                         .HasMaxLength(26)
                         .HasColumnType("varchar(26)");
 
@@ -295,6 +320,17 @@ namespace Records.Recordsets.Infrastructure.Sql.Migrations
                     b.HasIndex("RecordsetDbId");
 
                     b.ToTable("RecordsetStatusTransitions", (string)null);
+                });
+
+            modelBuilder.Entity("Records.Recordsets.Infrastructure.Sql.Entities.RecordActivityDb", b =>
+                {
+                    b.HasOne("Records.Recordsets.Infrastructure.Sql.Entities.RecordDb", "Record")
+                        .WithMany()
+                        .HasForeignKey("RecordId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Record");
                 });
 
             modelBuilder.Entity("Records.Recordsets.Infrastructure.Sql.Entities.RecordsetColumnDb", b =>

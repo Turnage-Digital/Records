@@ -14,7 +14,6 @@ namespace Records.Recordsets.Presentation.Controllers;
 [Route("api/recordsets")]
 public sealed class RecordsetsController(
     IMediator mediator,
-    ICurrentUserAccess currentUserAccess,
     IRecordsetQueries recordsetQueries,
     IRecordQueries recordQueries
 ) : ControllerBase
@@ -246,14 +245,7 @@ public sealed class RecordsetsController(
             return BadRequest("Route recordsetId does not match payload.");
         }
 
-        var actorId = currentUserAccess.GetCurrentUserIdOrThrow();
-        var effectiveCommand = command with
-        {
-            CreatedBy = actorId,
-            CreatedAt = DateTimeOffset.UtcNow
-        };
-
-        var result = await mediator.Send(effectiveCommand, cancellationToken);
+        var result = await mediator.Send(command, cancellationToken);
         return Created($"/api/recordsets/{recordsetId}/records/{result.RecordId}", result);
     }
 
@@ -276,14 +268,7 @@ public sealed class RecordsetsController(
             return BadRequest("Route identifiers do not match payload.");
         }
 
-        var actorId = currentUserAccess.GetCurrentUserIdOrThrow();
-        var effectiveCommand = command with
-        {
-            UpdatedBy = actorId,
-            UpdatedAt = DateTimeOffset.UtcNow
-        };
-
-        await mediator.Send(effectiveCommand, cancellationToken);
+        await mediator.Send(command, cancellationToken);
         return NoContent();
     }
 }

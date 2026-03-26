@@ -103,6 +103,11 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
             .ToListAsync(cancellationToken);
         _dbContext.RecordsetItems.RemoveRange(items);
 
+        var activities = await _dbContext.RecordActivities
+            .Where(x => x.RecordsetId == recordsetKey)
+            .ToListAsync(cancellationToken);
+        _dbContext.RecordActivities.RemoveRange(activities);
+
         var columns = await _dbContext.RecordsetColumns
             .ApplyCriteria(new RecordsetColumnsByRecordsetIdCriteria(recordsetKey))
             .ToListAsync(cancellationToken);
@@ -126,20 +131,37 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
         _dbContext.Recordsets.Remove(recordset);
     }
 
-    public async Task AddRecordAsync(Record record, CancellationToken cancellationToken)
+    public async Task AddRecordAsync(
+        Record record,
+        UlidId actorId,
+        DateTimeOffset occurredAt,
+        CancellationToken cancellationToken
+    )
     {
         var entity = new RecordDb
         {
             RecordsetId = record.RecordsetId.ToString(),
-            BagJson = JsonSerializer.Serialize(record.Bag),
-            CreatedBy = record.CreatedBy.ToString(),
-            CreatedAt = record.CreatedAt
+            BagJson = JsonSerializer.Serialize(record.Bag)
         };
         await _dbContext.RecordsetItems.AddAsync(entity, cancellationToken);
+        await _dbContext.RecordActivities.AddAsync(new RecordActivityDb
+        {
+            RecordsetId = record.RecordsetId.ToString(),
+            Record = entity,
+            ActionType = "Created",
+            ActorId = actorId.ToString(),
+            OccurredAt = occurredAt,
+            BagJson = entity.BagJson
+        }, cancellationToken);
         _pendingRecords.Add((record, entity));
     }
 
-    public async Task UpdateRecordAsync(Record record, CancellationToken cancellationToken)
+    public async Task UpdateRecordAsync(
+        Record record,
+        UlidId actorId,
+        DateTimeOffset occurredAt,
+        CancellationToken cancellationToken
+    )
     {
         var existing = await _dbContext.RecordsetItems
             .ApplyCriteria(new RecordsetItemByRecordsetIdAndIdCriteria(record.RecordsetId.ToString(), record.Id))
@@ -151,8 +173,15 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
         }
 
         existing.BagJson = JsonSerializer.Serialize(record.Bag);
-        existing.UpdatedBy = record.UpdatedBy?.ToString();
-        existing.UpdatedAt = record.UpdatedAt;
+        await _dbContext.RecordActivities.AddAsync(new RecordActivityDb
+        {
+            RecordsetId = record.RecordsetId.ToString(),
+            RecordId = existing.Id,
+            ActionType = "Updated",
+            ActorId = actorId.ToString(),
+            OccurredAt = occurredAt,
+            BagJson = existing.BagJson
+        }, cancellationToken);
     }
 
     public async Task<Record?> GetRecordByIdAsync(UlidId recordsetId, int recordId, CancellationToken cancellationToken)
@@ -168,16 +197,10 @@ public sealed class RecordsetsUnitOfWork : UnitOfWork<RecordsetsDbContext>, IRec
         }
 
         var bag = JsonSerializer.Deserialize<object>(item.BagJson) ?? new object();
-        var domainItem = new Record(
+        return new Record(
             (int)item.Id,
             UlidId.Parse(item.RecordsetId),
-            bag,
-            UlidId.Parse(item.CreatedBy),
-            item.CreatedAt);
-        domainItem.LoadUpdated(
-            item.UpdatedBy == null ? null : UlidId.Parse(item.UpdatedBy),
-            item.UpdatedAt);
-        return domainItem;
+            bag);
     }
 
     public Task<int> GetRecordCountAsync(UlidId recordsetId, CancellationToken cancellationToken)

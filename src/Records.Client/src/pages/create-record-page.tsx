@@ -9,14 +9,12 @@ import {
 } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { useAuth } from "../auth";
 import { RecordEditor, SmartPasteDialog, Titlebar } from "../components";
-import { extractRecordId, resolveActorUlid } from "../lib/identifiers";
+import { extractRecordId } from "../lib/identifiers";
 import { RecordItem } from "../models";
 import { recordsetItemDefinitionQueryOptions } from "../query-options";
 
 const CreateRecordPage = () => {
-  const auth = useAuth();
   const { recordsetId } = useParams<{ recordsetId: string }>();
   if (!recordsetId) {
     throw new Error("Recordset id is required");
@@ -54,7 +52,6 @@ const CreateRecordPage = () => {
 
   const createRecordMutation = useMutation({
     mutationFn: async (record: RecordItem) => {
-      const actorId = resolveActorUlid(auth.user);
       const request = new Request(`/api/recordsets/${recordsetId}/records`, {
         headers: {
           "Content-Type": "application/json",
@@ -63,8 +60,6 @@ const CreateRecordPage = () => {
         body: JSON.stringify({
           recordsetId,
           bag: record.bag,
-          createdBy: actorId,
-          createdAt: new Date().toISOString(),
         }),
       });
       const response = await fetch(request);

@@ -24,13 +24,7 @@ namespace Records.Recordsets.Infrastructure.Sql.Migrations
                     RecordsetId = table.Column<string>(type: "varchar(26)", maxLength: 26, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     BagJson = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedBy = table.Column<string>(type: "varchar(26)", maxLength: 26, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "varchar(26)", maxLength: 26, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
@@ -103,6 +97,35 @@ namespace Records.Recordsets.Infrastructure.Sql.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Recordsets", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "RecordActivities",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    RecordsetId = table.Column<string>(type: "varchar(26)", maxLength: 26, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RecordId = table.Column<long>(type: "bigint", nullable: false),
+                    ActionType = table.Column<string>(type: "varchar(32)", maxLength: 32, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ActorId = table.Column<string>(type: "varchar(26)", maxLength: 26, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    OccurredAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                    BagJson = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RecordActivities", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RecordActivities_RecordsetItems_RecordId",
+                        column: x => x.RecordId,
+                        principalTable: "RecordsetItems",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -193,6 +216,16 @@ namespace Records.Recordsets.Infrastructure.Sql.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateIndex(
+                name: "IX_RecordActivities_RecordId",
+                table: "RecordActivities",
+                column: "RecordId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RecordActivities_RecordsetId_RecordId_OccurredAt",
+                table: "RecordActivities",
+                columns: new[] { "RecordsetId", "RecordId", "OccurredAt" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RecordsetColumns_RecordsetDbId",
                 table: "RecordsetColumns",
                 column: "RecordsetDbId");
@@ -241,10 +274,10 @@ namespace Records.Recordsets.Infrastructure.Sql.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "RecordsetColumns");
+                name: "RecordActivities");
 
             migrationBuilder.DropTable(
-                name: "RecordsetItems");
+                name: "RecordsetColumns");
 
             migrationBuilder.DropTable(
                 name: "RecordsetMigrationJobs");
@@ -257,6 +290,9 @@ namespace Records.Recordsets.Infrastructure.Sql.Migrations
 
             migrationBuilder.DropTable(
                 name: "RecordsetStatusTransitions");
+
+            migrationBuilder.DropTable(
+                name: "RecordsetItems");
 
             migrationBuilder.DropTable(
                 name: "Recordsets");

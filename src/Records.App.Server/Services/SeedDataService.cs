@@ -586,7 +586,7 @@ public sealed class SeedDataService(
             columns,
             statuses,
             transitions,
-            recordset => BuildStudentRecords(recordset, ownerId, random, seededAt, 180),
+            recordset => BuildStudentRecords(recordset, random, seededAt, 180),
             cancellationToken);
     }
 
@@ -633,7 +633,7 @@ public sealed class SeedDataService(
             columns,
             statuses,
             transitions,
-            recordset => BuildProjectRecords(recordset, ownerId, random, seededAt, 96),
+            recordset => BuildProjectRecords(recordset, random, seededAt, 96),
             cancellationToken);
     }
 
@@ -683,7 +683,7 @@ public sealed class SeedDataService(
             columns,
             statuses,
             transitions,
-            recordset => BuildInventoryRecords(recordset, ownerId, random, seededAt, 120),
+            recordset => BuildInventoryRecords(recordset, random, seededAt, 120),
             cancellationToken);
     }
 
@@ -695,7 +695,7 @@ public sealed class SeedDataService(
         IReadOnlyList<Column> columns,
         IReadOnlyList<Status> statuses,
         IReadOnlyList<StatusTransition> transitions,
-        Func<Recordset, List<Record>> buildRecords,
+        Func<Recordset, List<SeedRecord>> buildRecords,
         CancellationToken cancellationToken
     )
     {
@@ -721,10 +721,14 @@ public sealed class SeedDataService(
         await context.RecordsetsUnitOfWork.SaveChangesAsync(cancellationToken);
 
         var records = buildRecords(recordset);
-        foreach (var record in records)
+        foreach (var seedRecord in records)
         {
-            context.RecordBagValidator.Validate(recordset, record.Bag);
-            await context.RecordsetsUnitOfWork.AddRecordAsync(record, cancellationToken);
+            context.RecordBagValidator.Validate(recordset, seedRecord.Record.Bag);
+            await context.RecordsetsUnitOfWork.AddRecordAsync(
+                seedRecord.Record,
+                ownerId,
+                seedRecord.OccurredAt,
+                cancellationToken);
         }
 
         if (records.Count > 0)
@@ -734,7 +738,7 @@ public sealed class SeedDataService(
                 cancellationToken);
             await context.RecordsetProjectionWriter.UpdateLastChangedAsync(
                 recordset.Id,
-                records.Max(x => x.CreatedAt),
+                records.Max(x => x.OccurredAt),
                 cancellationToken);
         }
 
@@ -743,7 +747,7 @@ public sealed class SeedDataService(
         return new SeededRecordset(
             recordset.Id,
             name,
-            records.Take(4).Select(x => x.Id).ToArray());
+            records.Take(4).Select(x => x.Record.Id).ToArray());
     }
 
     private async Task EnsureStudentsNotificationsAsync(
@@ -1361,15 +1365,14 @@ public sealed class SeedDataService(
             notificationRuleId);
     }
 
-    private static List<Record> BuildStudentRecords(
+    private static List<SeedRecord> BuildStudentRecords(
         Recordset recordset,
-        UlidId ownerId,
         Random random,
         DateTimeOffset seededAt,
         int count
     )
     {
-        var records = new List<Record>(count);
+        var records = new List<SeedRecord>(count);
 
         for (var i = 0; i < count; i++)
         {
@@ -1390,26 +1393,25 @@ public sealed class SeedDataService(
                 ["gpa"] = RandomDecimal(random, 2.0m, 4.0m)
             };
 
-            records.Add(new Record(
-                0,
-                recordset.Id,
-                bag,
-                ownerId,
+            records.Add(new SeedRecord(
+                new Record(
+                    0,
+                    recordset.Id,
+                    bag),
                 RandomPastDate(random, seededAt, 10, 240)));
         }
 
         return records;
     }
 
-    private static List<Record> BuildProjectRecords(
+    private static List<SeedRecord> BuildProjectRecords(
         Recordset recordset,
-        UlidId ownerId,
         Random random,
         DateTimeOffset seededAt,
         int count
     )
     {
-        var records = new List<Record>(count);
+        var records = new List<SeedRecord>(count);
 
         for (var i = 0; i < count; i++)
         {
@@ -1425,26 +1427,25 @@ public sealed class SeedDataService(
                 ["tags"] = string.Join(", ", PickDistinct(random, ProjectTagsPool, random.Next(1, 4)))
             };
 
-            records.Add(new Record(
-                0,
-                recordset.Id,
-                bag,
-                ownerId,
+            records.Add(new SeedRecord(
+                new Record(
+                    0,
+                    recordset.Id,
+                    bag),
                 RandomPastDate(random, seededAt, 5, 180)));
         }
 
         return records;
     }
 
-    private static List<Record> BuildInventoryRecords(
+    private static List<SeedRecord> BuildInventoryRecords(
         Recordset recordset,
-        UlidId ownerId,
         Random random,
         DateTimeOffset seededAt,
         int count
     )
     {
-        var records = new List<Record>(count);
+        var records = new List<SeedRecord>(count);
 
         for (var i = 0; i < count; i++)
         {
@@ -1467,11 +1468,11 @@ public sealed class SeedDataService(
                 ["notes"] = Chance(random, 0.45) ? Pick(random, InventoryNotes) : string.Empty
             };
 
-            records.Add(new Record(
-                0,
-                recordset.Id,
-                bag,
-                ownerId,
+            records.Add(new SeedRecord(
+                new Record(
+                    0,
+                    recordset.Id,
+                    bag),
                 RandomPastDate(random, seededAt, 3, 365)));
         }
 
@@ -1717,6 +1718,8 @@ public sealed class SeedDataService(
     );
 
     private sealed record UserSeed(string Email, string DisplayName);
+
+    private sealed record SeedRecord(Record Record, DateTimeOffset OccurredAt);
 
     private sealed record SeededRecordset(UlidId Id, string Name, int[] SampleRecordIds);
 }

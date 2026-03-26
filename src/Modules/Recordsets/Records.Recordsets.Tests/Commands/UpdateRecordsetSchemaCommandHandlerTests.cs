@@ -117,12 +117,22 @@ public class UpdateRecordsetSchemaCommandHandlerTests
             return Task.CompletedTask;
         }
 
-        public Task AddRecordAsync(Record record, CancellationToken cancellationToken)
+        public Task AddRecordAsync(
+            Record record,
+            UlidId actorId,
+            DateTimeOffset occurredAt,
+            CancellationToken cancellationToken
+        )
         {
             return Task.CompletedTask;
         }
 
-        public Task UpdateRecordAsync(Record record, CancellationToken cancellationToken)
+        public Task UpdateRecordAsync(
+            Record record,
+            UlidId actorId,
+            DateTimeOffset occurredAt,
+            CancellationToken cancellationToken
+        )
         {
             return Task.CompletedTask;
         }

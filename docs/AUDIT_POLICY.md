@@ -72,6 +72,14 @@ Implementation notes:
 
 - migrate history screens to event-store-backed projections
 - split vague "updated" behavior into explicit actions where the domain cares
+- `Record` is not an aggregate root today, so its durable history must come from an explicit activity model until it is promoted
+
+Status:
+
+- completed for `Recordset` and `Record` aggregate/domain state
+- recordset root history now comes from the event stream
+- record history now comes from explicit `RecordActivities`, not row-audit columns on `RecordDb`
+- record list/detail DTOs no longer expose generic create/update timestamps
 
 ### ClockDefinition
 
@@ -268,8 +276,13 @@ Completed so far:
 - recordset summaries now use projection-only `LastChangedAt` instead of generic `UpdatedAt`.
 - recordset root history now reads the event stream instead of reconstructing history from row-audit columns.
 - recordset migration and seed paths were updated to use the new root contract without reintroducing generic audit.
+- `Record` no longer stores `CreatedBy`, `CreatedAt`, `UpdatedBy`, or `UpdatedAt` in domain state or the `RecordDb` write table.
+- record create/update commands, handlers, controllers, tests, and browser payloads no longer carry synthetic record audit fields.
+- record create/update now stamp actor/time from request or job context into durable `RecordActivities` rows.
+- record list/detail DTOs no longer expose generic record timestamps.
+- record history now reads from `RecordActivities` instead of `RecordDb` row-audit columns.
 - the local database and module migrations were regenerated with `ef-reset.ps1` after the `Clock`, `ClockDefinition`, `NotificationRule`, `Notification`, and `Recordset` cleanup.
 
 Active next step:
 
-- apply the same exception test to `Record`, especially row-audit-backed record history and record list DTO timestamps
+- promote `Tenant` into a real aggregate root, then choose the `Users` direction under the same policy

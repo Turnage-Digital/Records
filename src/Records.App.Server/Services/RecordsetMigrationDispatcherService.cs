@@ -381,11 +381,9 @@ public class RecordsetMigrationJobRunner(
                 var newRecord = new Record(
                     0,
                     newRecordset.Id,
-                    transformedBag,
-                    requestedBy,
-                    DateTimeOffset.UtcNow);
+                    transformedBag);
 
-                await unitOfWork.AddRecordAsync(newRecord, ct);
+                await unitOfWork.AddRecordAsync(newRecord, requestedBy, DateTimeOffset.UtcNow, ct);
             }
 
             await unitOfWork.SaveChangesAsync(ct);

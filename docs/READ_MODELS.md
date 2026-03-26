@@ -8,7 +8,8 @@ This document summarizes how each module exposes read models and how they are ke
 - `RecordsetProjectionDb` is updated by application commands after writes and now stores projection-only recency as `LastChangedAt`.
 - recordset summary queries read from `RecordsetProjectionDb`.
 - recordset root history reads from the event stream, not from the `Recordsets` write table.
-- record data is still stored in `RecordDb` with JSON bags, and record history currently still depends on `RecordDb` row audit.
+- record data is still stored in `RecordDb` with JSON bags only; generic record audit columns are gone.
+- record history reads from `RecordActivityDb`, which stores explicit action rows with actor/time metadata for record create and update operations.
 
 ## Notifications
 

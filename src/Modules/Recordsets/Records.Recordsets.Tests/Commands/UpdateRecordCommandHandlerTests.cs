@@ -1,4 +1,5 @@
 using MediatR;
+using Records.Core.Contracts;
 using Records.Core.Domain.ValueObjects;
 using Records.Recordsets.Application.Commands;
 using Records.Recordsets.Contracts.Projections;
@@ -12,17 +13,23 @@ public class UpdateRecordCommandHandlerTests
     [Test]
     public async Task Handle_UpdatesRecord()
     {
-        var record = new Record(1, UlidId.NewUlid(), new { name = "old" }, UlidId.NewUlid(), DateTimeOffset.UtcNow);
+        var record = new Record(1, UlidId.NewUlid(), new { name = "old" });
         var unitOfWork = new FakeRecordsetsUnitOfWork(record);
         var bagValidator = new FakeBagValidator();
         var projectionWriter = new FakeProjectionWriter();
-        var handler = new UpdateRecordCommandHandler(unitOfWork, bagValidator, projectionWriter, new NoopPublisher());
+        var handler = new UpdateRecordCommandHandler(
+            unitOfWork,
+            bagValidator,
+            projectionWriter,
+            new NoopPublisher(),
+            new FakeTenantContext(UlidId.NewUlid()));
 
         await handler.Handle(
-            new UpdateRecordCommand(record.RecordsetId, record.Id, new { name = "new" }, UlidId.NewUlid(),
-                DateTimeOffset.UtcNow), CancellationToken.None);
+            new UpdateRecordCommand(record.RecordsetId, record.Id, new { name = "new" }),
+            CancellationToken.None);
 
         Assert.That(unitOfWork.UpdatedRecord, Is.Not.Null);
+        Assert.That(projectionWriter.LastChangedUpdated, Is.True);
     }
 
     private sealed class FakeRecordsetsUnitOfWork : IRecordsetsUnitOfWork
@@ -68,12 +75,22 @@ public class UpdateRecordCommandHandlerTests
             return Task.CompletedTask;
         }
 
-        public Task AddRecordAsync(Record record, CancellationToken cancellationToken)
+        public Task AddRecordAsync(
+            Record record,
+            UlidId actorId,
+            DateTimeOffset occurredAt,
+            CancellationToken cancellationToken
+        )
         {
             return Task.CompletedTask;
         }
 
-        public Task UpdateRecordAsync(Record record, CancellationToken cancellationToken)
+        public Task UpdateRecordAsync(
+            Record record,
+            UlidId actorId,
+            DateTimeOffset occurredAt,
+            CancellationToken cancellationToken
+        )
         {
             UpdatedRecord = record;
             return Task.CompletedTask;
@@ -117,6 +134,8 @@ public class UpdateRecordCommandHandlerTests
 
     private sealed class FakeProjectionWriter : IRecordsetProjectionWriter
     {
+        public bool LastChangedUpdated { get; private set; }
+
         public Task UpsertAsync(RecordsetProjectionModel model, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -133,6 +152,7 @@ public class UpdateRecordCommandHandlerTests
             CancellationToken cancellationToken
         )
         {
+            LastChangedUpdated = true;
             return Task.CompletedTask;
         }
     }
@@ -149,5 +169,11 @@ public class UpdateRecordCommandHandlerTests
         {
             return Task.CompletedTask;
         }
+    }
+
+    private sealed class FakeTenantContext(UlidId actorId) : ITenantContext
+    {
+        public string? TenantId => null;
+        public string? ActorId => actorId.ToString();
     }
 }

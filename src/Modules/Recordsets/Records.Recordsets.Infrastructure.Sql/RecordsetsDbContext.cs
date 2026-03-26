@@ -10,6 +10,7 @@ public class RecordsetsDbContext(DbContextOptions<RecordsetsDbContext> options)
 {
     public DbSet<RecordsetDb> Recordsets => Set<RecordsetDb>();
     public DbSet<RecordDb> RecordsetItems => Set<RecordDb>();
+    public DbSet<RecordActivityDb> RecordActivities => Set<RecordActivityDb>();
     public DbSet<RecordsetColumnDb> RecordsetColumns => Set<RecordsetColumnDb>();
     public DbSet<RecordsetStatusDb> RecordsetStatuses => Set<RecordsetStatusDb>();
     public DbSet<RecordsetStatusTransitionDb> RecordsetStatusTransitions => Set<RecordsetStatusTransitionDb>();
@@ -24,6 +25,7 @@ public class RecordsetsDbContext(DbContextOptions<RecordsetsDbContext> options)
         ConfigureRecordsetStatuses(modelBuilder.Entity<RecordsetStatusDb>());
         ConfigureRecordsetStatusTransitions(modelBuilder.Entity<RecordsetStatusTransitionDb>());
         ConfigureRecordsetItems(modelBuilder.Entity<RecordDb>());
+        ConfigureRecordActivities(modelBuilder.Entity<RecordActivityDb>());
         ConfigureRecordsetProjections(modelBuilder.Entity<RecordsetProjectionDb>());
         ConfigureRecordsetMigrationJobs(modelBuilder.Entity<RecordsetMigrationJobDb>());
     }
@@ -74,10 +76,23 @@ public class RecordsetsDbContext(DbContextOptions<RecordsetsDbContext> options)
         builder.HasKey(x => x.Id);
         builder.Property(x => x.RecordsetId).HasMaxLength(26).IsRequired();
         builder.Property(x => x.BagJson).HasColumnType("longtext");
-        builder.Property(x => x.CreatedBy).HasMaxLength(26).IsRequired();
-        builder.Property(x => x.CreatedAt).IsRequired();
-        builder.Property(x => x.UpdatedBy).HasMaxLength(26);
         builder.HasIndex(x => new { x.RecordsetId, x.Id }).IsUnique();
+    }
+
+    private static void ConfigureRecordActivities(EntityTypeBuilder<RecordActivityDb> builder)
+    {
+        builder.ToTable("RecordActivities");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.RecordsetId).HasMaxLength(26).IsRequired();
+        builder.Property(x => x.ActionType).HasMaxLength(32).IsRequired();
+        builder.Property(x => x.ActorId).HasMaxLength(26);
+        builder.Property(x => x.OccurredAt).IsRequired();
+        builder.Property(x => x.BagJson).HasColumnType("longtext");
+        builder.HasIndex(x => new { x.RecordsetId, x.RecordId, x.OccurredAt });
+        builder.HasOne(x => x.Record)
+            .WithMany()
+            .HasForeignKey(x => x.RecordId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 
     private static void ConfigureRecordsetProjections(EntityTypeBuilder<RecordsetProjectionDb> builder)

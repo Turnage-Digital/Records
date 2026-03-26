@@ -32,9 +32,7 @@ public sealed class RecordQueries(
             .Select(x => new RecordDto(
                 (int)x.Id,
                 UlidId.Parse(x.RecordsetId),
-                x.BagJson,
-                x.CreatedAt,
-                x.UpdatedAt
+                x.BagJson
             ))
             .FirstOrDefaultAsync(cancellationToken);
     }
@@ -45,13 +43,11 @@ public sealed class RecordQueries(
         return await dbContext.RecordsetItems
             .AsNoTracking()
             .ApplyCriteria(new RecordsetItemsByRecordsetIdCriteria(recordsetKey))
-            .OrderByDescending(x => x.CreatedAt)
+            .OrderByDescending(x => x.Id)
             .Select(x => new RecordDto(
                 (int)x.Id,
                 UlidId.Parse(x.RecordsetId),
-                x.BagJson,
-                x.CreatedAt,
-                x.UpdatedAt
+                x.BagJson
             ))
             .ToListAsync(cancellationToken);
     }
@@ -182,44 +178,32 @@ public sealed class RecordQueries(
     )
     {
         var recordsetKey = recordsetId.ToString();
-        var item = await dbContext.RecordsetItems
+        var activities = await dbContext.RecordActivities
             .AsNoTracking()
-            .ApplyCriteria(new RecordsetItemByRecordsetIdAndIdCriteria(recordsetKey, recordId))
-            .FirstOrDefaultAsync(cancellationToken);
-        if (item is null)
+            .Where(x => x.RecordsetId == recordsetKey && x.RecordId == recordId)
+            .OrderByDescending(x => x.OccurredAt)
+            .ThenByDescending(x => x.Id)
+            .ToListAsync(cancellationToken);
+        if (activities.Count == 0)
         {
             return null;
         }
 
-        var entries = new List<HistoryEntryDto>
-        {
-            new()
+        var entries = activities
+            .Select(activity => new HistoryEntryDto
             {
-                Type = "Created",
-                On = item.CreatedAt,
-                By = item.CreatedBy,
-                Bag = DeserializeBag(item.BagJson)
-            }
-        };
-
-        if (item.UpdatedAt.HasValue)
-        {
-            entries.Add(new HistoryEntryDto
-            {
-                Type = "Updated",
-                On = item.UpdatedAt.Value,
-                By = item.UpdatedBy,
-                Bag = DeserializeBag(item.BagJson)
-            });
-        }
-
-        var ordered = entries.OrderByDescending(x => x.On).ToArray();
+                Type = activity.ActionType,
+                On = activity.OccurredAt,
+                By = activity.ActorId,
+                Bag = DeserializeBag(activity.BagJson ?? "{}")
+            })
+            .ToArray();
         return new HistoryPageDto
         {
-            Items = ordered.Skip(page * pageSize).Take(pageSize).ToArray(),
+            Items = entries.Skip(page * pageSize).Take(pageSize).ToArray(),
             Page = page,
             PageSize = pageSize,
-            Total = ordered.Length
+            Total = entries.Length
         };
     }
 

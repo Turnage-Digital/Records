@@ -1,4 +1,5 @@
 using MediatR;
+using Records.Core.Contracts;
 using Records.Core.Domain.ValueObjects;
 using Records.Recordsets.Application.Commands;
 using Records.Recordsets.Contracts.Projections;
@@ -24,14 +25,20 @@ public class CreateRecordCommandHandlerTests
         var unitOfWork = new FakeRecordsetsUnitOfWork(recordset);
         var projectionWriter = new FakeProjectionWriter();
         var bagValidator = new FakeBagValidator();
-        var handler = new CreateRecordCommandHandler(unitOfWork, projectionWriter, bagValidator, new NoopPublisher());
+        var handler = new CreateRecordCommandHandler(
+            unitOfWork,
+            projectionWriter,
+            bagValidator,
+            new NoopPublisher(),
+            new FakeTenantContext(UlidId.NewUlid()));
 
         await handler.Handle(
-            new CreateRecordCommand(recordset.Id, new { name = "test" }, UlidId.NewUlid(), DateTimeOffset.UtcNow),
+            new CreateRecordCommand(recordset.Id, new { name = "test" }),
             CancellationToken.None);
 
         Assert.That(unitOfWork.AddedRecord, Is.Not.Null);
         Assert.That(projectionWriter.ItemCountUpdated, Is.True);
+        Assert.That(projectionWriter.LastChangedUpdated, Is.True);
     }
 
     private sealed class FakeRecordsetsUnitOfWork : IRecordsetsUnitOfWork
@@ -70,13 +77,23 @@ public class CreateRecordCommandHandlerTests
             return Task.CompletedTask;
         }
 
-        public Task AddRecordAsync(Record record, CancellationToken cancellationToken)
+        public Task AddRecordAsync(
+            Record record,
+            UlidId actorId,
+            DateTimeOffset occurredAt,
+            CancellationToken cancellationToken
+        )
         {
             AddedRecord = record;
             return Task.CompletedTask;
         }
 
-        public Task UpdateRecordAsync(Record record, CancellationToken cancellationToken)
+        public Task UpdateRecordAsync(
+            Record record,
+            UlidId actorId,
+            DateTimeOffset occurredAt,
+            CancellationToken cancellationToken
+        )
         {
             return Task.CompletedTask;
         }
@@ -109,6 +126,7 @@ public class CreateRecordCommandHandlerTests
     private sealed class FakeProjectionWriter : IRecordsetProjectionWriter
     {
         public bool ItemCountUpdated { get; private set; }
+        public bool LastChangedUpdated { get; private set; }
 
         public Task UpsertAsync(RecordsetProjectionModel model, CancellationToken cancellationToken)
         {
@@ -127,6 +145,7 @@ public class CreateRecordCommandHandlerTests
             CancellationToken cancellationToken
         )
         {
+            LastChangedUpdated = true;
             return Task.CompletedTask;
         }
     }
@@ -154,5 +173,11 @@ public class CreateRecordCommandHandlerTests
         {
             return Task.CompletedTask;
         }
+    }
+
+    private sealed class FakeTenantContext(UlidId actorId) : ITenantContext
+    {
+        public string? TenantId => null;
+        public string? ActorId => actorId.ToString();
     }
 }
