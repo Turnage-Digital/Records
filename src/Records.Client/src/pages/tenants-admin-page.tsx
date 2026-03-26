@@ -3,14 +3,13 @@ import * as React from "react";
 import { AddBusiness, Block } from "@mui/icons-material";
 import {
   Alert,
-  Box,
   Button,
   Chip,
-  Paper,
   Stack,
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -22,7 +21,7 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 
-import { Titlebar } from "../components";
+import { ConfirmDeleteDialog, PageSection, Titlebar } from "../components";
 import { TenantSummary } from "../models";
 import { tenantSummariesQueryOptions } from "../query-options";
 
@@ -35,6 +34,15 @@ const formatTimestamp = (value: string) => {
   return parsed.toLocaleString();
 };
 
+const compareTenants = (left: TenantSummary, right: TenantSummary) => {
+  const createdComparison = right.createdAt.localeCompare(left.createdAt);
+  if (createdComparison !== 0) {
+    return createdComparison;
+  }
+
+  return left.name.localeCompare(right.name);
+};
+
 const TenantsAdminPage = () => {
   const queryClient = useQueryClient();
   const tenantsQuery = useSuspenseQuery(tenantSummariesQueryOptions());
@@ -42,6 +50,8 @@ const TenantsAdminPage = () => {
   const [newTenantName, setNewTenantName] = React.useState("");
   const [createError, setCreateError] = React.useState<string | null>(null);
   const [disableError, setDisableError] = React.useState<string | null>(null);
+  const [tenantToDisable, setTenantToDisable] =
+    React.useState<TenantSummary | null>(null);
 
   const createTenantMutation = useMutation({
     mutationFn: async (name: string) => {
@@ -97,10 +107,7 @@ const TenantsAdminPage = () => {
   });
 
   const sortedTenants = React.useMemo(
-    () =>
-      [...tenantsQuery.data].sort((left, right) =>
-        right.createdAt.localeCompare(left.createdAt),
-      ),
+    () => [...tenantsQuery.data].sort(compareTenants),
     [tenantsQuery.data],
   );
 
@@ -137,7 +144,23 @@ const TenantsAdminPage = () => {
   };
 
   const handleDisableTenantClick = (tenant: TenantSummary) => {
-    handleDisableTenant(tenant).catch(() => undefined);
+    setTenantToDisable(tenant);
+  };
+
+  const handleConfirmDisableTenant = async () => {
+    if (!tenantToDisable) {
+      return;
+    }
+
+    try {
+      await handleDisableTenant(tenantToDisable);
+    } finally {
+      setTenantToDisable(null);
+    }
+  };
+
+  const handleCancelDisableTenant = () => {
+    setTenantToDisable(null);
   };
 
   const createErrorAlert = createError ? (
@@ -152,20 +175,25 @@ const TenantsAdminPage = () => {
 
   const noTenantsMessage =
     sortedTenants.length === 0 ? (
-      <Box sx={{ px: 3, py: 4 }}>
-        <Typography color="text.secondary">No tenants created yet.</Typography>
-      </Box>
+      <Typography color="text.secondary">No tenants created yet.</Typography>
     ) : null;
+
+  const disableTenantDialogDescription = tenantToDisable
+    ? `Disable tenant "${tenantToDisable.name}"? Users and tenant-scoped areas will lose access immediately.`
+    : "Disable this tenant?";
 
   return (
     <Stack spacing={3}>
-      <Titlebar title="Tenant Admin" />
+      <Titlebar title="Tenants" />
 
-      <Paper sx={{ p: 3 }}>
+      <PageSection
+        title="Create tenant"
+        description="Add a tenant before assigning tenant-scoped users, clocks, and records."
+      >
         <Stack
           component="form"
-          direction={{ xs: "column", md: "row" }}
           spacing={2}
+          direction={{ xs: "column", md: "row" }}
           onSubmit={handleCreateTenant}
           alignItems={{ xs: "stretch", md: "center" }}
         >
@@ -186,63 +214,82 @@ const TenantsAdminPage = () => {
           </Button>
         </Stack>
         {createErrorAlert}
-      </Paper>
+      </PageSection>
 
-      <Paper sx={{ p: 0 }}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Created</TableCell>
-              <TableCell align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sortedTenants.map((tenant) => {
-              const canDisable = tenant.status === "Active";
-              const statusColor = canDisable ? "success" : "default";
-              return (
-                <TableRow key={tenant.tenantId} hover>
-                  <TableCell>
-                    <Stack>
-                      <Typography variant="body2" fontWeight={600}>
-                        {tenant.name}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {tenant.tenantId}
-                      </Typography>
-                    </Stack>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      size="small"
-                      color={statusColor}
-                      label={tenant.status}
-                    />
-                  </TableCell>
-                  <TableCell>{formatTimestamp(tenant.createdAt)}</TableCell>
-                  <TableCell align="right">
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      size="small"
-                      startIcon={<Block />}
-                      disabled={!canDisable || disableTenantMutation.isPending}
-                      onClick={() => handleDisableTenantClick(tenant)}
-                    >
-                      Disable
-                    </Button>
-                  </TableCell>
+      <PageSection
+        title="Tenant directory"
+        description="Review tenant status and disable tenant access when needed."
+      >
+        <Stack spacing={2}>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Created</TableCell>
+                  <TableCell align="right">Actions</TableCell>
                 </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-        {noTenantsMessage}
-      </Paper>
+              </TableHead>
+              <TableBody>
+                {sortedTenants.map((tenant) => {
+                  const canDisable = tenant.status === "Active";
+                  const statusColor = canDisable ? "success" : "default";
+                  return (
+                    <TableRow key={tenant.tenantId} hover>
+                      <TableCell>
+                        <Stack>
+                          <Typography variant="body2" fontWeight={600}>
+                            {tenant.name}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {tenant.tenantId}
+                          </Typography>
+                        </Stack>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          size="small"
+                          color={statusColor}
+                          label={tenant.status}
+                        />
+                      </TableCell>
+                      <TableCell>{formatTimestamp(tenant.createdAt)}</TableCell>
+                      <TableCell align="right">
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          startIcon={<Block />}
+                          disabled={
+                            !canDisable || disableTenantMutation.isPending
+                          }
+                          onClick={() => handleDisableTenantClick(tenant)}
+                        >
+                          Disable
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          {noTenantsMessage}
+        </Stack>
+      </PageSection>
 
       {disableErrorAlert}
+
+      <ConfirmDeleteDialog
+        open={Boolean(tenantToDisable)}
+        title="Disable tenant"
+        description={disableTenantDialogDescription}
+        confirmLabel="Disable tenant"
+        confirmDisabled={disableTenantMutation.isPending}
+        onCancel={handleCancelDisableTenant}
+        onConfirm={handleConfirmDisableTenant}
+      />
     </Stack>
   );
 };

@@ -12,9 +12,7 @@ public sealed record UpdateNotificationRuleCommand(
     NotificationChannelConfig[] Channels,
     NotificationSchedule Schedule,
     string? TemplateId,
-    bool IsActive,
-    string UpdatedBy,
-    DateTimeOffset UpdatedAt
+    bool IsActive
 ) : IRequest<NotificationRuleDto>;
 
 public sealed class UpdateNotificationRuleRequest
@@ -55,9 +53,7 @@ public sealed class UpdateNotificationRuleCommandHandler(
             channels,
             request.Schedule,
             request.TemplateId,
-            request.IsActive,
-            request.UpdatedBy,
-            request.UpdatedAt
+            request.IsActive
         );
 
         await unitOfWork.NotificationRules.UpdateAsync(rule, cancellationToken);

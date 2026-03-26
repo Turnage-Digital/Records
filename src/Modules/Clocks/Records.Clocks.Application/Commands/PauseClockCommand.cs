@@ -7,7 +7,6 @@ namespace Records.Clocks.Application.Commands;
 public sealed record PauseClockCommand(
     UlidId ClockId,
     string Reason,
-    UlidId PausedBy,
     DateTimeOffset PausedAt
 ) : IRequest;
 

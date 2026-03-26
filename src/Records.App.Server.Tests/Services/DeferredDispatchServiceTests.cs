@@ -46,7 +46,7 @@ public sealed class DeferredDispatchServiceTests
             {
                 readCount++;
                 return readCount == 1
-                    ? (IReadOnlyList<StoredEvent>)[storedEvent]
+                    ? [storedEvent]
                     : [];
             });
 

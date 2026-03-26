@@ -46,7 +46,7 @@ public sealed class NotificationProcessingServiceTests
             {
                 pendingCalls++;
                 return pendingCalls == 1
-                    ? (IReadOnlyList<NotificationPendingDto>)[CreatePending(idA)]
+                    ? [CreatePending(idA)]
                     : [];
             });
 
@@ -61,7 +61,7 @@ public sealed class NotificationProcessingServiceTests
             {
                 retryCalls++;
                 return retryCalls == 1
-                    ? (IReadOnlyList<NotificationPendingDto>)[CreatePending(idA), CreatePending(idB)]
+                    ? [CreatePending(idA), CreatePending(idB)]
                     : [];
             });
 

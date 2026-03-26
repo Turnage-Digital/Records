@@ -2,6 +2,7 @@ using Records.Core.Domain.ValueObjects;
 
 namespace Records.Tenants.Domain;
 
+// TODO: Inherit AggregateRoot.
 public class Tenant
 {
     private Tenant()

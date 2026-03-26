@@ -3,18 +3,17 @@ import * as React from "react";
 import { Block, PersonAdd, Security } from "@mui/icons-material";
 import {
   Alert,
-  Box,
   Button,
   Chip,
   FormControl,
   InputLabel,
   MenuItem,
-  Paper,
   Select,
   Stack,
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -28,9 +27,9 @@ import {
 } from "@tanstack/react-query";
 
 import { useAuth } from "../auth";
-import { Titlebar } from "../components";
+import { ConfirmDeleteDialog, PageSection, Titlebar } from "../components";
 import { resolveActorUlid } from "../lib/identifiers";
-import { UserRole, UserSummary } from "../models";
+import { TenantSummary, UserRole, UserSummary } from "../models";
 import {
   tenantSummariesQueryOptions,
   userRoleMembershipsQueryOptions,
@@ -43,6 +42,14 @@ const roleDisplayNames: Record<UserRole, string> = {
   Operations: "Operations",
 };
 
+const roleOrder: Record<UserRole, number> = {
+  GlobalAdmin: 0,
+  TenantAdmin: 1,
+  Operations: 2,
+};
+
+const availableRoles: UserRole[] = ["GlobalAdmin", "TenantAdmin", "Operations"];
+
 const formatTimestamp = (value: string) => {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) {
@@ -54,6 +61,30 @@ const formatTimestamp = (value: string) => {
 
 const getInitialTenantId = (tenantIds: string[]) => tenantIds[0] ?? "";
 
+const getUserLabel = (user: UserSummary) => {
+  const displayName = user.displayName?.trim();
+  return displayName && displayName.length > 0 ? displayName : user.email;
+};
+
+const compareUsers = (left: UserSummary, right: UserSummary) => {
+  const labelComparison = getUserLabel(left).localeCompare(getUserLabel(right));
+  if (labelComparison !== 0) {
+    return labelComparison;
+  }
+
+  return left.email.localeCompare(right.email);
+};
+
+const compareTenants = (left: TenantSummary, right: TenantSummary) =>
+  left.name.localeCompare(right.name);
+
+interface RoleMembershipSelection {
+  userId: string;
+  userLabel: string;
+  role: UserRole;
+  tenantId?: string;
+}
+
 const UsersAdminPage = () => {
   const auth = useAuth();
   const actorId = resolveActorUlid(auth.user);
@@ -61,30 +92,42 @@ const UsersAdminPage = () => {
 
   const usersQuery = useSuspenseQuery(userSummariesQueryOptions());
   const tenantsQuery = useSuspenseQuery(tenantSummariesQueryOptions());
-  const tenantIds = tenantsQuery.data.map((tenant) => tenant.tenantId);
+  const sortedUsers = React.useMemo(
+    () => [...usersQuery.data].sort(compareUsers),
+    [usersQuery.data],
+  );
+  const sortedTenants = React.useMemo(
+    () => [...tenantsQuery.data].sort(compareTenants),
+    [tenantsQuery.data],
+  );
+  const tenantIds = sortedTenants.map((tenant) => tenant.tenantId);
+  const tenantNamesById = React.useMemo(
+    () =>
+      new Map(sortedTenants.map((tenant) => [tenant.tenantId, tenant.name])),
+    [sortedTenants],
+  );
   const fallbackTenantId = React.useMemo(
     () => getInitialTenantId(tenantIds),
     [tenantIds],
   );
 
   const [selectedUserId, setSelectedUserId] = React.useState<string | null>(
-    usersQuery.data[0]?.userId ?? null,
+    sortedUsers[0]?.userId ?? null,
   );
 
   React.useEffect(() => {
     if (
       selectedUserId &&
-      usersQuery.data.some((user) => user.userId === selectedUserId)
+      sortedUsers.some((user) => user.userId === selectedUserId)
     ) {
       return;
     }
-    setSelectedUserId(usersQuery.data[0]?.userId ?? null);
-  }, [selectedUserId, usersQuery.data]);
+    setSelectedUserId(sortedUsers[0]?.userId ?? null);
+  }, [selectedUserId, sortedUsers]);
 
   const selectedUser = React.useMemo(
-    () =>
-      usersQuery.data.find((user) => user.userId === selectedUserId) ?? null,
-    [selectedUserId, usersQuery.data],
+    () => sortedUsers.find((user) => user.userId === selectedUserId) ?? null,
+    [selectedUserId, sortedUsers],
   );
 
   const userRolesQuery = useQuery(
@@ -101,6 +144,11 @@ const UsersAdminPage = () => {
   const [grantTenantId, setGrantTenantId] = React.useState(fallbackTenantId);
   const [grantError, setGrantError] = React.useState<string | null>(null);
   const [suspendError, setSuspendError] = React.useState<string | null>(null);
+  const [userToSuspend, setUserToSuspend] = React.useState<UserSummary | null>(
+    null,
+  );
+  const [roleMembershipToRevoke, setRoleMembershipToRevoke] =
+    React.useState<RoleMembershipSelection | null>(null);
 
   React.useEffect(() => {
     if (inviteTenantId && tenantIds.includes(inviteTenantId)) {
@@ -312,7 +360,23 @@ const UsersAdminPage = () => {
   };
 
   const handleSuspendUserClick = (user: UserSummary) => {
-    handleSuspendUser(user).catch(() => undefined);
+    setUserToSuspend(user);
+  };
+
+  const handleConfirmSuspendUser = async () => {
+    if (!userToSuspend) {
+      return;
+    }
+
+    try {
+      await handleSuspendUser(userToSuspend);
+    } finally {
+      setUserToSuspend(null);
+    }
+  };
+
+  const handleCancelSuspendUser = () => {
+    setUserToSuspend(null);
   };
 
   const handleGrantRole = async () => {
@@ -346,17 +410,13 @@ const UsersAdminPage = () => {
     handleGrantRole().catch(() => undefined);
   };
 
-  const handleRevokeRole = async (role: UserRole, tenantId?: string) => {
-    if (!selectedUser) {
-      return;
-    }
-
+  const handleRevokeRole = async (membership: RoleMembershipSelection) => {
     setGrantError(null);
     try {
       await revokeRoleMutation.mutateAsync({
-        userId: selectedUser.userId,
-        role,
-        tenantId,
+        userId: membership.userId,
+        role: membership.role,
+        tenantId: membership.tenantId,
       });
     } catch (error) {
       setGrantError(
@@ -365,26 +425,40 @@ const UsersAdminPage = () => {
     }
   };
 
-  const handleRevokeRoleClick = (role: UserRole, tenantId?: string) => {
-    handleRevokeRole(role, tenantId).catch(() => undefined);
+  const handleRevokeRoleClick = (membership: RoleMembershipSelection) => {
+    setRoleMembershipToRevoke(membership);
   };
 
-  const inviteTenantDisabled = inviteRole === "GlobalAdmin";
+  const handleConfirmRevokeRole = async () => {
+    if (!roleMembershipToRevoke) {
+      return;
+    }
+
+    try {
+      await handleRevokeRole(roleMembershipToRevoke);
+    } finally {
+      setRoleMembershipToRevoke(null);
+    }
+  };
+
+  const handleCancelRevokeRole = () => {
+    setRoleMembershipToRevoke(null);
+  };
+
+  const inviteTenantDisabled =
+    inviteRole === "GlobalAdmin" || sortedTenants.length === 0;
   const inviteTenantValue = inviteTenantDisabled ? "" : inviteTenantId;
-  const grantTenantDisabled = grantRole === "GlobalAdmin";
+  const grantTenantDisabled =
+    grantRole === "GlobalAdmin" || sortedTenants.length === 0;
   const grantTenantValue = grantTenantDisabled ? "" : grantTenantId;
 
   const inviteErrorAlert = inviteError ? (
-    <Alert severity="error" sx={{ mt: 2 }}>
-      {inviteError}
-    </Alert>
+    <Alert severity="error">{inviteError}</Alert>
   ) : null;
 
   const usersEmptyState =
-    usersQuery.data.length === 0 ? (
-      <Box sx={{ px: 3, py: 4 }}>
-        <Typography color="text.secondary">No users found.</Typography>
-      </Box>
+    sortedUsers.length === 0 ? (
+      <Typography color="text.secondary">No users found.</Typography>
     ) : null;
 
   const suspendErrorAlert = suspendError ? (
@@ -392,39 +466,95 @@ const UsersAdminPage = () => {
   ) : null;
 
   const selectedUserCaption = selectedUser ? (
-    <Typography variant="body2" color="text.secondary">
-      {selectedUser.email}
-    </Typography>
+    <Stack spacing={0.25} alignItems={{ xs: "flex-start", md: "flex-end" }}>
+      <Typography variant="body2" fontWeight={600}>
+        {getUserLabel(selectedUser)}
+      </Typography>
+      <Typography variant="caption" color="text.secondary">
+        {selectedUser.email}
+      </Typography>
+    </Stack>
   ) : null;
 
   const grantErrorAlert = grantError ? (
     <Alert severity="error">{grantError}</Alert>
   ) : null;
 
-  const memberships = userRolesQuery.data ?? [];
-  const roleRows = memberships.map((membership) => (
-    <TableRow key={`${membership.role}:${membership.tenantId ?? "global"}`}>
-      <TableCell>{roleDisplayNames[membership.role]}</TableCell>
-      <TableCell>{membership.tenantId ?? "Global"}</TableCell>
-      <TableCell>{formatTimestamp(membership.grantedAt)}</TableCell>
-      <TableCell align="right">
-        <Button
-          size="small"
-          color="error"
-          variant="outlined"
-          disabled={revokeRoleMutation.isPending}
-          onClick={() =>
-            handleRevokeRoleClick(membership.role, membership.tenantId)
-          }
-        >
-          Revoke
-        </Button>
-      </TableCell>
-    </TableRow>
-  ));
+  const sortedMemberships = React.useMemo(() => {
+    const memberships = userRolesQuery.data ?? [];
+
+    return [...memberships].sort((left, right) => {
+      const roleComparison = roleOrder[left.role] - roleOrder[right.role];
+      if (roleComparison !== 0) {
+        return roleComparison;
+      }
+
+      const leftTenantLabel = left.tenantId
+        ? (tenantNamesById.get(left.tenantId) ?? left.tenantId)
+        : "Global";
+      const rightTenantLabel = right.tenantId
+        ? (tenantNamesById.get(right.tenantId) ?? right.tenantId)
+        : "Global";
+      return leftTenantLabel.localeCompare(rightTenantLabel);
+    });
+  }, [tenantNamesById, userRolesQuery.data]);
+
+  const tenantAvailabilityAlert =
+    sortedTenants.length === 0 ? (
+      <Alert severity="info">
+        Create a tenant to target tenant-scoped access.
+      </Alert>
+    ) : null;
+
+  const roleRows = sortedMemberships.map((membership) => {
+    const tenantCell = membership.tenantId ? (
+      <Stack spacing={0.25}>
+        <Typography variant="body2">
+          {tenantNamesById.get(membership.tenantId) ?? membership.tenantId}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {membership.tenantId}
+        </Typography>
+      </Stack>
+    ) : (
+      "Global"
+    );
+
+    const handleRevokeClick = () => {
+      if (!selectedUser) {
+        return;
+      }
+
+      handleRevokeRoleClick({
+        userId: selectedUser.userId,
+        userLabel: getUserLabel(selectedUser),
+        role: membership.role,
+        tenantId: membership.tenantId,
+      });
+    };
+
+    return (
+      <TableRow key={`${membership.role}:${membership.tenantId ?? "global"}`}>
+        <TableCell>{roleDisplayNames[membership.role]}</TableCell>
+        <TableCell>{tenantCell}</TableCell>
+        <TableCell>{formatTimestamp(membership.grantedAt)}</TableCell>
+        <TableCell align="right">
+          <Button
+            size="small"
+            color="error"
+            variant="outlined"
+            disabled={revokeRoleMutation.isPending}
+            onClick={handleRevokeClick}
+          >
+            Revoke
+          </Button>
+        </TableCell>
+      </TableRow>
+    );
+  });
 
   const noRoleMembershipRow =
-    memberships.length === 0 ? (
+    sortedMemberships.length === 0 ? (
       <TableRow>
         <TableCell colSpan={4}>
           <Typography color="text.secondary">
@@ -435,20 +565,22 @@ const UsersAdminPage = () => {
     ) : null;
 
   let roleMembershipsContent: React.ReactNode = (
-    <Table size="small">
-      <TableHead>
-        <TableRow>
-          <TableCell>Role</TableCell>
-          <TableCell>Tenant</TableCell>
-          <TableCell>Granted</TableCell>
-          <TableCell align="right">Actions</TableCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {roleRows}
-        {noRoleMembershipRow}
-      </TableBody>
-    </Table>
+    <TableContainer>
+      <Table size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell>Role</TableCell>
+            <TableCell>Tenant</TableCell>
+            <TableCell>Granted</TableCell>
+            <TableCell align="right">Actions</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {roleRows}
+          {noRoleMembershipRow}
+        </TableBody>
+      </Table>
+    </TableContainer>
   );
 
   if (!selectedUser) {
@@ -461,161 +593,184 @@ const UsersAdminPage = () => {
     roleMembershipsContent = (
       <Typography color="text.secondary">Loading roles...</Typography>
     );
+  } else if (userRolesQuery.isError) {
+    roleMembershipsContent = (
+      <Alert severity="error">
+        {userRolesQuery.error.message || "Failed to load role memberships."}
+      </Alert>
+    );
   }
+
+  const suspendUserDialogDescription = userToSuspend
+    ? `Suspend ${getUserLabel(userToSuspend)}? They will lose access until reactivated.`
+    : "Suspend this user?";
+  const revokeRoleDialogDescription = roleMembershipToRevoke
+    ? `Revoke ${roleDisplayNames[roleMembershipToRevoke.role]} access from ${roleMembershipToRevoke.userLabel}${
+        roleMembershipToRevoke.tenantId
+          ? ` for ${tenantNamesById.get(roleMembershipToRevoke.tenantId) ?? roleMembershipToRevoke.tenantId}`
+          : ""
+      }?`
+    : "Revoke this role?";
 
   return (
     <Stack spacing={3}>
-      <Titlebar title="Users Admin" />
+      <Titlebar title="Users" />
 
-      <Paper sx={{ p: 3 }}>
-        <Stack
-          component="form"
-          spacing={2}
-          onSubmit={handleInviteSubmit}
-          direction={{ xs: "column", lg: "row" }}
-          alignItems={{ xs: "stretch", lg: "center" }}
-        >
-          <TextField
-            label="Email"
-            type="email"
-            value={inviteEmail}
-            onChange={(event) => setInviteEmail(event.target.value)}
-            required
-            fullWidth
-          />
-          <TextField
-            label="Display name"
-            value={inviteDisplayName}
-            onChange={(event) => setInviteDisplayName(event.target.value)}
-            fullWidth
-          />
-          <FormControl sx={{ minWidth: 180 }}>
-            <InputLabel id="invite-role-label">Role</InputLabel>
-            <Select
-              labelId="invite-role-label"
-              value={inviteRole}
-              label="Role"
-              onChange={(event) =>
-                setInviteRole(event.target.value as UserRole)
-              }
-            >
-              <MenuItem value="GlobalAdmin">Global Admin</MenuItem>
-              <MenuItem value="TenantAdmin">Tenant Admin</MenuItem>
-              <MenuItem value="Operations">Operations</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl sx={{ minWidth: 220 }} disabled={inviteTenantDisabled}>
-            <InputLabel id="invite-tenant-label">Tenant</InputLabel>
-            <Select
-              labelId="invite-tenant-label"
-              value={inviteTenantValue}
-              label="Tenant"
-              onChange={(event) =>
-                setInviteTenantId(String(event.target.value))
-              }
-            >
-              {tenantsQuery.data.map((tenant) => (
-                <MenuItem key={tenant.tenantId} value={tenant.tenantId}>
-                  {tenant.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <Button
-            type="submit"
-            variant="contained"
-            startIcon={<PersonAdd />}
-            disabled={inviteUserMutation.isPending}
+      <PageSection
+        title="Invite user"
+        description="Send an invitation and assign the user's starting access."
+      >
+        <Stack spacing={2}>
+          <Stack
+            component="form"
+            spacing={2}
+            onSubmit={handleInviteSubmit}
+            direction={{ xs: "column", lg: "row" }}
+            alignItems={{ xs: "stretch", lg: "center" }}
           >
-            Invite user
-          </Button>
+            <TextField
+              label="Email"
+              type="email"
+              value={inviteEmail}
+              onChange={(event) => setInviteEmail(event.target.value)}
+              required
+              fullWidth
+            />
+            <TextField
+              label="Display name"
+              value={inviteDisplayName}
+              onChange={(event) => setInviteDisplayName(event.target.value)}
+              fullWidth
+            />
+            <FormControl sx={{ minWidth: 180 }}>
+              <InputLabel id="invite-role-label">Role</InputLabel>
+              <Select
+                labelId="invite-role-label"
+                value={inviteRole}
+                label="Role"
+                onChange={(event) =>
+                  setInviteRole(event.target.value as UserRole)
+                }
+              >
+                {availableRoles.map((role) => (
+                  <MenuItem key={role} value={role}>
+                    {roleDisplayNames[role]}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl sx={{ minWidth: 220 }} disabled={inviteTenantDisabled}>
+              <InputLabel id="invite-tenant-label">Tenant</InputLabel>
+              <Select
+                labelId="invite-tenant-label"
+                value={inviteTenantValue}
+                label="Tenant"
+                onChange={(event) =>
+                  setInviteTenantId(String(event.target.value))
+                }
+              >
+                {sortedTenants.map((tenant) => (
+                  <MenuItem key={tenant.tenantId} value={tenant.tenantId}>
+                    {tenant.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Button
+              type="submit"
+              variant="contained"
+              startIcon={<PersonAdd />}
+              disabled={inviteUserMutation.isPending}
+            >
+              Invite user
+            </Button>
+          </Stack>
+          {tenantAvailabilityAlert}
+          {inviteErrorAlert}
         </Stack>
-        {inviteErrorAlert}
-      </Paper>
+      </PageSection>
 
-      <Paper sx={{ p: 0 }}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>User</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {usersQuery.data.map((user) => {
-              const isSelected = user.userId === selectedUserId;
-              const userLabel = user.displayName
-                ? user.displayName
-                : user.email;
-              const statusColor =
-                user.status === "Suspended" ? "warning" : "default";
-              const disableSuspendAction =
-                user.status === "Suspended" || suspendUserMutation.isPending;
-
-              return (
-                <TableRow
-                  key={user.userId}
-                  hover
-                  selected={isSelected}
-                  onClick={() => setSelectedUserId(user.userId)}
-                  sx={{ cursor: "pointer" }}
-                >
-                  <TableCell>
-                    <Stack>
-                      <Typography variant="body2" fontWeight={600}>
-                        {userLabel}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {user.email}
-                      </Typography>
-                    </Stack>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      size="small"
-                      label={user.status}
-                      color={statusColor}
-                    />
-                  </TableCell>
-                  <TableCell align="right">
-                    <Button
-                      variant="outlined"
-                      color="warning"
-                      size="small"
-                      startIcon={<Block />}
-                      disabled={disableSuspendAction}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleSuspendUserClick(user);
-                      }}
-                    >
-                      Suspend
-                    </Button>
-                  </TableCell>
+      <PageSection
+        title="User directory"
+        description="Select a user to review their access or suspend their account."
+      >
+        <Stack spacing={2}>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>User</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell align="right">Actions</TableCell>
                 </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-        {usersEmptyState}
-      </Paper>
+              </TableHead>
+              <TableBody>
+                {sortedUsers.map((user) => {
+                  const isSelected = user.userId === selectedUserId;
+                  const statusColor =
+                    user.status === "Suspended" ? "warning" : "default";
+                  const disableSuspendAction =
+                    user.status === "Suspended" ||
+                    suspendUserMutation.isPending;
+
+                  return (
+                    <TableRow
+                      key={user.userId}
+                      hover
+                      selected={isSelected}
+                      onClick={() => setSelectedUserId(user.userId)}
+                      sx={{ cursor: "pointer" }}
+                    >
+                      <TableCell>
+                        <Stack>
+                          <Typography variant="body2" fontWeight={600}>
+                            {getUserLabel(user)}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {user.email}
+                          </Typography>
+                        </Stack>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          size="small"
+                          label={user.status}
+                          color={statusColor}
+                        />
+                      </TableCell>
+                      <TableCell align="right">
+                        <Button
+                          variant="outlined"
+                          color="warning"
+                          size="small"
+                          startIcon={<Block />}
+                          disabled={disableSuspendAction}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleSuspendUserClick(user);
+                          }}
+                        >
+                          Suspend
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          {usersEmptyState}
+        </Stack>
+      </PageSection>
 
       {suspendErrorAlert}
 
-      <Paper sx={{ p: 3 }}>
+      <PageSection
+        title="Role memberships"
+        description="Grant or revoke access for the selected user."
+        actions={selectedUserCaption}
+      >
         <Stack spacing={2}>
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            spacing={2}
-            alignItems={{ xs: "stretch", md: "center" }}
-          >
-            <Typography variant="h6" sx={{ flexGrow: 1 }}>
-              Role Memberships
-            </Typography>
-            {selectedUserCaption}
-          </Stack>
-
           <Stack
             spacing={2}
             direction={{ xs: "column", lg: "row" }}
@@ -631,9 +786,11 @@ const UsersAdminPage = () => {
                   setGrantRole(event.target.value as UserRole)
                 }
               >
-                <MenuItem value="GlobalAdmin">Global Admin</MenuItem>
-                <MenuItem value="TenantAdmin">Tenant Admin</MenuItem>
-                <MenuItem value="Operations">Operations</MenuItem>
+                {availableRoles.map((role) => (
+                  <MenuItem key={role} value={role}>
+                    {roleDisplayNames[role]}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
             <FormControl sx={{ minWidth: 220 }} disabled={grantTenantDisabled}>
@@ -646,7 +803,7 @@ const UsersAdminPage = () => {
                   setGrantTenantId(String(event.target.value))
                 }
               >
-                {tenantsQuery.data.map((tenant) => (
+                {sortedTenants.map((tenant) => (
                   <MenuItem key={tenant.tenantId} value={tenant.tenantId}>
                     {tenant.name}
                   </MenuItem>
@@ -663,10 +820,32 @@ const UsersAdminPage = () => {
             </Button>
           </Stack>
 
+          {tenantAvailabilityAlert}
           {grantErrorAlert}
           {roleMembershipsContent}
         </Stack>
-      </Paper>
+      </PageSection>
+
+      <ConfirmDeleteDialog
+        open={Boolean(userToSuspend)}
+        title="Suspend user"
+        description={suspendUserDialogDescription}
+        confirmLabel="Suspend user"
+        confirmColor="warning"
+        confirmDisabled={suspendUserMutation.isPending}
+        onCancel={handleCancelSuspendUser}
+        onConfirm={handleConfirmSuspendUser}
+      />
+
+      <ConfirmDeleteDialog
+        open={Boolean(roleMembershipToRevoke)}
+        title="Revoke role"
+        description={revokeRoleDialogDescription}
+        confirmLabel="Revoke role"
+        confirmDisabled={revokeRoleMutation.isPending}
+        onCancel={handleCancelRevokeRole}
+        onConfirm={handleConfirmRevokeRole}
+      />
     </Stack>
   );
 };

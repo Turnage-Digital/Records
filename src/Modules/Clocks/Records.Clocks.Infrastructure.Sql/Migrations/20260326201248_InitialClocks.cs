@@ -29,8 +29,7 @@ namespace Records.Clocks.Infrastructure.Sql.Migrations
                     AtRiskThresholdUnit = table.Column<int>(type: "int", nullable: false),
                     BreachThresholdValue = table.Column<int>(type: "int", nullable: false),
                     BreachThresholdUnit = table.Column<int>(type: "int", nullable: false),
-                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -52,13 +51,7 @@ namespace Records.Clocks.Infrastructure.Sql.Migrations
                     AtRiskThresholdUnit = table.Column<int>(type: "int", nullable: false),
                     BreachThresholdValue = table.Column<int>(type: "int", nullable: false),
                     BreachThresholdUnit = table.Column<int>(type: "int", nullable: false),
-                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    CreatedBy = table.Column<string>(type: "varchar(26)", maxLength: 26, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "varchar(26)", maxLength: 26, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
                 constraints: table =>
                 {

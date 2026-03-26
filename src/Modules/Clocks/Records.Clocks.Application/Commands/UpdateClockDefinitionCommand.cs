@@ -11,9 +11,7 @@ public sealed record UpdateClockDefinitionCommand(
     int AtRiskThresholdValue,
     ClockThresholdUnit AtRiskThresholdUnit,
     int BreachThresholdValue,
-    ClockThresholdUnit BreachThresholdUnit,
-    UlidId UpdatedBy,
-    DateTimeOffset UpdatedAt
+    ClockThresholdUnit BreachThresholdUnit
 ) : IRequest;
 
 public sealed class UpdateClockDefinitionCommandHandler(
@@ -31,9 +29,7 @@ public sealed class UpdateClockDefinitionCommandHandler(
         definition.Update(
             request.Name.Trim(),
             ClockThreshold.From(request.AtRiskThresholdValue, request.AtRiskThresholdUnit),
-            ClockThreshold.From(request.BreachThresholdValue, request.BreachThresholdUnit),
-            request.UpdatedBy,
-            request.UpdatedAt
+            ClockThreshold.From(request.BreachThresholdValue, request.BreachThresholdUnit)
         );
 
         await unitOfWork.ClockDefinitions.UpdateAsync(definition, cancellationToken);

@@ -18,11 +18,7 @@ public static class ClockDefinitionMapper
             AtRiskThresholdUnit = (int)definition.AtRiskThreshold.Unit,
             BreachThresholdValue = definition.BreachThreshold.Value,
             BreachThresholdUnit = (int)definition.BreachThreshold.Unit,
-            IsActive = definition.IsActive,
-            CreatedBy = definition.CreatedBy.ToString(),
-            CreatedAt = definition.CreatedAt.UtcDateTime,
-            UpdatedBy = definition.UpdatedBy?.ToString(),
-            UpdatedAt = definition.UpdatedAt?.UtcDateTime
+            IsActive = definition.IsActive
         };
     }
 
@@ -34,11 +30,7 @@ public static class ClockDefinitionMapper
             entity.Name,
             ClockThreshold.From(entity.AtRiskThresholdValue, (ClockThresholdUnit)entity.AtRiskThresholdUnit),
             ClockThreshold.From(entity.BreachThresholdValue, (ClockThresholdUnit)entity.BreachThresholdUnit),
-            entity.IsActive,
-            UlidId.Parse(entity.CreatedBy),
-            new DateTimeOffset(entity.CreatedAt, TimeSpan.Zero),
-            entity.UpdatedBy is null ? null : UlidId.Parse(entity.UpdatedBy),
-            entity.UpdatedAt.HasValue ? new DateTimeOffset(entity.UpdatedAt.Value, TimeSpan.Zero) : null
+            entity.IsActive
         );
     }
 }

@@ -23,6 +23,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{F50E38A2-1
 	ProjectSection(SolutionItems) = preProject
 		docs\ARCHITECTURE.md = docs\ARCHITECTURE.md
 		docs\PLAN.md = docs\PLAN.md
+		docs\AUDIT_POLICY.md = docs\AUDIT_POLICY.md
+		docs\DEPLOYMENT.md = docs\DEPLOYMENT.md
+		docs\INTEGRATION_EVENTS.md = docs\INTEGRATION_EVENTS.md
+		docs\PERF_SMOKE.md = docs\PERF_SMOKE.md
+		docs\READ_MODELS.md = docs\READ_MODELS.md
+		docs\RELEASE_CHECKLIST.md = docs\RELEASE_CHECKLIST.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{C8934328-46D7-4DEE-8103-709C8D0CDF5F}"

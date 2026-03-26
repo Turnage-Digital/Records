@@ -73,8 +73,7 @@ public sealed class NotificationRulesController(
             request.Channels,
             request.Schedule,
             request.TemplateId,
-            request.IsActive,
-            DateTimeOffset.UtcNow
+            request.IsActive
         );
 
         var result = await mediator.Send(command, cancellationToken);
@@ -93,7 +92,7 @@ public sealed class NotificationRulesController(
             return BadRequest("Invalid rule id format.");
         }
 
-        if (!currentUserAccess.TryGetCurrentUserId(out var currentUserId))
+        if (!currentUserAccess.TryGetCurrentUserId(out _))
         {
             return Unauthorized();
         }
@@ -121,9 +120,7 @@ public sealed class NotificationRulesController(
             request.Channels,
             request.Schedule,
             request.TemplateId,
-            request.IsActive,
-            currentUserId.ToString(),
-            DateTimeOffset.UtcNow
+            request.IsActive
         );
 
         var result = await mediator.Send(command, cancellationToken);
@@ -141,7 +138,7 @@ public sealed class NotificationRulesController(
             return BadRequest("Invalid rule id format.");
         }
 
-        if (!currentUserAccess.TryGetCurrentUserId(out var currentUserId))
+        if (!currentUserAccess.TryGetCurrentUserId(out _))
         {
             return Unauthorized();
         }
@@ -163,10 +160,7 @@ public sealed class NotificationRulesController(
             return Forbid();
         }
 
-        var command = new DeleteNotificationRuleCommand(
-            ruleUlid,
-            currentUserId.ToString(),
-            DateTimeOffset.UtcNow);
+        var command = new DeleteNotificationRuleCommand(ruleUlid);
         await mediator.Send(command, cancellationToken);
         return NoContent();
     }

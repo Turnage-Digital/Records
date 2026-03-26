@@ -131,7 +131,6 @@ const getPreferredTenantId = (
 
 const createClockDefinition = async (
   tenantId: string,
-  actorId: string,
   input: ClockDefinitionSubmission,
 ) => {
   const response = await fetch("/api/clock-definitions", {
@@ -146,8 +145,6 @@ const createClockDefinition = async (
       atRiskThresholdUnit: input.atRiskThresholdUnit,
       breachThresholdValue: input.breachThresholdValue,
       breachThresholdUnit: input.breachThresholdUnit,
-      createdBy: actorId,
-      createdAt: new Date().toISOString(),
     }),
   });
 
@@ -161,7 +158,6 @@ const createClockDefinition = async (
 
 const updateClockDefinition = async (
   definitionId: string,
-  actorId: string,
   input: ClockDefinitionSubmission,
 ) => {
   const response = await fetch(`/api/clock-definitions/${definitionId}`, {
@@ -176,8 +172,6 @@ const updateClockDefinition = async (
       atRiskThresholdUnit: input.atRiskThresholdUnit,
       breachThresholdValue: input.breachThresholdValue,
       breachThresholdUnit: input.breachThresholdUnit,
-      updatedBy: actorId,
-      updatedAt: new Date().toISOString(),
     }),
   });
 
@@ -189,10 +183,7 @@ const updateClockDefinition = async (
   }
 };
 
-const disableClockDefinition = async (
-  definitionId: string,
-  actorId: string,
-) => {
+const disableClockDefinition = async (definitionId: string) => {
   const response = await fetch(
     `/api/clock-definitions/${definitionId}/disable`,
     {
@@ -202,8 +193,6 @@ const disableClockDefinition = async (
       },
       body: JSON.stringify({
         definitionId,
-        updatedBy: actorId,
-        updatedAt: new Date().toISOString(),
       }),
     },
   );
@@ -473,7 +462,7 @@ const EditRecordsetPage = () => {
 
       await Promise.all(
         clockCreates.map((definition) =>
-          createClockDefinition(tenantId, actorId, definition),
+          createClockDefinition(tenantId, definition),
         ),
       );
     }
@@ -481,7 +470,7 @@ const EditRecordsetPage = () => {
     if (clockUpdates.length > 0) {
       await Promise.all(
         clockUpdates.map((definition) =>
-          updateClockDefinition(definition.id, actorId, definition),
+          updateClockDefinition(definition.id, definition),
         ),
       );
     }
@@ -489,7 +478,7 @@ const EditRecordsetPage = () => {
     if (disabledDefinitionIds.length > 0) {
       await Promise.all(
         disabledDefinitionIds.map((definitionId) =>
-          disableClockDefinition(definitionId, actorId),
+          disableClockDefinition(definitionId),
         ),
       );
     }

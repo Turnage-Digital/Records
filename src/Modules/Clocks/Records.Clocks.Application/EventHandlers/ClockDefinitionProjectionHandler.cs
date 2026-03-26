@@ -19,8 +19,7 @@ public sealed class ClockDefinitionProjectionHandler(IClockDefinitionProjectionW
             notification.AtRiskThreshold.Unit,
             notification.BreachThreshold.Value,
             notification.BreachThreshold.Unit,
-            true,
-            notification.CreatedAt
+            notification.IsActive
         );
 
         return writer.UpsertAsync(model, cancellationToken);
@@ -28,7 +27,7 @@ public sealed class ClockDefinitionProjectionHandler(IClockDefinitionProjectionW
 
     public Task Handle(ClockDefinitionDisabled notification, CancellationToken cancellationToken)
     {
-        return writer.DisableAsync(notification.DefinitionId, notification.UpdatedAt, cancellationToken);
+        return writer.DisableAsync(notification.DefinitionId, cancellationToken);
     }
 
     public Task Handle(ClockDefinitionUpdated notification, CancellationToken cancellationToken)
@@ -41,8 +40,7 @@ public sealed class ClockDefinitionProjectionHandler(IClockDefinitionProjectionW
             notification.AtRiskThreshold.Unit,
             notification.BreachThreshold.Value,
             notification.BreachThreshold.Unit,
-            true,
-            notification.UpdatedAt
+            notification.IsActive
         );
 
         return writer.UpsertAsync(model, cancellationToken);

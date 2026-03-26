@@ -27,8 +27,7 @@ public sealed class ClockDefinitionProjectionWriter(
                 AtRiskThresholdUnit = (int)model.AtRiskThresholdUnit,
                 BreachThresholdValue = model.BreachThresholdValue,
                 BreachThresholdUnit = (int)model.BreachThresholdUnit,
-                IsActive = model.IsActive,
-                UpdatedAt = model.UpdatedAt.UtcDateTime
+                IsActive = model.IsActive
             };
 
             dbContext.ClockDefinitionProjections.Add(record);
@@ -41,14 +40,13 @@ public sealed class ClockDefinitionProjectionWriter(
             record.BreachThresholdValue = model.BreachThresholdValue;
             record.BreachThresholdUnit = (int)model.BreachThresholdUnit;
             record.IsActive = model.IsActive;
-            record.UpdatedAt = model.UpdatedAt.UtcDateTime;
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
         logger.LogInformation("ClockDefinitionProjection upserted: {DefinitionId}", model.DefinitionId);
     }
 
-    public async Task DisableAsync(UlidId definitionId, DateTimeOffset updatedAt, CancellationToken cancellationToken)
+    public async Task DisableAsync(UlidId definitionId, CancellationToken cancellationToken)
     {
         var record = await dbContext.ClockDefinitionProjections
             .FirstOrDefaultAsync(x => x.Id == definitionId.ToString(), cancellationToken);
@@ -59,7 +57,6 @@ public sealed class ClockDefinitionProjectionWriter(
         }
 
         record.IsActive = false;
-        record.UpdatedAt = updatedAt.UtcDateTime;
 
         await dbContext.SaveChangesAsync(cancellationToken);
         logger.LogInformation("ClockDefinitionProjection disabled: {DefinitionId}", definitionId);

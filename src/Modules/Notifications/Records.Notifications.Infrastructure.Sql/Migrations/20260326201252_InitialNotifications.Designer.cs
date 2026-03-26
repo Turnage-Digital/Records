@@ -12,7 +12,7 @@ using Records.Notifications.Infrastructure.Sql;
 namespace Records.Notifications.Infrastructure.Sql.Migrations
 {
     [DbContext(typeof(NotificationsDbContext))]
-    [Migration("20260218164416_InitialNotifications")]
+    [Migration("20260326201252_InitialNotifications")]
     partial class InitialNotifications
     {
         /// <inheritdoc />
@@ -277,14 +277,6 @@ namespace Records.Notifications.Infrastructure.Sql.Migrations
                         .IsRequired()
                         .HasColumnType("JSON");
 
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("varchar(450)");
-
-                    b.Property<DateTime>("CreatedOn")
-                        .HasColumnType("datetime(6)");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)");
 
@@ -315,13 +307,6 @@ namespace Records.Notifications.Infrastructure.Sql.Migrations
 
                     b.Property<int>("TriggerType")
                         .HasColumnType("int");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(450)
-                        .HasColumnType("varchar(450)");
-
-                    b.Property<DateTime?>("UpdatedOn")
-                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("UserId")
                         .IsRequired()

@@ -6,7 +6,6 @@ namespace Records.Clocks.Application.Commands;
 
 public sealed record CompleteClockCommand(
     UlidId ClockId,
-    UlidId CompletedBy,
     DateTimeOffset CompletedAt
 ) : IRequest;
 

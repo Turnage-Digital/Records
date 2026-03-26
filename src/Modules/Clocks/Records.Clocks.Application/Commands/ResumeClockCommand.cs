@@ -6,7 +6,6 @@ namespace Records.Clocks.Application.Commands;
 
 public sealed record ResumeClockCommand(
     UlidId ClockId,
-    UlidId ResumedBy,
     DateTimeOffset ResumedAt
 ) : IRequest;
 

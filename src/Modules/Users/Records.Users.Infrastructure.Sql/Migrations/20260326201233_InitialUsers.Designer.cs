@@ -12,7 +12,7 @@ using Records.Users.Infrastructure.Sql;
 namespace Records.Users.Infrastructure.Sql.Migrations
 {
     [DbContext(typeof(UsersDbContext))]
-    [Migration("20260218164356_InitialUsers")]
+    [Migration("20260326201233_InitialUsers")]
     partial class InitialUsers
     {
         /// <inheritdoc />
@@ -157,7 +157,7 @@ namespace Records.Users.Infrastructure.Sql.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Records.Users.Domain.Entities.User", b =>
+            modelBuilder.Entity("Records.Users.Domain.User", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
@@ -300,7 +300,7 @@ namespace Records.Users.Infrastructure.Sql.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("Records.Users.Domain.Entities.User", null)
+                    b.HasOne("Records.Users.Domain.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -309,7 +309,7 @@ namespace Records.Users.Infrastructure.Sql.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("Records.Users.Domain.Entities.User", null)
+                    b.HasOne("Records.Users.Domain.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -324,7 +324,7 @@ namespace Records.Users.Infrastructure.Sql.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Records.Users.Domain.Entities.User", null)
+                    b.HasOne("Records.Users.Domain.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -333,7 +333,7 @@ namespace Records.Users.Infrastructure.Sql.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("Records.Users.Domain.Entities.User", null)
+                    b.HasOne("Records.Users.Domain.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)

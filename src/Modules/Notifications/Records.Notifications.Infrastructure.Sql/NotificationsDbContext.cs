@@ -122,10 +122,6 @@ public class NotificationsDbContext(DbContextOptions<NotificationsDbContext> opt
         builder.Property(e => e.ChannelsJson).HasColumnType("JSON");
         builder.Property(e => e.ScheduleJson).HasColumnType("JSON");
         builder.Property(e => e.TemplateId).HasMaxLength(128);
-        builder.Property(e => e.CreatedBy).HasMaxLength(450).IsRequired();
-        builder.Property(e => e.UpdatedBy).HasMaxLength(450);
-        builder.Property(e => e.CreatedOn).HasColumnType("datetime(6)");
-        builder.Property(e => e.UpdatedOn).HasColumnType("datetime(6)");
 
         builder.HasIndex(e => e.UserId);
         builder.HasIndex(e => e.RecordsetId);

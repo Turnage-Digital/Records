@@ -11,7 +11,5 @@ public sealed record ClockDefinitionDto(
     ClockThresholdUnit AtRiskThresholdUnit,
     int BreachThresholdValue,
     ClockThresholdUnit BreachThresholdUnit,
-    bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt
+    bool IsActive
 );

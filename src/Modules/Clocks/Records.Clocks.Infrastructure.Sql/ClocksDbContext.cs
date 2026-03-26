@@ -30,8 +30,6 @@ public sealed class ClocksDbContext(DbContextOptions<ClocksDbContext> options)
         builder.Property(x => x.Id).HasMaxLength(26).IsRequired();
         builder.Property(x => x.TenantId).HasMaxLength(26).IsRequired();
         builder.Property(x => x.Name).HasMaxLength(256).IsRequired();
-        builder.Property(x => x.CreatedBy).HasMaxLength(26).IsRequired();
-        builder.Property(x => x.UpdatedBy).HasMaxLength(26);
         builder.Property(x => x.AtRiskThresholdUnit).HasConversion<int>();
         builder.Property(x => x.BreachThresholdUnit).HasConversion<int>();
     }

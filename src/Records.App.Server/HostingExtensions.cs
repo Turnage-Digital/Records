@@ -1,14 +1,13 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using MediatR;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Records.App.ChangeFeed;
 using Records.App.ChangeFeed.Controllers;
-using Records.App.ChangeFeed.EventHandlers;
 using Records.App.Infrastructure.Security;
 using Records.App.Server.Services;
 using Records.Clocks.Application.Commands;
@@ -42,8 +41,8 @@ internal static class HostingExtensions
         var isTestingEnvironment = builder.Environment.IsEnvironment("Testing");
 
         builder.Services.AddHealthChecks();
-        builder.Services.Configure<DevelopmentSeedOptions>(
-            builder.Configuration.GetSection("DevelopmentSeed"));
+        builder.Services.Configure<SeedOptions>(
+            builder.Configuration.GetSection("Seed"));
         builder.Services.AddOpenTelemetry()
             .ConfigureResource(resource => resource.AddService(
                 "Records.App.Server",
@@ -110,11 +109,12 @@ internal static class HostingExtensions
         }
 
         builder.Services.AddCoreInfrastructureSql(connectionString, serverVersion);
-        builder.Services.AddUsersInfrastructureSql(connectionString);
-        builder.Services.AddTenantsInfrastructureSql(connectionString);
-        builder.Services.AddRecordsetsInfrastructureSql(connectionString);
-        builder.Services.AddClocksInfrastructureSql(connectionString);
-        builder.Services.AddNotificationsInfrastructureSql(connectionString);
+        builder.Services.AddUsersInfrastructureSql(connectionString, serverVersion);
+        builder.Services.AddTenantsInfrastructureSql(connectionString, serverVersion);
+        builder.Services.AddRecordsetsInfrastructureSql(connectionString, serverVersion);
+        builder.Services.AddClocksInfrastructureSql(connectionString, serverVersion);
+        builder.Services.AddNotificationsInfrastructureSql(connectionString, serverVersion);
+
         builder.Services.AddScoped<IRecordBagValidator, RecordBagValidator>();
         builder.Services.AddScoped<IMigrationValidator, MigrationValidator>();
         builder.Services.AddScoped<RecordsetMigrationJobRunner>();
@@ -124,10 +124,9 @@ internal static class HostingExtensions
             .AddEntityFrameworkStores<UsersDbContext>()
             .AddDefaultTokenProviders();
 
-        builder.Services.AddSingleton<Records.App.ChangeFeed.ChangeFeed>();
-        builder.Services.AddTransient(typeof(INotificationHandler<>), typeof(ChangeFeedNotificationHandler<>));
+        builder.Services.AddChangeFeed();
 
-        builder.Services.AddRecordsAppSecurity();
+        builder.Services.AddSecurity();
 
         builder.Services.AddMediatR(config =>
         {

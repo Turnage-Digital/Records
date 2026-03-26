@@ -10,19 +10,10 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddTenantsInfrastructureSql(
         this IServiceCollection services,
-        string connectionString
+        string connectionString,
+        ServerVersion serverVersion
     )
     {
-        ServerVersion serverVersion;
-        try
-        {
-            serverVersion = ServerVersion.AutoDetect(connectionString);
-        }
-        catch
-        {
-            serverVersion = new MySqlServerVersion(new Version(8, 0, 34));
-        }
-
         services.AddDbContext<TenantsDbContext>(options =>
             options.UseMySql(connectionString, serverVersion, builder =>
                 builder.MigrationsAssembly(typeof(TenantsDbContext).Assembly.FullName)));

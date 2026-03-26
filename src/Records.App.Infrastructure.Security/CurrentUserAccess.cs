@@ -9,7 +9,7 @@ namespace Records.App.Infrastructure.Security;
 public sealed class CurrentUserAccess(
     IHttpContextAccessor httpContextAccessor,
     IUserAccessQueries userAccessQueries
-) : ICurrentUserAccess
+) : ICurrentUserAccess, ITenantContext
 {
     private static readonly string[] ClaimTypeCandidates =
     [
@@ -19,6 +19,17 @@ public sealed class CurrentUserAccess(
         "id",
         "nameid"
     ];
+
+    private static readonly string[] TenantClaimTypeCandidates =
+    [
+        "tenantId",
+        "tenant_id",
+        "tid"
+    ];
+
+    public string? TenantId => TryGetTenantId(out var tenantId) ? tenantId : null;
+
+    public string? ActorId => TryGetCurrentUserId(out var userId) ? userId.ToString() : null;
 
     public bool TryGetCurrentUserId(out UlidId userId)
     {
@@ -121,5 +132,28 @@ public sealed class CurrentUserAccess(
         }
 
         return await userAccessQueries.IsOperationsAsync(userId, tenantId, cancellationToken);
+    }
+
+    private bool TryGetTenantId(out string tenantId)
+    {
+        var user = httpContextAccessor.HttpContext?.User;
+        if (user?.Identity?.IsAuthenticated != true)
+        {
+            tenantId = string.Empty;
+            return false;
+        }
+
+        foreach (var claimType in TenantClaimTypeCandidates)
+        {
+            var candidate = user.FindFirstValue(claimType);
+            if (!string.IsNullOrWhiteSpace(candidate))
+            {
+                tenantId = candidate;
+                return true;
+            }
+        }
+
+        tenantId = string.Empty;
+        return false;
     }
 }

@@ -149,3 +149,13 @@ Presentation ────► Application ──────► Contracts ◄─�
 - Aggregates emit domain events and are persisted with their `EventRecord` in one transaction.
 - Domain events are dispatched after commit via MediatR.
 - Deferred dispatch / outbox processing is the mechanism for cross-module and external integration events.
+
+## 6.1) Audit and Aggregate State
+
+- The event store is the source of truth for action audit (`ActorId`, event timestamp, correlation, causation).
+- Aggregate roots and domain entities should not carry generic audit fields by default.
+- `CreatedBy`, `CreatedAt`, `UpdatedBy`, and `UpdatedAt` are banned from aggregate/domain state unless a documented exception proves they are required for current business behavior.
+- If the UI or API needs audit fields, project them from events into read models rather than storing them flat on aggregates.
+- Keep only current-state fields on aggregates: values needed for invariants, transitions, time calculations, or future domain decisions.
+- Prefer explicit state names like `StartedAt`, `CompletedAt`, or `ReadAt` over generic `UpdatedAt`.
+- See `docs/AUDIT_POLICY.md` for the aggregate-by-aggregate plan and exception rules.

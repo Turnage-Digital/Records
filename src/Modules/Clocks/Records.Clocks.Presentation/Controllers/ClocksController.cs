@@ -104,10 +104,8 @@ public sealed class ClocksController(
             return Forbid();
         }
 
-        var actorId = currentUserAccess.GetCurrentUserIdOrThrow();
         var effectiveCommand = command with
         {
-            StartedBy = actorId,
             StartedAt = DateTimeOffset.UtcNow
         };
 
@@ -156,10 +154,8 @@ public sealed class ClocksController(
             return Forbid();
         }
 
-        var actorId = currentUserAccess.GetCurrentUserIdOrThrow();
         var effectiveCommand = command with
         {
-            PausedBy = actorId,
             PausedAt = DateTimeOffset.UtcNow
         };
 
@@ -205,10 +201,8 @@ public sealed class ClocksController(
             return Forbid();
         }
 
-        var actorId = currentUserAccess.GetCurrentUserIdOrThrow();
         var effectiveCommand = command with
         {
-            ResumedBy = actorId,
             ResumedAt = DateTimeOffset.UtcNow
         };
 
@@ -254,10 +248,8 @@ public sealed class ClocksController(
             return Forbid();
         }
 
-        var actorId = currentUserAccess.GetCurrentUserIdOrThrow();
         var effectiveCommand = command with
         {
-            CompletedBy = actorId,
             CompletedAt = DateTimeOffset.UtcNow
         };
 

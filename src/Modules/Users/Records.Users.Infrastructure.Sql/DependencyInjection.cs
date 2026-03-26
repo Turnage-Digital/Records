@@ -10,19 +10,10 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddUsersInfrastructureSql(
         this IServiceCollection services,
-        string connectionString
+        string connectionString,
+        ServerVersion serverVersion
     )
     {
-        ServerVersion serverVersion;
-        try
-        {
-            serverVersion = ServerVersion.AutoDetect(connectionString);
-        }
-        catch
-        {
-            serverVersion = new MySqlServerVersion(new Version(8, 0, 34));
-        }
-
         services.AddDbContext<UsersDbContext>(options =>
             options.UseMySql(connectionString, serverVersion, builder =>
                 builder.MigrationsAssembly(typeof(UsersDbContext).Assembly.FullName)));

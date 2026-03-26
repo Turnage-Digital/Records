@@ -10,6 +10,5 @@ public sealed record ClockDefinitionUpdated(
     string Name,
     ClockThreshold AtRiskThreshold,
     ClockThreshold BreachThreshold,
-    UlidId UpdatedBy,
-    DateTimeOffset UpdatedAt
+    bool IsActive
 ) : INotification;

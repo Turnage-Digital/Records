@@ -5,9 +5,7 @@ using Records.Notifications.Domain;
 namespace Records.Notifications.Application.Commands;
 
 public sealed record DeleteNotificationRuleCommand(
-    UlidId RuleId,
-    string DeletedBy,
-    DateTimeOffset DeletedAt
+    UlidId RuleId
 ) : IRequest;
 
 public sealed class DeleteNotificationRuleCommandHandler(
@@ -22,7 +20,7 @@ public sealed class DeleteNotificationRuleCommandHandler(
             throw new InvalidOperationException("Notification rule not found.");
         }
 
-        rule.Delete(request.DeletedBy, request.DeletedAt);
+        rule.Delete();
         await unitOfWork.NotificationRules.UpdateAsync(rule, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }

@@ -6,7 +6,7 @@ namespace Records.Clocks.Contracts.Projections;
 public interface IClockDefinitionProjectionWriter
 {
     Task UpsertAsync(ClockDefinitionProjectionModel model, CancellationToken cancellationToken);
-    Task DisableAsync(UlidId definitionId, DateTimeOffset updatedAt, CancellationToken cancellationToken);
+    Task DisableAsync(UlidId definitionId, CancellationToken cancellationToken);
 }
 
 public sealed record ClockDefinitionProjectionModel(
@@ -17,6 +17,5 @@ public sealed record ClockDefinitionProjectionModel(
     ClockThresholdUnit AtRiskThresholdUnit,
     int BreachThresholdValue,
     ClockThresholdUnit BreachThresholdUnit,
-    bool IsActive,
-    DateTimeOffset UpdatedAt
+    bool IsActive
 );

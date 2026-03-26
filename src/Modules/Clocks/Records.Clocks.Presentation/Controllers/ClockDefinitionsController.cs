@@ -79,14 +79,7 @@ public sealed class ClockDefinitionsController(
             return Forbid();
         }
 
-        var actorId = currentUserAccess.GetCurrentUserIdOrThrow();
-        var effectiveCommand = command with
-        {
-            CreatedBy = actorId,
-            CreatedAt = DateTimeOffset.UtcNow
-        };
-
-        var id = await mediator.Send(effectiveCommand, cancellationToken);
+        var id = await mediator.Send(command, cancellationToken);
         var definition = await queries.GetByIdAsync(id, cancellationToken);
         return definition is null
             ? Created($"/api/clock-definitions/{id}", new { definitionId = id })
@@ -124,14 +117,7 @@ public sealed class ClockDefinitionsController(
             return Forbid();
         }
 
-        var actorId = currentUserAccess.GetCurrentUserIdOrThrow();
-        var effectiveCommand = command with
-        {
-            UpdatedBy = actorId,
-            UpdatedAt = DateTimeOffset.UtcNow
-        };
-
-        await mediator.Send(effectiveCommand, cancellationToken);
+        await mediator.Send(command, cancellationToken);
         return NoContent();
     }
 
@@ -166,14 +152,7 @@ public sealed class ClockDefinitionsController(
             return Forbid();
         }
 
-        var actorId = currentUserAccess.GetCurrentUserIdOrThrow();
-        var effectiveCommand = command with
-        {
-            UpdatedBy = actorId,
-            UpdatedAt = DateTimeOffset.UtcNow
-        };
-
-        await mediator.Send(effectiveCommand, cancellationToken);
+        await mediator.Send(command, cancellationToken);
         return NoContent();
     }
 }

@@ -12,7 +12,7 @@ using Records.Clocks.Infrastructure.Sql;
 namespace Records.Clocks.Infrastructure.Sql.Migrations
 {
     [DbContext(typeof(ClocksDbContext))]
-    [Migration("20260218164411_InitialClocks")]
+    [Migration("20260326201248_InitialClocks")]
     partial class InitialClocks
     {
         /// <inheritdoc />
@@ -103,14 +103,6 @@ namespace Records.Clocks.Infrastructure.Sql.Migrations
                     b.Property<int>("BreachThresholdValue")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasMaxLength(26)
-                        .HasColumnType("varchar(26)");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)");
 
@@ -121,13 +113,6 @@ namespace Records.Clocks.Infrastructure.Sql.Migrations
 
                     b.Property<string>("TenantId")
                         .IsRequired()
-                        .HasMaxLength(26)
-                        .HasColumnType("varchar(26)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("UpdatedBy")
                         .HasMaxLength(26)
                         .HasColumnType("varchar(26)");
 
@@ -166,9 +151,6 @@ namespace Records.Clocks.Infrastructure.Sql.Migrations
                         .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("varchar(26)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
 

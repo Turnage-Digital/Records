@@ -1,5 +1,6 @@
 using Records.Core.Domain;
 using Records.Core.Domain.ValueObjects;
+using Records.Notifications.Domain.Events;
 using Records.Notifications.Domain.ValueObjects;
 
 namespace Records.Notifications.Domain;
@@ -20,10 +21,6 @@ public sealed class NotificationRule : AggregateRoot
     public string? TemplateId { get; private set; }
     public bool IsActive { get; private set; }
     public bool IsDeleted { get; private set; }
-    public DateTimeOffset CreatedAt { get; private set; }
-    public string CreatedBy { get; private set; } = string.Empty;
-    public DateTimeOffset? UpdatedAt { get; private set; }
-    public string? UpdatedBy { get; private set; }
 
     public static NotificationRule Create(
         UlidId tenantId,
@@ -33,8 +30,7 @@ public sealed class NotificationRule : AggregateRoot
         IReadOnlyList<NotificationChannelConfig> channels,
         NotificationSchedule schedule,
         string? templateId,
-        bool isActive,
-        DateTimeOffset createdAt
+        bool isActive
     )
     {
         var rule = new NotificationRule
@@ -44,14 +40,23 @@ public sealed class NotificationRule : AggregateRoot
             RecordsetId = recordsetId,
             UserId = userId,
             Trigger = trigger,
-            Channels = channels,
+            Channels = channels.ToArray(),
             Schedule = schedule,
             TemplateId = templateId,
             IsActive = isActive,
-            IsDeleted = false,
-            CreatedAt = createdAt,
-            CreatedBy = userId
+            IsDeleted = false
         };
+
+        rule.AddDomainEvent(new NotificationRuleCreated(
+            rule.Id,
+            rule.TenantId,
+            rule.RecordsetId,
+            rule.UserId,
+            rule.Trigger,
+            rule.Channels.ToArray(),
+            rule.Schedule,
+            rule.TemplateId,
+            rule.IsActive));
 
         return rule;
     }
@@ -66,11 +71,7 @@ public sealed class NotificationRule : AggregateRoot
         NotificationSchedule schedule,
         string? templateId,
         bool isActive,
-        bool isDeleted,
-        DateTimeOffset createdAt,
-        string createdBy,
-        DateTimeOffset? updatedAt,
-        string? updatedBy
+        bool isDeleted
     )
     {
         return new NotificationRule
@@ -80,15 +81,11 @@ public sealed class NotificationRule : AggregateRoot
             RecordsetId = recordsetId,
             UserId = userId,
             Trigger = trigger,
-            Channels = channels,
+            Channels = channels.ToArray(),
             Schedule = schedule,
             TemplateId = templateId,
             IsActive = isActive,
-            IsDeleted = isDeleted,
-            CreatedAt = createdAt,
-            CreatedBy = createdBy,
-            UpdatedAt = updatedAt,
-            UpdatedBy = updatedBy
+            IsDeleted = isDeleted
         };
     }
 
@@ -97,25 +94,37 @@ public sealed class NotificationRule : AggregateRoot
         IReadOnlyList<NotificationChannelConfig> channels,
         NotificationSchedule schedule,
         string? templateId,
-        bool isActive,
-        string updatedBy,
-        DateTimeOffset updatedAt
+        bool isActive
     )
     {
         Trigger = trigger;
-        Channels = channels;
+        Channels = channels.ToArray();
         Schedule = schedule;
         TemplateId = templateId;
         IsActive = isActive;
-        UpdatedBy = updatedBy;
-        UpdatedAt = updatedAt;
+
+        AddDomainEvent(new NotificationRuleUpdated(
+            Id,
+            TenantId,
+            RecordsetId,
+            UserId,
+            Trigger,
+            Channels.ToArray(),
+            Schedule,
+            TemplateId,
+            IsActive));
     }
 
-    public void Delete(string deletedBy, DateTimeOffset deletedAt)
+    public void Delete()
     {
+        if (IsDeleted)
+        {
+            return;
+        }
+
         IsDeleted = true;
-        UpdatedBy = deletedBy;
-        UpdatedAt = deletedAt;
+
+        AddDomainEvent(new NotificationRuleDeleted(Id, TenantId));
     }
 
     public override string GetStreamId()

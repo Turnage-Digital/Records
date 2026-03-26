@@ -12,7 +12,7 @@ using Records.Tenants.Infrastructure.Sql;
 namespace Records.Tenants.Infrastructure.Sql.Migrations
 {
     [DbContext(typeof(TenantsDbContext))]
-    [Migration("20260218164401_InitialTenants")]
+    [Migration("20260326201238_InitialTenants")]
     partial class InitialTenants
     {
         /// <inheritdoc />

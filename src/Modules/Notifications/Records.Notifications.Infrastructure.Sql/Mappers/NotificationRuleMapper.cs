@@ -29,11 +29,7 @@ public static class NotificationRuleMapper
             schedule,
             entity.TemplateId,
             entity.IsActive,
-            entity.IsDeleted,
-            new DateTimeOffset(entity.CreatedOn, TimeSpan.Zero),
-            entity.CreatedBy,
-            entity.UpdatedOn.HasValue ? new DateTimeOffset(entity.UpdatedOn.Value, TimeSpan.Zero) : null,
-            entity.UpdatedBy
+            entity.IsDeleted
         );
     }
 
@@ -51,11 +47,7 @@ public static class NotificationRuleMapper
             TriggerType = (int)rule.Trigger.Type,
             TemplateId = rule.TemplateId,
             IsActive = rule.IsActive,
-            IsDeleted = rule.IsDeleted,
-            CreatedOn = rule.CreatedAt.UtcDateTime,
-            CreatedBy = rule.CreatedBy,
-            UpdatedOn = rule.UpdatedAt?.UtcDateTime,
-            UpdatedBy = rule.UpdatedBy
+            IsDeleted = rule.IsDeleted
         };
     }
 
@@ -68,7 +60,5 @@ public static class NotificationRuleMapper
         db.TemplateId = rule.TemplateId;
         db.IsActive = rule.IsActive;
         db.IsDeleted = rule.IsDeleted;
-        db.UpdatedOn = rule.UpdatedAt?.UtcDateTime;
-        db.UpdatedBy = rule.UpdatedBy;
     }
 }

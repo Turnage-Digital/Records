@@ -7,6 +7,7 @@ export { default as ForgotPasswordForm } from "./forgot-password-form";
 export { default as RecordCard } from "./record-card";
 export { default as RecordsetCard } from "./recordset-card";
 export { default as Loading } from "./loading";
+export { default as PageSection } from "./page-section";
 export { default as ResetPasswordForm } from "./reset-password-form";
 export { default as SignInForm } from "./sign-in-form";
 export { default as SignUpForm } from "./sign-up-form";

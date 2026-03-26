@@ -11,9 +11,7 @@ public sealed record CreateClockDefinitionCommand(
     int AtRiskThresholdValue,
     ClockThresholdUnit AtRiskThresholdUnit,
     int BreachThresholdValue,
-    ClockThresholdUnit BreachThresholdUnit,
-    UlidId CreatedBy,
-    DateTimeOffset CreatedAt
+    ClockThresholdUnit BreachThresholdUnit
 ) : IRequest<UlidId>;
 
 public sealed class CreateClockDefinitionCommandHandler(
@@ -37,9 +35,7 @@ public sealed class CreateClockDefinitionCommandHandler(
             request.TenantId,
             request.Name.Trim(),
             ClockThreshold.From(request.AtRiskThresholdValue, request.AtRiskThresholdUnit),
-            ClockThreshold.From(request.BreachThresholdValue, request.BreachThresholdUnit),
-            request.CreatedBy,
-            request.CreatedAt
+            ClockThreshold.From(request.BreachThresholdValue, request.BreachThresholdUnit)
         );
 
         await unitOfWork.ClockDefinitions.AddAsync(definition, cancellationToken);

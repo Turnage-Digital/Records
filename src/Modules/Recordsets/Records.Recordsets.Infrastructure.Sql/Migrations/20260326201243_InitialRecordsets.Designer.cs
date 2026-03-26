@@ -12,7 +12,7 @@ using Records.Recordsets.Infrastructure.Sql;
 namespace Records.Recordsets.Infrastructure.Sql.Migrations
 {
     [DbContext(typeof(RecordsetsDbContext))]
-    [Migration("20260218164406_InitialRecordsets")]
+    [Migration("20260326201243_InitialRecordsets")]
     partial class InitialRecordsets
     {
         /// <inheritdoc />

@@ -14,8 +14,7 @@ public sealed record CreateNotificationRuleCommand(
     NotificationChannelConfig[] Channels,
     NotificationSchedule Schedule,
     string? TemplateId,
-    bool IsActive,
-    DateTimeOffset CreatedAt
+    bool IsActive
 ) : IRequest<NotificationRuleDto>;
 
 public sealed class CreateNotificationRuleRequest
@@ -55,8 +54,7 @@ public sealed class CreateNotificationRuleCommandHandler(
             channels,
             request.Schedule,
             request.TemplateId,
-            request.IsActive,
-            request.CreatedAt
+            request.IsActive
         );
 
         await unitOfWork.NotificationRules.AddAsync(rule, cancellationToken);

@@ -10,5 +10,4 @@ public sealed class ClockDefinitionProjectionDb
     public int BreachThresholdValue { get; set; }
     public int BreachThresholdUnit { get; set; }
     public bool IsActive { get; set; }
-    public DateTime UpdatedAt { get; set; }
 }

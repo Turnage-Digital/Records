@@ -9,6 +9,4 @@ export interface ClockDefinition {
   breachThresholdValue: number;
   breachThresholdUnit: ClockThresholdUnit;
   isActive: boolean;
-  createdAt: string;
-  updatedAt: string | null;
 }

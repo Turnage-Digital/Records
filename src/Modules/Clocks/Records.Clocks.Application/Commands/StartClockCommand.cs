@@ -10,7 +10,6 @@ public sealed record StartClockCommand(
     UlidId RecordsetId,
     int RecordId,
     UlidId DefinitionId,
-    UlidId StartedBy,
     DateTimeOffset StartedAt
 ) : IRequest<UlidId>;
 

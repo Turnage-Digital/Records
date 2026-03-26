@@ -2,9 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Records.Clocks.Contracts.Dtos;
 using Records.Clocks.Contracts.Queries;
 using Records.Clocks.Domain;
-using Records.Clocks.Infrastructure.Sql.QueryCriteria;
 using Records.Core.Domain.ValueObjects;
-using Records.Core.Infrastructure.Sql.QueryCriteria;
 
 namespace Records.Clocks.Infrastructure.Sql;
 
@@ -12,7 +10,7 @@ public sealed class ClockDefinitionQueries(ClocksDbContext dbContext) : IClockDe
 {
     public async Task<ClockDefinitionDto?> GetByIdAsync(UlidId definitionId, CancellationToken cancellationToken)
     {
-        var entity = await dbContext.ClockDefinitions
+        var entity = await dbContext.ClockDefinitionProjections
             .AsNoTracking()
             .FirstOrDefaultAsync(d => d.Id == definitionId.ToString(), cancellationToken);
 
@@ -26,9 +24,7 @@ public sealed class ClockDefinitionQueries(ClocksDbContext dbContext) : IClockDe
                 (ClockThresholdUnit)entity.AtRiskThresholdUnit,
                 entity.BreachThresholdValue,
                 (ClockThresholdUnit)entity.BreachThresholdUnit,
-                entity.IsActive,
-                new DateTimeOffset(entity.CreatedAt, TimeSpan.Zero),
-                entity.UpdatedAt.HasValue ? new DateTimeOffset(entity.UpdatedAt.Value, TimeSpan.Zero) : null
+                entity.IsActive
             );
     }
 
@@ -37,10 +33,10 @@ public sealed class ClockDefinitionQueries(ClocksDbContext dbContext) : IClockDe
         CancellationToken cancellationToken
     )
     {
-        var spec = new ClockDefinitionsByTenantCriteria(tenantId.ToString());
-        var entities = await dbContext.ClockDefinitions
+        var entities = await dbContext.ClockDefinitionProjections
             .AsNoTracking()
-            .ApplyCriteria(spec)
+            .Where(entity => entity.TenantId == tenantId.ToString())
+            .OrderBy(entity => entity.Name)
             .ToListAsync(cancellationToken);
 
         return entities.Select(entity => new ClockDefinitionDto(
@@ -51,9 +47,7 @@ public sealed class ClockDefinitionQueries(ClocksDbContext dbContext) : IClockDe
                 (ClockThresholdUnit)entity.AtRiskThresholdUnit,
                 entity.BreachThresholdValue,
                 (ClockThresholdUnit)entity.BreachThresholdUnit,
-                entity.IsActive,
-                new DateTimeOffset(entity.CreatedAt, TimeSpan.Zero),
-                entity.UpdatedAt.HasValue ? new DateTimeOffset(entity.UpdatedAt.Value, TimeSpan.Zero) : null
+                entity.IsActive
             ))
             .ToList();
     }

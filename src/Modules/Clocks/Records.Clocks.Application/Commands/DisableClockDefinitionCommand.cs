@@ -5,9 +5,7 @@ using Records.Core.Domain.ValueObjects;
 namespace Records.Clocks.Application.Commands;
 
 public sealed record DisableClockDefinitionCommand(
-    UlidId DefinitionId,
-    UlidId UpdatedBy,
-    DateTimeOffset UpdatedAt
+    UlidId DefinitionId
 ) : IRequest;
 
 public sealed class DisableClockDefinitionCommandHandler(
@@ -22,7 +20,7 @@ public sealed class DisableClockDefinitionCommandHandler(
             throw new InvalidOperationException("Clock definition not found.");
         }
 
-        definition.Disable(request.UpdatedBy, request.UpdatedAt);
+        definition.Disable();
         await unitOfWork.ClockDefinitions.UpdateAsync(definition, cancellationToken);
         await unitOfWork.SaveChangesAsync(true, cancellationToken);
     }
