@@ -108,7 +108,8 @@ public sealed class MarkNotificationReadCommandHandlerTests
             return Task.FromResult(id == notification.Id ? notification : null);
         }
 
-        public Task<IReadOnlyList<Notification>> GetPendingAsync(int limit, CancellationToken cancellationToken = default)
+        public Task<IReadOnlyList<Notification>> GetPendingAsync(int limit,
+            CancellationToken cancellationToken = default)
         {
             throw new NotSupportedException();
         }
