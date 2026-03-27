@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Records.Notifications.Contracts\Records.Notifications.Contracts.csproj"/>
+        <ProjectReference Include="..\..\Core\Records.Core.Application\Records.Core.Application.csproj"/>
+        <ProjectReference Include="..\..\Core\Records.Core.Contracts\Records.Core.Contracts.csproj"/>
+        <ProjectReference Include="..\..\Clocks\Records.Clocks.Contracts\Records.Clocks.Contracts.csproj"/>
+        <ProjectReference Include="..\..\Recordsets\Records.Recordsets.Contracts\Records.Recordsets.Contracts.csproj"/>
+    </ItemGroup>
+
+</Project>
