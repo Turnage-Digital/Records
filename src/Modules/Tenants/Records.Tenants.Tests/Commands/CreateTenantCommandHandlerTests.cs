@@ -1,7 +1,7 @@
 using Records.Core.Domain.ValueObjects;
 using Records.Tenants.Application.Commands;
-using Records.Tenants.Contracts.Projections;
 using Records.Tenants.Domain;
+using Records.Tenants.Domain.Events;
 
 namespace Records.Tenants.Tests.Commands;
 
@@ -11,8 +11,7 @@ public class CreateTenantCommandHandlerTests
     public async Task Handle_CreatesTenantAndWritesProjection()
     {
         var unitOfWork = new FakeTenantsUnitOfWork();
-        var projectionWriter = new FakeTenantProjectionWriter();
-        var handler = new CreateTenantCommandHandler(unitOfWork, projectionWriter);
+        var handler = new CreateTenantCommandHandler(unitOfWork);
 
         var tenantId = await handler.Handle(new CreateTenantCommand("Acme"), CancellationToken.None);
 
@@ -20,8 +19,8 @@ public class CreateTenantCommandHandlerTests
         Assert.That(unitOfWork.AddedTenant, Is.Not.Null);
         Assert.That(unitOfWork.AddedTenant!.Name, Is.EqualTo("Acme"));
         Assert.That(unitOfWork.AddedTenant!.Status, Is.EqualTo(TenantStatus.Active));
-        Assert.That(projectionWriter.Upserted, Is.Not.Null);
-        Assert.That(projectionWriter.Upserted!.TenantId, Is.EqualTo(tenantId));
+        Assert.That(unitOfWork.AddedTenant.DomainEvents.OfType<TenantCreated>().Single().TenantId,
+            Is.EqualTo(tenantId));
     }
 
     private sealed class FakeTenantsUnitOfWork : ITenantsUnitOfWork
@@ -42,26 +41,14 @@ public class CreateTenantCommandHandlerTests
         {
             return Task.FromResult(1);
         }
-    }
 
-    private sealed class FakeTenantProjectionWriter : ITenantProjectionWriter
-    {
-        public TenantProjectionModel? Upserted { get; private set; }
-
-        public Task UpsertAsync(TenantProjectionModel model, CancellationToken cancellationToken)
+        public Task<int> SaveChangesAsync(bool deferDispatch, CancellationToken cancellationToken)
         {
-            Upserted = model;
-            return Task.CompletedTask;
+            return Task.FromResult(1);
         }
 
-        public Task UpdateStatusAsync(UlidId tenantId, TenantStatus status, CancellationToken cancellationToken)
+        public void Dispose()
         {
-            return Task.CompletedTask;
-        }
-
-        public Task UpdateNameAsync(UlidId tenantId, string name, CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
         }
     }
 }

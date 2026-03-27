@@ -19,56 +19,28 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import {
   ConfirmDeleteDialog,
-  NotificationsDrawer,
   RecordsDesktopView,
-  RecordsetHistoryDrawer,
   RecordsMobileView,
   Titlebar,
   useSideDrawer,
 } from "../components";
-import { RecordsetSearch } from "../models";
+import {
+  getRecordsetSearch,
+  setRecordsetSearchParams,
+} from "../lib/recordset-search";
 import {
   pagedRecordsQueryOptions,
   recordsetItemDefinitionQueryOptions,
 } from "../query-options";
 
-export const getRecordsetSearch = (
-  params: URLSearchParams,
-): RecordsetSearch => {
-  const page = Number(params.get("page") ?? "0");
-  const pageSize = Number(params.get("pageSize") ?? "10");
-  const status = params.get("status") ?? undefined;
-  const field = params.get("field") ?? undefined;
-  const sort = params.get("sort") ?? undefined;
-  return {
-    page,
-    pageSize,
-    status: status ?? undefined,
-    field: field ?? undefined,
-    sort: sort ?? undefined,
-  };
-};
+import type { RecordsetSearch } from "../models";
 
-const setRecordsetSearch = (
-  updater: (current: RecordsetSearch) => RecordsetSearch,
-  setParams: (nextInit: URLSearchParams) => void,
-  currentParams: URLSearchParams,
-) => {
-  const nextSearch = updater(getRecordsetSearch(currentParams));
-  const nextParams = new URLSearchParams();
-  nextParams.set("page", nextSearch.page.toString());
-  nextParams.set("pageSize", nextSearch.pageSize.toString());
-  if (nextSearch.status) {
-    nextParams.set("status", nextSearch.status);
-  }
-  if (nextSearch.field) {
-    nextParams.set("field", nextSearch.field);
-  }
-  if (nextSearch.sort) {
-    nextParams.set("sort", nextSearch.sort);
-  }
-  setParams(nextParams);
-};
+const NotificationsDrawer = React.lazy(
+  () => import("../components/notifications/notifications-drawer"),
+);
+const RecordsetHistoryDrawer = React.lazy(
+  () => import("../components/history/recordset-history-drawer"),
+);
 
 const RecordsPage = () => {
   const { recordsetId } = useParams<{ recordsetId: string }>();
@@ -83,6 +55,7 @@ const RecordsPage = () => {
   const search = getRecordsetSearch(searchParams);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
+  const [, startSearchTransition] = React.useTransition();
   const [recordToDelete, setRecordToDelete] = React.useState<{
     recordsetId: string;
     recordId: number;
@@ -125,35 +98,54 @@ const RecordsPage = () => {
       }
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries();
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["recordset-records", recordsetId],
+          exact: false,
+        }),
+        queryClient.invalidateQueries({ queryKey: ["recordset-names"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["record-history"],
+          exact: false,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["recordset-history", recordsetId],
+          exact: false,
+        }),
+      ]);
     },
   });
 
+  const updateSearch = React.useCallback(
+    (updater: (current: RecordsetSearch) => RecordsetSearch) => {
+      startSearchTransition(() => {
+        setRecordsetSearchParams(
+          updater,
+          (next) => setSearchParams(next),
+          searchParams,
+        );
+      });
+    },
+    [searchParams, setSearchParams],
+  );
+
   const handlePaginationChange = (gridPaginationModel: GridPaginationModel) => {
-    setRecordsetSearch(
-      (prev) => ({
-        ...prev,
-        page: gridPaginationModel.page,
-        pageSize: gridPaginationModel.pageSize,
-      }),
-      (next) => setSearchParams(next),
-      searchParams,
-    );
+    updateSearch((prev) => ({
+      ...prev,
+      page: gridPaginationModel.page,
+      pageSize: gridPaginationModel.pageSize,
+    }));
   };
 
   const handleSortChange = (gridSortModel: GridSortModel) => {
-    setRecordsetSearch(
-      (prev) => {
-        if (gridSortModel.length === 0) {
-          return { ...prev, field: undefined, sort: undefined };
-        }
-        const field = gridSortModel[0].field;
-        const sort = gridSortModel[0].sort === "desc" ? "desc" : "asc";
-        return { ...prev, field, sort };
-      },
-      (next) => setSearchParams(next),
-      searchParams,
-    );
+    updateSearch((prev) => {
+      if (gridSortModel.length === 0) {
+        return { ...prev, field: undefined, sort: undefined };
+      }
+      const field = gridSortModel[0].field;
+      const sort = gridSortModel[0].sort === "desc" ? "desc" : "asc";
+      return { ...prev, field, sort };
+    });
   };
 
   const handleViewRecord = (currentRecordsetId: string, recordId: number) => {
@@ -185,11 +177,7 @@ const RecordsPage = () => {
   };
 
   const handleMobilePageChange = (newPage: number) => {
-    setRecordsetSearch(
-      (prev) => ({ ...prev, page: newPage }),
-      (next) => setSearchParams(next),
-      searchParams,
-    );
+    updateSearch((prev) => ({ ...prev, page: newPage }));
   };
 
   const handleStatusFilterChange = (
@@ -200,15 +188,11 @@ const RecordsPage = () => {
       return;
     }
 
-    setRecordsetSearch(
-      (prev) => ({
-        ...prev,
-        page: 0,
-        status: nextValue === "__all__" ? undefined : nextValue,
-      }),
-      (next) => setSearchParams(next),
-      searchParams,
-    );
+    updateSearch((prev) => ({
+      ...prev,
+      page: 0,
+      status: nextValue === "__all__" ? undefined : nextValue,
+    }));
   };
 
   const handleCreateRecord = () => {

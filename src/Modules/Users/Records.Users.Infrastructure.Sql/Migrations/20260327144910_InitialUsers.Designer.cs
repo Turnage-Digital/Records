@@ -12,7 +12,7 @@ using Records.Users.Infrastructure.Sql;
 namespace Records.Users.Infrastructure.Sql.Migrations
 {
     [DbContext(typeof(UsersDbContext))]
-    [Migration("20260326212602_InitialUsers")]
+    [Migration("20260327144910_InitialUsers")]
     partial class InitialUsers
     {
         /// <inheritdoc />

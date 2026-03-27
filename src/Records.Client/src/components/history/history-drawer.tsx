@@ -151,12 +151,12 @@ const HistoryDrawer = ({ subtitle, query }: HistoryDrawerProps) => {
     entries.length > 0 ? (
       <Stack sx={{ flex: 1 }}>
         {entries.map((entry, index) => {
-          const entryKey = `${entry.on}-${entry.type}-${entry.by ?? "unknown"}`;
+          const entryKey = `${entry.occurredAt}-${entry.type}-${entry.actorId ?? "unknown"}`;
           const hasTrailingConnector = index < entries.length - 1;
 
-          const performerLine = entry.by ? (
+          const performerLine = entry.actorId ? (
             <Typography variant="body2" color="text.secondary">
-              Performed by {entry.by}
+              Performed by {entry.actorId}
             </Typography>
           ) : null;
 
@@ -211,7 +211,7 @@ const HistoryDrawer = ({ subtitle, query }: HistoryDrawerProps) => {
                   }}
                 >
                   <Typography variant="caption" color="text.secondary">
-                    {formatTimestamp(entry.on)}
+                    {formatTimestamp(entry.occurredAt)}
                   </Typography>
                   <Typography variant="subtitle2">{entry.type}</Typography>
                   {performerLine}

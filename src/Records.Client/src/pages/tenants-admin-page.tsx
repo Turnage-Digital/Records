@@ -164,13 +164,15 @@ const TenantsAdminPage = () => {
   };
 
   const createErrorAlert = createError ? (
-    <Alert severity="error" sx={{ mt: 2 }}>
+    <Alert severity="error" aria-live="assertive" sx={{ mt: 2 }}>
       {createError}
     </Alert>
   ) : null;
 
   const disableErrorAlert = disableError ? (
-    <Alert severity="error">{disableError}</Alert>
+    <Alert severity="error" aria-live="assertive">
+      {disableError}
+    </Alert>
   ) : null;
 
   const noTenantsMessage =
@@ -222,7 +224,7 @@ const TenantsAdminPage = () => {
       >
         <Stack spacing={2}>
           <TableContainer>
-            <Table size="small">
+            <Table size="small" aria-label="Tenant directory">
               <TableHead>
                 <TableRow>
                   <TableCell>Name</TableCell>

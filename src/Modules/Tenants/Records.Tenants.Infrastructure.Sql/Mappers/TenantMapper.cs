@@ -12,8 +12,7 @@ public static class TenantMapper
         {
             Id = tenant.Id.ToString(),
             Name = tenant.Name,
-            Status = tenant.Status,
-            CreatedAt = tenant.CreatedAt
+            Status = tenant.Status
         };
     }
 
@@ -22,14 +21,12 @@ public static class TenantMapper
         return Tenant.Rehydrate(
             UlidId.Parse(entity.Id),
             entity.Name,
-            entity.Status,
-            entity.CreatedAt);
+            entity.Status);
     }
 
     public static void UpdateDb(Tenant domain, TenantDb entity)
     {
         entity.Name = domain.Name;
         entity.Status = domain.Status;
-        entity.CreatedAt = domain.CreatedAt;
     }
 }

@@ -509,8 +509,7 @@ public sealed class SeedDataService(
             {
                 Id = UlidId.NewUlid().ToString(),
                 Name = tenantName,
-                Status = TenantStatus.Active,
-                CreatedAt = createdAt
+                Status = TenantStatus.Active
             };
 
             tenantsDbContext.Tenants.Add(tenant);
@@ -528,7 +527,7 @@ public sealed class SeedDataService(
                 TenantId = tenant.Id,
                 Name = tenant.Name,
                 Status = tenant.Status,
-                CreatedAt = tenant.CreatedAt
+                CreatedAt = createdAt
             });
         }
         else

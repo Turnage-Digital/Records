@@ -9,9 +9,12 @@ import {
 } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
-import { ConfirmDeleteDialog, RecordsetCard, Titlebar } from "../components";
-import { RecordsetName } from "../models";
+import ConfirmDeleteDialog from "../components/confirm-delete-dialog";
+import RecordsetCard from "../components/recordset-card";
+import Titlebar from "../components/titlebar";
 import { recordsetNamesQueryOptions } from "../query-options";
+
+import type { RecordsetName } from "../models";
 
 const RecordsetsPage = () => {
   const navigate = useNavigate();
@@ -39,7 +42,9 @@ const RecordsetsPage = () => {
       }
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries();
+      await queryClient.invalidateQueries({
+        queryKey: ["recordset-names"],
+      });
     },
   });
 

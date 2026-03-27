@@ -158,7 +158,7 @@ public sealed class RecordQueries(
     )
     {
         var ordered = (await LoadRecordsetHistoryAsync(recordsetId, cancellationToken))
-            .OrderByDescending(x => x.On)
+            .OrderByDescending(x => x.OccurredAt)
             .ToArray();
         return new HistoryPageDto
         {
@@ -193,8 +193,8 @@ public sealed class RecordQueries(
             .Select(activity => new HistoryEntryDto
             {
                 Type = activity.ActionType,
-                On = activity.OccurredAt,
-                By = activity.ActorId,
+                OccurredAt = activity.OccurredAt,
+                ActorId = activity.ActorId,
                 Bag = DeserializeBag(activity.BagJson ?? "{}")
             })
             .ToArray();
@@ -291,15 +291,15 @@ public sealed class RecordQueries(
             RecordsetCreated created => new HistoryEntryDto
             {
                 Type = "Created",
-                On = ToOffset(storedEvent.CreatedAt),
-                By = storedEvent.ActorId,
+                OccurredAt = ToOffset(storedEvent.CreatedAt),
+                ActorId = storedEvent.ActorId,
                 Bag = new { name = created.Name }
             },
             RecordsetUpdated => new HistoryEntryDto
             {
                 Type = "Updated",
-                On = ToOffset(storedEvent.CreatedAt),
-                By = storedEvent.ActorId
+                OccurredAt = ToOffset(storedEvent.CreatedAt),
+                ActorId = storedEvent.ActorId
             },
             _ => null
         };

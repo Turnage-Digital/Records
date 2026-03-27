@@ -12,7 +12,7 @@ using Records.Recordsets.Infrastructure.Sql;
 namespace Records.Recordsets.Infrastructure.Sql.Migrations
 {
     [DbContext(typeof(RecordsetsDbContext))]
-    [Migration("20260326212612_InitialRecordsets")]
+    [Migration("20260327144921_InitialRecordsets")]
     partial class InitialRecordsets
     {
         /// <inheritdoc />
@@ -173,17 +173,17 @@ namespace Records.Recordsets.Infrastructure.Sql.Migrations
                     b.Property<DateTime?>("AvailableAfter")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<DateTime?>("BackupExpiresOn")
+                    b.Property<DateTime?>("BackupExpiresAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("BackupRecordsetId")
                         .HasMaxLength(26)
                         .HasColumnType("varchar(26)");
 
-                    b.Property<DateTime?>("BackupRemovedOn")
+                    b.Property<DateTime?>("BackupRemovedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<DateTime?>("CompletedOn")
+                    b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("CorrelationId")
@@ -191,7 +191,7 @@ namespace Records.Recordsets.Infrastructure.Sql.Migrations
                         .HasMaxLength(26)
                         .HasColumnType("varchar(26)");
 
-                    b.Property<DateTime>("CreatedOn")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("LastError")
@@ -222,7 +222,7 @@ namespace Records.Recordsets.Infrastructure.Sql.Migrations
                         .HasColumnType("varchar(20)")
                         .HasDefaultValue("Pending");
 
-                    b.Property<DateTime?>("StartedOn")
+                    b.Property<DateTime?>("StartedAt")
                         .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");

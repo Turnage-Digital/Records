@@ -11,24 +11,13 @@ import { createSearchParams, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../auth";
 import {
-  type ClockDefinitionFormValue,
-  ClockDefinitionsDrawer,
-  type ClockDefinitionSubmission,
   Loading,
-  type NotificationRuleFormValue,
-  NotificationRulesDrawer,
   RecordsetEditor,
-  type RecordsetEditorInitialValue,
-  type RecordsetEditorSubmitResult,
   Titlebar,
   toClockDefinitionFormValue,
   useSideDrawer,
 } from "../components";
-import {
-  extractRecordsetId,
-  resolveActorUlid,
-  resolveTenantUlid,
-} from "../lib/identifiers";
+import { extractRecordsetId, resolveTenantUlid } from "../lib/identifiers";
 import {
   NotificationRuleInput,
   RecordsetItemDefinition,
@@ -38,6 +27,21 @@ import {
   clockDefinitionsQueryOptions,
   tenantSummariesQueryOptions,
 } from "../query-options";
+
+import type {
+  ClockDefinitionFormValue,
+  ClockDefinitionSubmission,
+  NotificationRuleFormValue,
+  RecordsetEditorInitialValue,
+  RecordsetEditorSubmitResult,
+} from "../components";
+
+const ClockDefinitionsDrawer = React.lazy(
+  () => import("../components/recordset-editor/clock-definitions-drawer"),
+);
+const NotificationRulesDrawer = React.lazy(
+  () => import("../components/recordset-editor/notification-rules-drawer"),
+);
 
 const getPreferredTenantId = (
   preferredTenantId: string | undefined,
@@ -328,7 +332,15 @@ const CreateRecordsetPage = () => {
       return { id: createdId } satisfies Pick<RecordsetItemDefinition, "id">;
     },
     onSuccess: async (created) => {
-      await queryClient.invalidateQueries();
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["recordset-names"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["clock-definitions"],
+          exact: false,
+        }),
+      ]);
       const search = createSearchParams({
         page: "0",
         pageSize: "10",

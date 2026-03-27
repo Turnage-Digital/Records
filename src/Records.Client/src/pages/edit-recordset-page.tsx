@@ -12,11 +12,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../auth";
 import {
   type ClockDefinitionFormValue,
-  ClockDefinitionsDrawer,
   type ClockDefinitionSubmission,
   Loading,
   type NotificationRuleFormValue,
-  NotificationRulesDrawer,
   type NotificationRuleSubmission,
   RecordsetEditor,
   type RecordsetEditorInitialValue,
@@ -37,6 +35,13 @@ import {
 } from "../query-options";
 
 import type { MigrationPlan, MigrationProgressRecord, Status } from "../models";
+
+const ClockDefinitionsDrawer = React.lazy(
+  () => import("../components/recordset-editor/clock-definitions-drawer"),
+);
+const NotificationRulesDrawer = React.lazy(
+  () => import("../components/recordset-editor/notification-rules-drawer"),
+);
 
 type NotificationRuleMutationInput = Pick<
   NotificationRuleSubmission,

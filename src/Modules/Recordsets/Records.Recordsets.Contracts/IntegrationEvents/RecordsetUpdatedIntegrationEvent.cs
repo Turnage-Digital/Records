@@ -12,7 +12,7 @@ public sealed class RecordsetUpdatedIntegrationEvent : IIntegrationEvent
     )
     {
         EventId = Guid.NewGuid();
-        OccurredOn = updatedAt;
+        OccurredAt = updatedAt;
         EventType = nameof(RecordsetUpdatedIntegrationEvent);
         RecordsetId = recordsetId;
         UpdatedBy = updatedBy;
@@ -24,6 +24,6 @@ public sealed class RecordsetUpdatedIntegrationEvent : IIntegrationEvent
     public DateTimeOffset UpdatedAt { get; }
 
     public Guid EventId { get; }
-    public DateTimeOffset OccurredOn { get; }
+    public DateTimeOffset OccurredAt { get; }
     public string EventType { get; }
 }

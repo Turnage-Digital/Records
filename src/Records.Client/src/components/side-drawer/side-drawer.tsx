@@ -1,8 +1,31 @@
 import * as React from "react";
 
-import { Dialog, Drawer, useMediaQuery, useTheme } from "@mui/material";
+import {
+  Box,
+  CircularProgress,
+  Dialog,
+  Drawer,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
 
 import useSideDrawer from "./use-side-drawer";
+
+const SideDrawerFallback = () => (
+  <Box
+    role="status"
+    aria-live="polite"
+    sx={{
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      minHeight: 240,
+      px: 3,
+    }}
+  >
+    <CircularProgress />
+  </Box>
+);
 
 const SideDrawer = () => {
   const { content, closeDrawer } = useSideDrawer();
@@ -20,14 +43,28 @@ const SideDrawer = () => {
           width: 500,
           borderTopLeftRadius: 0,
           borderBottomLeftRadius: 0,
+          overscrollBehavior: "contain",
         },
       }}
     >
-      {content}
+      <React.Suspense fallback={<SideDrawerFallback />}>
+        {content}
+      </React.Suspense>
     </Drawer>
   ) : (
-    <Dialog open={content !== null} onClose={closeDrawer} fullScreen>
-      {content}
+    <Dialog
+      open={content !== null}
+      onClose={closeDrawer}
+      fullScreen
+      PaperProps={{
+        sx: {
+          overscrollBehavior: "contain",
+        },
+      }}
+    >
+      <React.Suspense fallback={<SideDrawerFallback />}>
+        {content}
+      </React.Suspense>
     </Dialog>
   );
 };

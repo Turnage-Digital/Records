@@ -3,7 +3,7 @@ export interface ChangeFeedMessage<T = unknown> {
   type: string;
   data: T;
   // ISO timestamp
-  occurredOn: string;
+  occurredAt: string;
 }
 
 export type ChangeFeedHandler = (message: ChangeFeedMessage) => void;

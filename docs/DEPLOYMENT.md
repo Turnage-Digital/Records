@@ -32,6 +32,7 @@ This repo includes first-pass deployment templates for local/dev and cluster env
 - File: `deploy/k8s/records-app.yaml`
 
 These are bootstrap templates only:
+
 - Replace `ghcr.io/your-org/records-app:latest` with your image.
 - Replace inline secret values with your secret management process.
 - Apply manifest: `kubectl apply -f deploy/k8s/mysql.yaml`

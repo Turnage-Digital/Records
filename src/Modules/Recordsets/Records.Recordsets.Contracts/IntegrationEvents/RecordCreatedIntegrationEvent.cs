@@ -13,7 +13,7 @@ public sealed class RecordCreatedIntegrationEvent : IIntegrationEvent
     )
     {
         EventId = Guid.NewGuid();
-        OccurredOn = createdAt;
+        OccurredAt = createdAt;
         EventType = nameof(RecordCreatedIntegrationEvent);
         RecordsetId = recordsetId;
         RecordId = recordId;
@@ -27,6 +27,6 @@ public sealed class RecordCreatedIntegrationEvent : IIntegrationEvent
     public DateTimeOffset CreatedAt { get; }
 
     public Guid EventId { get; }
-    public DateTimeOffset OccurredOn { get; }
+    public DateTimeOffset OccurredAt { get; }
     public string EventType { get; }
 }

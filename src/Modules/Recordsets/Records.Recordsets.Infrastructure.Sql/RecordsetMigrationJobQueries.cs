@@ -24,13 +24,13 @@ public sealed class RecordsetMigrationJobQueries(RecordsetsDbContext dbContext) 
                 UlidId.Parse(j.CorrelationId),
                 j.Stage,
                 UlidId.Parse(j.RequestedBy),
-                j.CreatedOn,
-                j.StartedOn,
-                j.CompletedOn,
+                j.CreatedAt,
+                j.StartedAt,
+                j.CompletedAt,
                 j.BackupRecordsetId == null ? null : UlidId.Parse(j.BackupRecordsetId),
                 j.NewRecordsetId == null ? null : UlidId.Parse(j.NewRecordsetId),
-                j.BackupExpiresOn,
-                j.BackupRemovedOn,
+                j.BackupExpiresAt,
+                j.BackupRemovedAt,
                 j.Attempts,
                 j.LastError))
             .FirstOrDefaultAsync(cancellationToken);

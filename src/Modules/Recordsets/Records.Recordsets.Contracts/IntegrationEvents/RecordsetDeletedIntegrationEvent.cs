@@ -12,7 +12,7 @@ public sealed class RecordsetDeletedIntegrationEvent : IIntegrationEvent
     )
     {
         EventId = Guid.NewGuid();
-        OccurredOn = deletedAt;
+        OccurredAt = deletedAt;
         EventType = nameof(RecordsetDeletedIntegrationEvent);
         RecordsetId = recordsetId;
         DeletedBy = deletedBy;
@@ -24,6 +24,6 @@ public sealed class RecordsetDeletedIntegrationEvent : IIntegrationEvent
     public DateTimeOffset DeletedAt { get; }
 
     public Guid EventId { get; }
-    public DateTimeOffset OccurredOn { get; }
+    public DateTimeOffset OccurredAt { get; }
     public string EventType { get; }
 }

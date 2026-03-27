@@ -1,6 +1,6 @@
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 
-import {
+import type {
   Clock,
   ClockDefinition,
   HistoryPage,
@@ -51,7 +51,7 @@ const normalizeNotificationSummary = (
   title: readString(raw, "title") ?? "",
   body: readString(raw, "body") ?? "",
   isRead: raw.isRead === true,
-  occurredOn: readString(raw, "occurredOn") ?? new Date().toISOString(),
+  occurredAt: readString(raw, "occurredAt") ?? new Date().toISOString(),
   recordsetId: readString(raw, "recordsetId"),
   recordId: readNumber(raw, "recordId"),
   metadata:

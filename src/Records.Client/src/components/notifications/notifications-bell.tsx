@@ -4,9 +4,10 @@ import NotificationsIcon from "@mui/icons-material/Notifications";
 import { Badge, IconButton, Tooltip } from "@mui/material";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import NotificationsDrawer from "./notifications-drawer";
 import { unreadCountQueryOptions } from "../../query-options";
 import useSideDrawer from "../side-drawer/use-side-drawer";
+
+const NotificationsDrawer = React.lazy(() => import("./notifications-drawer"));
 
 const NotificationsBell = () => {
   const { data: unreadCount } = useSuspenseQuery(unreadCountQueryOptions());
@@ -18,7 +19,11 @@ const NotificationsBell = () => {
 
   return (
     <Tooltip title="Notifications">
-      <IconButton color="primary" onClick={onClick}>
+      <IconButton
+        color="primary"
+        onClick={onClick}
+        aria-label="Open notifications"
+      >
         <Badge
           color="error"
           badgeContent={unreadCount}

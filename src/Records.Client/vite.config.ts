@@ -46,6 +46,50 @@ const target = env.ASPNETCORE_HTTPS_PORT
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [viteReact()],
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    if (!id.includes("node_modules")) {
+                        return undefined;
+                    }
+
+                    if (id.includes("@mui/x-data-grid")) {
+                        return "mui-data-grid";
+                    }
+
+                    if (id.includes("@mui/")) {
+                        return "mui-core";
+                    }
+
+                    if (id.includes("@emotion/")) {
+                        return "emotion";
+                    }
+
+                    if (id.includes("@tanstack/")) {
+                        return "react-query";
+                    }
+
+                    if (
+                        id.includes("react-router-dom") ||
+                        id.includes("@remix-run/router")
+                    ) {
+                        return "router";
+                    }
+
+                    if (id.includes("react-dom") || id.includes("/react/")) {
+                        return "react-vendor";
+                    }
+
+                    if (id.includes("date-fns")) {
+                        return "date-fns";
+                    }
+
+                    return "vendor";
+                }
+            }
+        }
+    },
     resolve: {
         alias: {
             "@": fileURLToPath(new URL("./src", import.meta.url))

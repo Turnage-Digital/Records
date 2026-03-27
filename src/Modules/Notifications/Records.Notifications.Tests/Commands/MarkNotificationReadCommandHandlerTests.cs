@@ -1,5 +1,5 @@
-using Records.Core.Domain.ValueObjects;
 using Records.Core.Application;
+using Records.Core.Domain.ValueObjects;
 using Records.Notifications.Application.Commands;
 using Records.Notifications.Domain;
 using Records.Notifications.Domain.ValueObjects;
@@ -108,8 +108,10 @@ public sealed class MarkNotificationReadCommandHandlerTests
             return Task.FromResult(id == notification.Id ? notification : null);
         }
 
-        public Task<IReadOnlyList<Notification>> GetPendingAsync(int limit,
-            CancellationToken cancellationToken = default)
+        public Task<IReadOnlyList<Notification>> GetPendingAsync(
+            int limit,
+            CancellationToken cancellationToken = default
+        )
         {
             throw new NotSupportedException();
         }

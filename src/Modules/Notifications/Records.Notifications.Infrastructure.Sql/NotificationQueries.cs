@@ -1,11 +1,9 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using Records.Core.Infrastructure.Sql.QueryCriteria;
 using Records.Notifications.Contracts.Dtos;
 using Records.Notifications.Contracts.Queries;
 using Records.Notifications.Domain;
 using Records.Notifications.Infrastructure.Sql.Entities;
-using Records.Notifications.Infrastructure.Sql.QueryCriteria;
 
 namespace Records.Notifications.Infrastructure.Sql;
 
@@ -47,7 +45,7 @@ public sealed class NotificationQueries(NotificationsDbContext dbContext)
             .Select(a => new DeliveryAttemptDto
             {
                 Channel = ((NotificationChannel)a.Channel).ToString(),
-                AttemptedOn = new DateTimeOffset(a.AttemptedAt, TimeSpan.Zero),
+                AttemptedAt = new DateTimeOffset(a.AttemptedAt, TimeSpan.Zero),
                 Status = MapDeliveryStatus((DeliveryStatus)a.Status),
                 FailureReason = a.FailureReason,
                 AttemptNumber = a.AttemptNumber
@@ -138,7 +136,7 @@ public sealed class NotificationQueries(NotificationsDbContext dbContext)
                     Body = content?.Body ?? string.Empty,
                     Metadata = metadata.Count > 0 ? metadata : null,
                     IsRead = row.ReadAt.HasValue,
-                    OccurredOn = new DateTimeOffset(row.CreatedAt, TimeSpan.Zero)
+                    OccurredAt = new DateTimeOffset(row.CreatedAt, TimeSpan.Zero)
                 };
             })
             .ToList();
@@ -357,7 +355,7 @@ public sealed class NotificationQueries(NotificationsDbContext dbContext)
             new()
             {
                 Type = "Created",
-                On = new DateTimeOffset(projection.CreatedAt, TimeSpan.Zero)
+                OccurredAt = new DateTimeOffset(projection.CreatedAt, TimeSpan.Zero)
             }
         };
 
@@ -366,7 +364,7 @@ public sealed class NotificationQueries(NotificationsDbContext dbContext)
             history.Add(new NotificationHistoryEntryDto
             {
                 Type = "Queued",
-                On = new DateTimeOffset(projection.QueuedAt.Value, TimeSpan.Zero)
+                OccurredAt = new DateTimeOffset(projection.QueuedAt.Value, TimeSpan.Zero)
             });
         }
 
@@ -375,18 +373,18 @@ public sealed class NotificationQueries(NotificationsDbContext dbContext)
             history.Add(new NotificationHistoryEntryDto
             {
                 Type = "Delivered",
-                On = new DateTimeOffset(projection.DeliveredAt.Value, TimeSpan.Zero)
+                OccurredAt = new DateTimeOffset(projection.DeliveredAt.Value, TimeSpan.Zero)
             });
         }
 
-        foreach (var attempt in attempts.OrderBy(a => a.AttemptedOn))
+        foreach (var attempt in attempts.OrderBy(a => a.AttemptedAt))
         {
             if (attempt.Status == "Failed")
             {
                 history.Add(new NotificationHistoryEntryDto
                 {
                     Type = "Failed",
-                    On = attempt.AttemptedOn,
+                    OccurredAt = attempt.AttemptedAt,
                     Bag = new { attempt.FailureReason, attempt.AttemptNumber }
                 });
             }
@@ -395,7 +393,7 @@ public sealed class NotificationQueries(NotificationsDbContext dbContext)
                 history.Add(new NotificationHistoryEntryDto
                 {
                     Type = "Bounced",
-                    On = attempt.AttemptedOn,
+                    OccurredAt = attempt.AttemptedAt,
                     Bag = new { attempt.FailureReason, attempt.AttemptNumber }
                 });
             }
@@ -406,7 +404,7 @@ public sealed class NotificationQueries(NotificationsDbContext dbContext)
             history.Add(new NotificationHistoryEntryDto
             {
                 Type = "Cancelled",
-                On = new DateTimeOffset(projection.CancelledAt.Value, TimeSpan.Zero)
+                OccurredAt = new DateTimeOffset(projection.CancelledAt.Value, TimeSpan.Zero)
             });
         }
 
@@ -415,12 +413,12 @@ public sealed class NotificationQueries(NotificationsDbContext dbContext)
             history.Add(new NotificationHistoryEntryDto
             {
                 Type = "Read",
-                On = new DateTimeOffset(projection.ReadAt.Value, TimeSpan.Zero)
+                OccurredAt = new DateTimeOffset(projection.ReadAt.Value, TimeSpan.Zero)
             });
         }
 
         return history
-            .OrderBy(entry => entry.On)
+            .OrderBy(entry => entry.OccurredAt)
             .ToList();
     }
 

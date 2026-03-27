@@ -72,7 +72,8 @@ Implementation notes:
 
 - migrate history screens to event-store-backed projections
 - split vague "updated" behavior into explicit actions where the domain cares
-- `Record` is not an aggregate root today, so its durable history must come from an explicit activity model until it is promoted
+- `Record` is not an aggregate root today, so its durable history must come from an explicit activity model until it is
+  promoted
 
 Status:
 
@@ -209,17 +210,27 @@ Reason:
 
 - tenants are a true domain concept and should not remain a special non-evented island
 
+Status:
+
+- completed for aggregate promotion
+- `Tenant` now inherits `AggregateRoot`
+- tenant creation and disable now emit domain events and persist through the event store pipeline
+- the tenant write table keeps only current business state, while projection `CreatedAt` is sourced from `TenantCreated`
+
 ### Users
 
 Target:
 
-- either promote `User` into a real aggregate root or explicitly document why it remains an exception
+- keep `User` as an explicit exception to the aggregate-root rule
 - keep role and lifecycle actions explicit: invite, grant, revoke, suspend
 - stop using generic audit fields as a fallback design
 
 Reason:
 
-- user lifecycle and role membership are domain actions, not just table mutations
+- `User` is currently anchored to ASP.NET Identity and its table model.
+- forcing aggregate-root semantics onto it right now would blur the identity boundary instead of clarifying it.
+- role membership and user lifecycle actions should still be explicit, but they do not need fake aggregate audit
+  state.
 
 ## Phase Plan
 
@@ -250,7 +261,7 @@ Reason:
 ### Phase 4
 
 - promote `Tenant` to `AggregateRoot`
-- choose the long-term `Users` direction and apply the same policy there
+- document `Users` as the intentional exception and keep generic audit out of its table model
 
 ## Progress
 
@@ -261,28 +272,45 @@ Completed so far:
 - `ClockDefinition` no longer stores `CreatedBy`, `CreatedAt`, `UpdatedBy`, or `UpdatedAt` in aggregate state.
 - `ClockDefinition` no longer stores generic audit columns in its write table.
 - `ClockDefinition` reads now come from projections, and the DTO no longer exposes generic audit timestamps.
-- browser payloads for clock operations and clock-definition operations no longer send audit actor/time fields that the server owns.
+- browser payloads for clock operations and clock-definition operations no longer send audit actor/time fields that the
+  server owns.
 - `NotificationRule` no longer stores generic audit fields in aggregate state or its write table.
 - `NotificationRule` create, update, and delete now emit explicit lifecycle events so audit lands in the event store.
 - notification-rule commands and controllers no longer carry synthetic audit actor/time inputs.
 - `NotificationsUnitOfWork` now persists notification-rule lifecycle events through the event store pipeline.
 - `Notification` no longer stores `CreatedAt`, `ProcessedAt`, or `DeliveredAt` in aggregate state or its write table.
-- notification inbox, detail, pending, retry, and history reads now use `NotificationProjectionDb` for timing/state concerns and use the write row only for content and recipient payload.
-- mark-read no longer pushes actor identity through aggregate state or notification events; ownership is enforced at the command boundary from the current request user.
+- notification inbox, detail, pending, retry, and history reads now use `NotificationProjectionDb` for timing/state
+  concerns and use the write row only for content and recipient payload.
+- mark-read no longer pushes actor identity through aggregate state or notification events; ownership is enforced at the
+  command boundary from the current request user.
 - notification query tests were updated to seed projection state explicitly, matching the new read-model contract.
 - `Recordset` no longer stores `CreatedBy`, `CreatedAt`, `UpdatedBy`, or `UpdatedAt` in aggregate state.
 - the `Recordsets` root write table no longer stores generic audit columns.
-- recordset create and schema-update commands/controllers/browser payloads no longer carry synthetic audit actor/time fields.
+- recordset create and schema-update commands/controllers/browser payloads no longer carry synthetic audit actor/time
+  fields.
 - recordset summaries now use projection-only `LastChangedAt` instead of generic `UpdatedAt`.
 - recordset root history now reads the event stream instead of reconstructing history from row-audit columns.
 - recordset migration and seed paths were updated to use the new root contract without reintroducing generic audit.
-- `Record` no longer stores `CreatedBy`, `CreatedAt`, `UpdatedBy`, or `UpdatedAt` in domain state or the `RecordDb` write table.
-- record create/update commands, handlers, controllers, tests, and browser payloads no longer carry synthetic record audit fields.
+- `Record` no longer stores `CreatedBy`, `CreatedAt`, `UpdatedBy`, or `UpdatedAt` in domain state or the `RecordDb`
+  write table.
+- record create/update commands, handlers, controllers, tests, and browser payloads no longer carry synthetic record
+  audit fields.
 - record create/update now stamp actor/time from request or job context into durable `RecordActivities` rows.
 - record list/detail DTOs no longer expose generic record timestamps.
 - record history now reads from `RecordActivities` instead of `RecordDb` row-audit columns.
-- the local database and module migrations were regenerated with `ef-reset.ps1` after the `Clock`, `ClockDefinition`, `NotificationRule`, `Notification`, and `Recordset` cleanup.
+- `Tenant` now inherits `AggregateRoot` and persists tenant lifecycle events through the core unit-of-work/event-store
+  path.
+- tenant commands no longer write projections directly; projection updates now flow from `TenantCreated` and
+  `TenantDisabled` event handlers.
+- the `Tenants` write table no longer stores `CreatedAt`; tenant projection `CreatedAt` is now projection-only state.
+- `Users` is now documented as the intentional exception to the aggregate-root rule; it remains Identity-backed and
+  should keep lifecycle/role actions explicit without inventing generic aggregate audit fields.
+- generic history contracts now use `OccurredAt` and `ActorId` instead of `On` and `By`.
+- integration-event contracts and change-feed payloads now use `OccurredAt` instead of `OccurredOn`.
+- recordset migration-job contracts and persistence now use `*At` timestamps instead of `*On`.
+- the local database and module migrations were regenerated with `ef-reset.ps1` after the `Clock`, `ClockDefinition`,
+  `NotificationRule`, `Notification`, and `Recordset` cleanup.
 
 Active next step:
 
-- promote `Tenant` into a real aggregate root, then choose the `Users` direction under the same policy
+- prepare the PR

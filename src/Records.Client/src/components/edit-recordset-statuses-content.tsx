@@ -88,6 +88,7 @@ const EditRecordsetStatusesContent = ({
                     onClick={(event) =>
                       handleMenuOpenClicked(event.currentTarget)
                     }
+                    aria-label="Choose status color"
                   >
                     <StatusBullet statusColor={statusColor} />
                   </IconButton>

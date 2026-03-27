@@ -9,10 +9,15 @@ import {
 } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { RecordEditor, SmartPasteDialog, Titlebar } from "../components";
+import { Loading, RecordEditor, Titlebar } from "../components";
 import { extractRecordId } from "../lib/identifiers";
-import { RecordItem } from "../models";
 import { recordsetItemDefinitionQueryOptions } from "../query-options";
+
+import type { RecordItem } from "../models";
+
+const SmartPasteDialog = React.lazy(
+  () => import("../components/smart-paste-dialog"),
+);
 
 const CreateRecordPage = () => {
   const { recordsetId } = useParams<{ recordsetId: string }>();
@@ -80,7 +85,19 @@ const CreateRecordPage = () => {
       } satisfies RecordItem;
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries();
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["recordset-records", recordsetId],
+          exact: false,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["recordset-names"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["recordset-history", recordsetId],
+          exact: false,
+        }),
+      ]);
     },
   });
 
@@ -139,6 +156,16 @@ const CreateRecordPage = () => {
     },
   ];
 
+  const smartPasteDialog = smartPasteOpen ? (
+    <React.Suspense fallback={<Loading />}>
+      <SmartPasteDialog
+        open={smartPasteOpen}
+        onClose={handleCloseSmartPaste}
+        onPaste={handlePaste}
+      />
+    </React.Suspense>
+  ) : null;
+
   const breadcrumbs = [
     {
       title: "Recordsets",
@@ -164,11 +191,7 @@ const CreateRecordPage = () => {
         onSubmit={handleSubmit}
         isSubmitting={createRecordMutation.isPending}
       />
-      <SmartPasteDialog
-        open={smartPasteOpen}
-        onClose={handleCloseSmartPaste}
-        onPaste={handlePaste}
-      />
+      {smartPasteDialog}
     </>
   );
 };

@@ -66,7 +66,7 @@ public sealed class RecordsetNotificationHandler(
                 rule,
                 trigger,
                 content,
-                notification.OccurredOn,
+                notification.OccurredAt,
                 notification.EventId.ToString(),
                 cancellationToken);
         }
@@ -127,7 +127,7 @@ public sealed class RecordsetNotificationHandler(
                 rule,
                 trigger,
                 content,
-                notification.OccurredOn,
+                notification.OccurredAt,
                 notification.EventId.ToString(),
                 cancellationToken);
         }
@@ -181,7 +181,7 @@ public sealed class RecordsetNotificationHandler(
                 rule,
                 trigger,
                 content,
-                notification.OccurredOn,
+                notification.OccurredAt,
                 notification.EventId.ToString(),
                 cancellationToken);
         }
@@ -211,37 +211,35 @@ public sealed class RecordsetNotificationHandler(
         var createdCount = 0;
 
         foreach (var rule in rules)
+        foreach (var actualTrigger in actualTriggers)
         {
-            foreach (var actualTrigger in actualTriggers)
+            if (rule.Trigger.Type != actualTrigger.Type)
             {
-                if (rule.Trigger.Type != actualTrigger.Type)
-                {
-                    continue;
-                }
-
-                var trigger = actualTrigger with { TenantId = rule.TenantId };
-
-                if (!await triggerEvaluator.ShouldTriggerAsync(rule, trigger, context, cancellationToken))
-                {
-                    continue;
-                }
-
-                var content = BuildContent(
-                    rule,
-                    "Record Updated",
-                    $"Record {notification.RecordId} was updated by {notification.UpdatedBy}.",
-                    context);
-
-                createdCount += await CreateNotificationsAsync(
-                    rule,
-                    trigger,
-                    content,
-                    notification.OccurredOn,
-                    notification.EventId.ToString(),
-                    cancellationToken);
-
-                break;
+                continue;
             }
+
+            var trigger = actualTrigger with { TenantId = rule.TenantId };
+
+            if (!await triggerEvaluator.ShouldTriggerAsync(rule, trigger, context, cancellationToken))
+            {
+                continue;
+            }
+
+            var content = BuildContent(
+                rule,
+                "Record Updated",
+                $"Record {notification.RecordId} was updated by {notification.UpdatedBy}.",
+                context);
+
+            createdCount += await CreateNotificationsAsync(
+                rule,
+                trigger,
+                content,
+                notification.OccurredAt,
+                notification.EventId.ToString(),
+                cancellationToken);
+
+            break;
         }
 
         if (createdCount > 0)

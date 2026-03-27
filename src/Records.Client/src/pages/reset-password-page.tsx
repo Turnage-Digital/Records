@@ -3,7 +3,8 @@ import * as React from "react";
 import { Alert, Link, Stack, Typography } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-import { AuthPageLayout, ResetPasswordForm } from "../components";
+import AuthPageLayout from "../components/auth-page-layout";
+import ResetPasswordForm from "../components/reset-password-form";
 
 const ResetPasswordPage = () => {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ const ResetPasswordPage = () => {
   return (
     <AuthPageLayout>
       <Stack spacing={2} alignItems="center">
-        <Typography variant="h5" align="center" gutterBottom>
+        <Typography variant="h5" component="h1" align="center" gutterBottom>
           Reset Password
         </Typography>
         <Typography variant="body2" color="text.secondary" align="center">
@@ -47,7 +48,11 @@ const ResetPasswordPage = () => {
 
       {formContent}
 
-      {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
+      {errorMessage && (
+        <Alert severity="error" aria-live="assertive">
+          {errorMessage}
+        </Alert>
+      )}
 
       <Stack spacing={2} alignItems="center">
         <Typography

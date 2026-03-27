@@ -91,7 +91,7 @@ public class RecordsetMigrationDispatcherService(
             .Where(j =>
                 j.Stage == RecordsetMigrationJobStage.Pending &&
                 (j.AvailableAfter == null || j.AvailableAfter <= now))
-            .OrderBy(j => j.CreatedOn)
+            .OrderBy(j => j.CreatedAt)
             .FirstOrDefaultAsync(ct);
     }
 
@@ -105,9 +105,9 @@ public class RecordsetMigrationDispatcherService(
         var staleJobs = await dbContext.RecordsetMigrationJobs
             .Where(j =>
                 j.Stage == RecordsetMigrationJobStage.Running &&
-                j.StartedOn != null &&
-                j.StartedOn <= recoveryCutoff)
-            .OrderBy(j => j.StartedOn)
+                j.StartedAt != null &&
+                j.StartedAt <= recoveryCutoff)
+            .OrderBy(j => j.StartedAt)
             .Take(10)
             .ToListAsync(cancellationToken);
 
@@ -143,7 +143,7 @@ public class RecordsetMigrationDispatcherService(
     )
     {
         job.Stage = RecordsetMigrationJobStage.Running;
-        job.StartedOn ??= DateTime.UtcNow;
+        job.StartedAt ??= DateTime.UtcNow;
         job.Attempts += 1;
         job.LastError = null;
         job.AvailableAfter = null;
@@ -153,7 +153,7 @@ public class RecordsetMigrationDispatcherService(
         {
             await runner.RunAsync(job, ct);
             job.Stage = RecordsetMigrationJobStage.Completed;
-            job.CompletedOn = DateTime.UtcNow;
+            job.CompletedAt = DateTime.UtcNow;
             job.LastError = null;
             job.AvailableAfter = null;
             await dbContext.SaveChangesAsync(ct);
@@ -164,7 +164,7 @@ public class RecordsetMigrationDispatcherService(
             if (job.Attempts >= MaxAttempts)
             {
                 job.Stage = RecordsetMigrationJobStage.Failed;
-                job.CompletedOn = DateTime.UtcNow;
+                job.CompletedAt = DateTime.UtcNow;
                 job.LastError = ex.Message;
                 job.AvailableAfter = null;
                 await dbContext.SaveChangesAsync(ct);
@@ -204,10 +204,10 @@ public class RecordsetMigrationDispatcherService(
             .Where(j =>
                 j.Stage == RecordsetMigrationJobStage.Completed &&
                 j.BackupRecordsetId != null &&
-                j.BackupRemovedOn == null &&
-                j.BackupExpiresOn != null &&
-                j.BackupExpiresOn <= now)
-            .OrderBy(j => j.BackupExpiresOn)
+                j.BackupRemovedAt == null &&
+                j.BackupExpiresAt != null &&
+                j.BackupExpiresAt <= now)
+            .OrderBy(j => j.BackupExpiresAt)
             .Take(5)
             .ToListAsync(ct);
 
@@ -217,14 +217,14 @@ public class RecordsetMigrationDispatcherService(
             {
                 if (job.BackupRecordsetId is null)
                 {
-                    job.BackupRemovedOn = DateTime.UtcNow;
+                    job.BackupRemovedAt = DateTime.UtcNow;
                     job.Stage = RecordsetMigrationJobStage.Archived;
                     await unitOfWork.SaveChangesAsync(ct);
                     continue;
                 }
 
                 await unitOfWork.DeleteRecordsetAsync(UlidId.Parse(job.BackupRecordsetId), ct);
-                job.BackupRemovedOn = DateTime.UtcNow;
+                job.BackupRemovedAt = DateTime.UtcNow;
                 job.Stage = RecordsetMigrationJobStage.Archived;
                 await unitOfWork.SaveChangesAsync(ct);
 
@@ -308,7 +308,7 @@ public class RecordsetMigrationJobRunner(
         await unitOfWork.SaveChangesAsync(ct);
 
         job.BackupRecordsetId = recordset.Id.ToString();
-        job.BackupExpiresOn ??= DateTime.UtcNow.Add(DefaultBackupRetention);
+        job.BackupExpiresAt ??= DateTime.UtcNow.Add(DefaultBackupRetention);
 
         var backupCount = await unitOfWork.GetRecordCountAsync(recordset.Id, ct);
         await projectionWriter.UpsertAsync(

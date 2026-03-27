@@ -4,16 +4,15 @@ import { History } from "@mui/icons-material";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 
-import {
-  RecordCard,
-  RecordHistoryDrawer,
-  Titlebar,
-  useSideDrawer,
-} from "../components";
+import { RecordCard, Titlebar, useSideDrawer } from "../components";
 import {
   recordQueryOptions,
   recordsetItemDefinitionQueryOptions,
 } from "../query-options";
+
+const RecordHistoryDrawer = React.lazy(
+  () => import("../components/history/record-history-drawer"),
+);
 
 const RecordDetailsPage = () => {
   const { recordsetId, recordId } = useParams<{

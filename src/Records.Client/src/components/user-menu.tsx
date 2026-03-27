@@ -57,8 +57,12 @@ const UserMenu = () => {
   return (
     <>
       <Tooltip title="Account">
-        <IconButton color="primary" onClick={handleUserMenuClick}>
-          <AccountCircleIcon />
+        <IconButton
+          color="primary"
+          onClick={handleUserMenuClick}
+          aria-label="Open account menu"
+        >
+          <AccountCircleIcon aria-hidden="true" />
         </IconButton>
       </Tooltip>
 

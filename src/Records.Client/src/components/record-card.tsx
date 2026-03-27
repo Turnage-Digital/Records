@@ -57,8 +57,9 @@ const RecordCard = ({
       <IconButton
         onClick={() => onViewRecord(definition.id!, record.id!)}
         color="primary"
+        aria-label={`View record ${record.id}`}
       >
-        <Visibility />
+        <Visibility aria-hidden="true" />
       </IconButton>
     </Tooltip>
   ) : null;
@@ -68,8 +69,9 @@ const RecordCard = ({
       <IconButton
         onClick={() => onEditRecord(definition.id!, record.id!)}
         color="primary"
+        aria-label={`Edit record ${record.id}`}
       >
-        <Edit />
+        <Edit aria-hidden="true" />
       </IconButton>
     </Tooltip>
   ) : null;
@@ -79,8 +81,9 @@ const RecordCard = ({
       <IconButton
         onClick={() => onDeleteRecord(definition.id!, record.id!)}
         color="error"
+        aria-label={`Delete record ${record.id}`}
       >
-        <Delete />
+        <Delete aria-hidden="true" />
       </IconButton>
     </Tooltip>
   ) : null;

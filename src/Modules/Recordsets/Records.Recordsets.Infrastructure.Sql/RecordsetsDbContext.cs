@@ -116,7 +116,7 @@ public class RecordsetsDbContext(DbContextOptions<RecordsetsDbContext> options)
         builder.Property(x => x.NewRecordsetId).HasMaxLength(26);
         builder.Property(x => x.RequestedBy).HasMaxLength(26).IsRequired();
         builder.Property(x => x.PlanJson).IsRequired();
-        builder.Property(x => x.CreatedOn).IsRequired();
+        builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.Stage)
             .HasConversion<string>()
             .HasMaxLength(20)

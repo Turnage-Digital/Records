@@ -3,22 +3,7 @@ import * as React from "react";
 import { QueryClient } from "@tanstack/react-query";
 import { createBrowserRouter, Navigate, redirect } from "react-router-dom";
 
-import {
-  CreateRecordPage,
-  CreateRecordsetPage,
-  EditRecordPage,
-  EditRecordsetPage,
-  ForgotPasswordPage,
-  getRecordsetSearch,
-  RecordDetailsPage,
-  RecordsetsPage,
-  RecordsPage,
-  ResetPasswordPage,
-  SignInPage,
-  SignUpPage,
-  TenantsAdminPage,
-  UsersAdminPage,
-} from "./pages";
+import { getRecordsetSearch } from "./lib/recordset-search";
 import {
   notificationRulesQueryOptions,
   pagedRecordsQueryOptions,
@@ -27,7 +12,31 @@ import {
   tenantSummariesQueryOptions,
   userSummariesQueryOptions,
 } from "./query-options";
-import Shell from "./shell";
+
+const Shell = React.lazy(() => import("./shell"));
+const CreateRecordPage = React.lazy(() => import("./pages/create-record-page"));
+const CreateRecordsetPage = React.lazy(
+  () => import("./pages/create-recordset-page"),
+);
+const EditRecordPage = React.lazy(() => import("./pages/edit-record-page"));
+const EditRecordsetPage = React.lazy(
+  () => import("./pages/edit-recordset-page"),
+);
+const ForgotPasswordPage = React.lazy(
+  () => import("./pages/forgot-password-page"),
+);
+const RecordDetailsPage = React.lazy(
+  () => import("./pages/record-details-page"),
+);
+const RecordsetsPage = React.lazy(() => import("./pages/recordsets-page"));
+const RecordsPage = React.lazy(() => import("./pages/records-page"));
+const ResetPasswordPage = React.lazy(
+  () => import("./pages/reset-password-page"),
+);
+const SignInPage = React.lazy(() => import("./pages/sign-in-page"));
+const SignUpPage = React.lazy(() => import("./pages/sign-up-page"));
+const TenantsAdminPage = React.lazy(() => import("./pages/tenants-admin-page"));
+const UsersAdminPage = React.lazy(() => import("./pages/users-admin-page"));
 
 interface IdentityAccessResponse {
   isGlobalAdmin?: boolean;

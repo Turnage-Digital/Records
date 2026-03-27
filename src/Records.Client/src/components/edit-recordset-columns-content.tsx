@@ -118,6 +118,7 @@ const EditRecordsetColumnsContent = ({ columns, onColumnsChanged }: Props) => {
                   <TableCell>
                     <IconButton
                       onClick={() => handleRemoveClicked(column.name)}
+                      aria-label={`Remove column ${column.name}`}
                     >
                       <Delete />
                     </IconButton>

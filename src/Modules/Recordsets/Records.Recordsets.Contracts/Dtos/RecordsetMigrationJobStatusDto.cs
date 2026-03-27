@@ -9,13 +9,13 @@ public sealed record RecordsetMigrationJobStatusDto(
     UlidId CorrelationId,
     RecordsetMigrationJobStage Stage,
     UlidId RequestedBy,
-    DateTime CreatedOn,
-    DateTime? StartedOn,
-    DateTime? CompletedOn,
+    DateTime CreatedAt,
+    DateTime? StartedAt,
+    DateTime? CompletedAt,
     UlidId? BackupRecordsetId,
     UlidId? NewRecordsetId,
-    DateTime? BackupExpiresOn,
-    DateTime? BackupRemovedOn,
+    DateTime? BackupExpiresAt,
+    DateTime? BackupRemovedAt,
     int Attempts,
     string? LastError
 );

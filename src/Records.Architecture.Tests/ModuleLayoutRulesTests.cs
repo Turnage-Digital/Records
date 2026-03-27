@@ -195,23 +195,21 @@ public sealed class ModuleLayoutRulesTests
 
         var violations = new List<string>();
         foreach (var project in infrastructureProjects)
+        foreach (var directory in Directory.EnumerateDirectories(project))
         {
-            foreach (var directory in Directory.EnumerateDirectories(project))
+            var folderName = Path.GetFileName(directory);
+            if (folderName is "bin" or "obj")
             {
-                var folderName = Path.GetFileName(directory);
-                if (folderName is "bin" or "obj")
-                {
-                    continue;
-                }
-
-                if (AllowedInfrastructureSqlFolders.Contains(folderName))
-                {
-                    continue;
-                }
-
-                violations.Add(
-                    $"{Path.GetRelativePath(repoRoot, directory)} is not an allowed Infrastructure.Sql folder.");
+                continue;
             }
+
+            if (AllowedInfrastructureSqlFolders.Contains(folderName))
+            {
+                continue;
+            }
+
+            violations.Add(
+                $"{Path.GetRelativePath(repoRoot, directory)} is not an allowed Infrastructure.Sql folder.");
         }
 
         Assert.That(

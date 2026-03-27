@@ -8,6 +8,7 @@ interface AuthPageLayoutProps {
 
 const AuthPageLayout = ({ children }: AuthPageLayoutProps) => (
   <Stack
+    component="main"
     sx={{
       maxWidth: 440,
       mx: "auto",

@@ -106,6 +106,8 @@ Presentation ────► Application ──────► Contracts ◄─�
 - Modules must declare dependencies only through **Contracts**; cross-module calls are via Contracts interfaces or
   integration events. No hidden or "backchannel" dependencies are allowed.
 - Module-owned schemas, migrations, and background services stay inside the module. The host only wires them up.
+- Aggregate roots are the default write-model shape, but `Users` is an intentional exception while it remains
+  ASP.NET Identity-backed. Exceptions must be explicit and documented, not accidental.
 
 ## 3) Bounded Contexts (Initial)
 
@@ -154,8 +156,11 @@ Presentation ────► Application ──────► Contracts ◄─�
 
 - The event store is the source of truth for action audit (`ActorId`, event timestamp, correlation, causation).
 - Aggregate roots and domain entities should not carry generic audit fields by default.
-- `CreatedBy`, `CreatedAt`, `UpdatedBy`, and `UpdatedAt` are banned from aggregate/domain state unless a documented exception proves they are required for current business behavior.
-- If the UI or API needs audit fields, project them from events into read models rather than storing them flat on aggregates.
-- Keep only current-state fields on aggregates: values needed for invariants, transitions, time calculations, or future domain decisions.
+- `CreatedBy`, `CreatedAt`, `UpdatedBy`, and `UpdatedAt` are banned from aggregate/domain state unless a documented
+  exception proves they are required for current business behavior.
+- If the UI or API needs audit fields, project them from events into read models rather than storing them flat on
+  aggregates.
+- Keep only current-state fields on aggregates: values needed for invariants, transitions, time calculations, or future
+  domain decisions.
 - Prefer explicit state names like `StartedAt`, `CompletedAt`, or `ReadAt` over generic `UpdatedAt`.
 - See `docs/AUDIT_POLICY.md` for the aggregate-by-aggregate plan and exception rules.

@@ -28,9 +28,6 @@ namespace Records.Tenants.Infrastructure.Sql.Migrations
                         .HasMaxLength(26)
                         .HasColumnType("varchar(26)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(256)

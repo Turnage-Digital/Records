@@ -53,7 +53,7 @@ public sealed class ClockNotificationHandler(
                 rule,
                 trigger,
                 content,
-                notification.OccurredOn,
+                notification.OccurredAt,
                 notification.EventId.ToString(),
                 cancellationToken);
         }
@@ -105,7 +105,7 @@ public sealed class ClockNotificationHandler(
                 rule,
                 trigger,
                 content,
-                notification.OccurredOn,
+                notification.OccurredAt,
                 notification.EventId.ToString(),
                 cancellationToken);
         }

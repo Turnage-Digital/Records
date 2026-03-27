@@ -5,7 +5,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { useAuth } from "../auth";
-import { AuthPageLayout, SignUpForm } from "../components";
+import AuthPageLayout from "../components/auth-page-layout";
+import SignUpForm from "../components/sign-up-form";
 
 const SignUpPage = () => {
   const navigate = useNavigate();
@@ -18,16 +19,16 @@ const SignUpPage = () => {
     navigate(searchString ? `/sign-in?${searchString}` : "/sign-in");
   };
 
-  const handleSignedUp = async (email: string) => {
+  const handleSignedUp = (email: string) => {
     auth.login(email);
-    await queryClient.invalidateQueries();
+    queryClient.clear();
     const callbackUrl = searchParams.get("callbackUrl") ?? "/";
     navigate(callbackUrl, { replace: true });
   };
 
   return (
     <AuthPageLayout>
-      <Typography variant="h5" align="center" gutterBottom>
+      <Typography variant="h5" component="h1" align="center" gutterBottom>
         Sign up
       </Typography>
 

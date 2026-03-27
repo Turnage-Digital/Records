@@ -12,7 +12,7 @@ using Records.Tenants.Infrastructure.Sql;
 namespace Records.Tenants.Infrastructure.Sql.Migrations
 {
     [DbContext(typeof(TenantsDbContext))]
-    [Migration("20260326212607_InitialTenants")]
+    [Migration("20260327144915_InitialTenants")]
     partial class InitialTenants
     {
         /// <inheritdoc />
@@ -30,9 +30,6 @@ namespace Records.Tenants.Infrastructure.Sql.Migrations
                     b.Property<string>("Id")
                         .HasMaxLength(26)
                         .HasColumnType("varchar(26)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Name")
                         .IsRequired()

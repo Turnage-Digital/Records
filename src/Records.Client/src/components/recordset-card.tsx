@@ -83,8 +83,9 @@ const RecordsetCard = ({ recordsetName, onDeleteClick }: Props) => {
             component={RouterLink}
             to={`/${recordsetName.id}?page=0&pageSize=10`}
             color="primary"
+            aria-label={`View ${recordsetName.name}`}
           >
-            <Visibility />
+            <Visibility aria-hidden="true" />
           </IconButton>
         </Tooltip>
         <Tooltip title={`Edit ${recordsetName.name}`}>
@@ -92,16 +93,18 @@ const RecordsetCard = ({ recordsetName, onDeleteClick }: Props) => {
             component={RouterLink}
             to={`/${recordsetName.id}/edit`}
             color="primary"
+            aria-label={`Edit ${recordsetName.name}`}
           >
-            <Edit />
+            <Edit aria-hidden="true" />
           </IconButton>
         </Tooltip>
         <Tooltip title={`Delete ${recordsetName.name}`}>
           <IconButton
             onClick={() => onDeleteClick(recordsetName)}
             color="error"
+            aria-label={`Delete ${recordsetName.name}`}
           >
-            <Delete />
+            <Delete aria-hidden="true" />
           </IconButton>
         </Tooltip>
       </CardActions>

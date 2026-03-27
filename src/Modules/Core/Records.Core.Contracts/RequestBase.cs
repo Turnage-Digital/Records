@@ -13,7 +13,8 @@ public interface IUserContextRequest
 
 public abstract record RequestBase<T> : IRequest<T>, IUserContextRequest
 {
-    [JsonIgnore] public string? UserId { get; set; }
+    [JsonIgnore]
+    public string? UserId { get; set; }
 
     public UlidId GetUserUlid()
     {

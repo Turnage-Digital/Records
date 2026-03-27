@@ -89,6 +89,9 @@ const SignInForm = ({ onSignedIn }: Props) => {
 
   const showPasswordType = showPassword ? "text" : "password";
   const showPasswordIcon = showPassword ? <VisibilityOff /> : <Visibility />;
+  const passwordVisibilityAriaLabel = showPassword
+    ? "Hide password"
+    : "Show password";
 
   return (
     <Stack
@@ -102,6 +105,7 @@ const SignInForm = ({ onSignedIn }: Props) => {
         margin="normal"
         id="email"
         name="email"
+        label="Email"
         placeholder="your@email.com"
         autoComplete="email"
         required
@@ -119,6 +123,7 @@ const SignInForm = ({ onSignedIn }: Props) => {
         margin="normal"
         id="password"
         name="password"
+        label="Password"
         placeholder="••••••"
         autoComplete="current-password"
         required
@@ -135,7 +140,8 @@ const SignInForm = ({ onSignedIn }: Props) => {
             endAdornment: (
               <InputAdornment position="end">
                 <IconButton
-                  aria-label="toggle password visibility"
+                  aria-label={passwordVisibilityAriaLabel}
+                  aria-pressed={showPassword}
                   onClick={() => setShowPassword((prev) => !prev)}
                 >
                   {showPasswordIcon}
@@ -158,7 +164,7 @@ const SignInForm = ({ onSignedIn }: Props) => {
       </Button>
 
       {formErrorMessage && (
-        <Alert severity="error" sx={{ width: "100%" }}>
+        <Alert severity="error" aria-live="assertive" sx={{ width: "100%" }}>
           {formErrorMessage}
         </Alert>
       )}

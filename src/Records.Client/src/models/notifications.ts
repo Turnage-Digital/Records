@@ -15,7 +15,7 @@ export type DeliveryStatus =
 export interface DeliveryAttemptView {
   channel: NotificationChannel;
   // ISO timestamp
-  attemptedOn: string;
+  attemptedAt: string;
   status: DeliveryStatus;
   failureReason?: string | null;
   attemptNumber: number;
@@ -25,8 +25,8 @@ export interface NotificationHistoryEntry {
   // e.g., Created | Delivered | Read
   type: string;
   // ISO timestamp
-  on: string;
-  by?: string | null;
+  occurredAt: string;
+  actorId?: string | null;
   bag?: Record<string, unknown> | null;
 }
 
@@ -48,7 +48,7 @@ export interface NotificationSummary {
   title: string;
   body: string;
   isRead: boolean;
-  occurredOn: string;
+  occurredAt: string;
   recordsetId?: string | null;
   recordId?: number | null;
   metadata?: Record<string, unknown> | null;

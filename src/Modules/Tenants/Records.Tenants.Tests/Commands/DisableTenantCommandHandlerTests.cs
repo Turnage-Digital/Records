@@ -1,7 +1,7 @@
 using Records.Core.Domain.ValueObjects;
 using Records.Tenants.Application.Commands;
-using Records.Tenants.Contracts.Projections;
 using Records.Tenants.Domain;
+using Records.Tenants.Domain.Events;
 
 namespace Records.Tenants.Tests.Commands;
 
@@ -10,23 +10,22 @@ public class DisableTenantCommandHandlerTests
     [Test]
     public async Task Handle_DisablesTenantAndUpdatesProjection()
     {
-        var tenant = new Tenant(UlidId.NewUlid(), "Acme");
+        var tenant = Tenant.Create(UlidId.NewUlid(), "Acme", DateTimeOffset.UtcNow);
+        tenant.ClearDomainEvents();
         var unitOfWork = new FakeTenantsUnitOfWork(tenant);
-        var projectionWriter = new FakeTenantProjectionWriter();
-        var handler = new DisableTenantCommandHandler(unitOfWork, projectionWriter);
+        var handler = new DisableTenantCommandHandler(unitOfWork);
 
         await handler.Handle(new DisableTenantCommand(tenant.Id), CancellationToken.None);
 
         Assert.That(tenant.Status, Is.EqualTo(TenantStatus.Disabled));
-        Assert.That(projectionWriter.UpdatedStatus, Is.EqualTo(TenantStatus.Disabled));
+        Assert.That(tenant.DomainEvents.OfType<TenantDisabled>().Count(), Is.EqualTo(1));
     }
 
     [Test]
     public void Handle_WhenTenantMissing_Throws()
     {
         var unitOfWork = new FakeTenantsUnitOfWork(null);
-        var projectionWriter = new FakeTenantProjectionWriter();
-        var handler = new DisableTenantCommandHandler(unitOfWork, projectionWriter);
+        var handler = new DisableTenantCommandHandler(unitOfWork);
 
         Assert.ThrowsAsync<InvalidOperationException>(() =>
             handler.Handle(new DisableTenantCommand(UlidId.NewUlid()), CancellationToken.None));
@@ -54,26 +53,14 @@ public class DisableTenantCommandHandlerTests
         {
             return Task.FromResult(1);
         }
-    }
 
-    private sealed class FakeTenantProjectionWriter : ITenantProjectionWriter
-    {
-        public TenantStatus? UpdatedStatus { get; private set; }
-
-        public Task UpsertAsync(TenantProjectionModel model, CancellationToken cancellationToken)
+        public Task<int> SaveChangesAsync(bool deferDispatch, CancellationToken cancellationToken)
         {
-            return Task.CompletedTask;
+            return Task.FromResult(1);
         }
 
-        public Task UpdateStatusAsync(UlidId tenantId, TenantStatus status, CancellationToken cancellationToken)
+        public void Dispose()
         {
-            UpdatedStatus = status;
-            return Task.CompletedTask;
-        }
-
-        public Task UpdateNameAsync(UlidId tenantId, string name, CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
         }
     }
 }

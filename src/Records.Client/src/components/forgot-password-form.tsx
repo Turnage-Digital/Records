@@ -19,8 +19,6 @@ const ForgotPasswordForm = ({
   const [formErrorMessage, setFormErrorMessage] = React.useState<string | null>(
     null,
   );
-  const [submittedEmail, setSubmittedEmail] = React.useState<string>("");
-
   const validateInputs = () => {
     if (email && /\S+@\S+\.\S+/.test(email)) {
       setEmailErrorMessage(null);
@@ -42,8 +40,6 @@ const ForgotPasswordForm = ({
     try {
       setFormErrorMessage(null);
       setLoading(true);
-      setSubmittedEmail(email);
-
       const response = await fetch("/identity/forgotPassword", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -85,6 +81,7 @@ const ForgotPasswordForm = ({
       <TextField
         id="email"
         name="email"
+        label="Email"
         placeholder="your@email.com"
         autoComplete="email"
         required
@@ -109,7 +106,7 @@ const ForgotPasswordForm = ({
       </Button>
 
       {formErrorMessage && (
-        <Alert severity="error" sx={{ width: "100%" }}>
+        <Alert severity="error" aria-live="assertive" sx={{ width: "100%" }}>
           {formErrorMessage}
         </Alert>
       )}

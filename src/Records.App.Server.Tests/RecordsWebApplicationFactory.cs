@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Records.Core.Infrastructure.Sql;
 using Records.Tenants.Infrastructure.Sql;
 using Records.Users.Infrastructure.Sql;
 
@@ -61,13 +62,17 @@ public sealed class RecordsWebApplicationFactory : WebApplicationFactory<Program
             }
         }
 
+        services.RemoveAll<DbContextOptions<CoreDbContext>>();
         services.RemoveAll<DbContextOptions<UsersDbContext>>();
         services.RemoveAll<DbContextOptions<TenantsDbContext>>();
+        services.RemoveAll<CoreDbContext>();
         services.RemoveAll<UsersDbContext>();
         services.RemoveAll<TenantsDbContext>();
 
         services.AddEntityFrameworkInMemoryDatabase();
 
+        services.AddDbContext<CoreDbContext>(options =>
+            options.UseInMemoryDatabase($"records-core-{databaseId}"));
         services.AddDbContext<UsersDbContext>(options =>
             options.UseInMemoryDatabase($"records-users-{databaseId}"));
         services.AddDbContext<TenantsDbContext>(options =>

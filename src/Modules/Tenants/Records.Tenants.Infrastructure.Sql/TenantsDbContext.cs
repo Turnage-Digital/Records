@@ -24,7 +24,6 @@ public class TenantsDbContext(DbContextOptions<TenantsDbContext> options)
         builder.Property(x => x.Id).HasMaxLength(26).IsRequired();
         builder.Property(x => x.Name).HasMaxLength(256).IsRequired();
         builder.Property(x => x.Status).HasConversion<int>();
-        builder.Property(x => x.CreatedAt).IsRequired();
     }
 
     private static void ConfigureTenantProjections(EntityTypeBuilder<TenantProjectionDb> builder)

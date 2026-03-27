@@ -13,7 +13,7 @@ public sealed class RecordsetMigrationJobWriter(RecordsetsDbContext dbContext) :
             SourceRecordsetId = model.SourceRecordsetId.ToString(),
             RequestedBy = model.RequestedBy.ToString(),
             PlanJson = model.PlanJson,
-            CreatedOn = model.CreatedOn,
+            CreatedAt = model.CreatedAt,
             Stage = model.Stage,
             CorrelationId = model.CorrelationId.ToString()
         };

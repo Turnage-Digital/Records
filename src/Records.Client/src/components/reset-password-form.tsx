@@ -121,12 +121,18 @@ const ResetPasswordForm = ({ email, resetCode, onPasswordReset }: Props) => {
 
   const showPasswordType = showPassword ? "text" : "password";
   const showPasswordIcon = showPassword ? <VisibilityOff /> : <Visibility />;
+  const passwordVisibilityAriaLabel = showPassword
+    ? "Hide password"
+    : "Show password";
   const showConfirmPasswordType = showConfirmPassword ? "text" : "password";
   const showConfirmPasswordIcon = showConfirmPassword ? (
     <VisibilityOff />
   ) : (
     <Visibility />
   );
+  const confirmPasswordVisibilityAriaLabel = showConfirmPassword
+    ? "Hide confirmation password"
+    : "Show confirmation password";
 
   return (
     <Stack
@@ -140,6 +146,7 @@ const ResetPasswordForm = ({ email, resetCode, onPasswordReset }: Props) => {
         margin="normal"
         id="password"
         name="password"
+        label="New password"
         placeholder="••••••"
         autoComplete="new-password"
         required
@@ -156,7 +163,8 @@ const ResetPasswordForm = ({ email, resetCode, onPasswordReset }: Props) => {
             endAdornment: (
               <InputAdornment position="end">
                 <IconButton
-                  aria-label="toggle password visibility"
+                  aria-label={passwordVisibilityAriaLabel}
+                  aria-pressed={showPassword}
                   onClick={() => setShowPassword((prev) => !prev)}
                 >
                   {showPasswordIcon}
@@ -171,6 +179,7 @@ const ResetPasswordForm = ({ email, resetCode, onPasswordReset }: Props) => {
         margin="normal"
         id="confirmPassword"
         name="confirmPassword"
+        label="Confirm new password"
         placeholder="••••••"
         autoComplete="new-password"
         required
@@ -187,7 +196,8 @@ const ResetPasswordForm = ({ email, resetCode, onPasswordReset }: Props) => {
             endAdornment: (
               <InputAdornment position="end">
                 <IconButton
-                  aria-label="toggle confirm password visibility"
+                  aria-label={confirmPasswordVisibilityAriaLabel}
+                  aria-pressed={showConfirmPassword}
                   onClick={() => setShowConfirmPassword((prev) => !prev)}
                 >
                   {showConfirmPasswordIcon}
@@ -210,7 +220,7 @@ const ResetPasswordForm = ({ email, resetCode, onPasswordReset }: Props) => {
       </Button>
 
       {formErrorMessage && (
-        <Alert severity="error" sx={{ width: "100%" }}>
+        <Alert severity="error" aria-live="assertive" sx={{ width: "100%" }}>
           {formErrorMessage}
         </Alert>
       )}

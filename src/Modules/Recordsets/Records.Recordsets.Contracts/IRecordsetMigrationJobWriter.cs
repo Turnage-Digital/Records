@@ -14,6 +14,6 @@ public sealed record RecordsetMigrationJobWriteModel(
     UlidId CorrelationId,
     UlidId RequestedBy,
     string PlanJson,
-    DateTime CreatedOn,
+    DateTime CreatedAt,
     RecordsetMigrationJobStage Stage
 );

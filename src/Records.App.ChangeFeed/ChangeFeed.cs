@@ -69,6 +69,6 @@ public sealed class ChangeFeed
     private sealed record ChangeFeedMessage(
         string Type,
         object Data,
-        DateTimeOffset OccurredOn
+        DateTimeOffset OccurredAt
     );
 }

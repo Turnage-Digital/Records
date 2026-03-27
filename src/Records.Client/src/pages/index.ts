@@ -3,7 +3,7 @@ export { default as CreateRecordsetPage } from "./create-recordset-page";
 export { default as EditRecordsetPage } from "./edit-recordset-page";
 export { default as EditRecordPage } from "./edit-record-page";
 export { default as RecordDetailsPage } from "./record-details-page";
-export { default as RecordsPage, getRecordsetSearch } from "./records-page";
+export { default as RecordsPage } from "./records-page";
 export { default as RecordsetsPage } from "./recordsets-page";
 export { default as ForgotPasswordPage } from "./forgot-password-page";
 export { default as ResetPasswordPage } from "./reset-password-page";

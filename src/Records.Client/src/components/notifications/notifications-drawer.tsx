@@ -316,7 +316,7 @@ const NotificationsListDrawer = ({
 
   const notificationItems = notifications.map((notification) => {
     const isUnread = notification.isRead === false;
-    const timestamp = formatTimestamp(notification.occurredOn);
+    const timestamp = formatTimestamp(notification.occurredAt);
     const timestampNode = timestamp ? (
       <Typography
         variant="caption"
@@ -340,6 +340,7 @@ const NotificationsListDrawer = ({
           size="small"
           onClick={(event) => handleMarkSingle(event, notification.id)}
           disabled={isMarkingSingle}
+          aria-label={`Mark "${notification.title}" as read`}
         >
           <MarkEmailReadIcon fontSize="small" />
         </IconButton>
@@ -567,9 +568,9 @@ const NotificationDetailsDrawer = ({
   const metadataEntries = Object.entries(data.metadata ?? {});
   const historyEntries = data.history;
   const deliveryEntries = data.deliveryAttempts;
-  const occurredOn =
-    historyEntries.length > 0 ? historyEntries[0]?.on : undefined;
-  const occurredOnLabel = formatTimestamp(occurredOn);
+  const occurredAt =
+    historyEntries.length > 0 ? historyEntries[0]?.occurredAt : undefined;
+  const occurredAtLabel = formatTimestamp(occurredAt);
 
   const metadataSection =
     metadataEntries.length > 0 ? (
@@ -631,11 +632,11 @@ const NotificationDetailsDrawer = ({
         <Stack spacing={0.75}>
           {historyEntries.map((entry) => (
             <Typography
-              key={`${entry.type}-${entry.on}`}
+              key={`${entry.type}-${entry.occurredAt}`}
               variant="body2"
               color="text.secondary"
             >
-              {formatTimestamp(entry.on)} — {entry.type}
+              {formatTimestamp(entry.occurredAt)} — {entry.type}
             </Typography>
           ))}
         </Stack>
@@ -681,7 +682,7 @@ const NotificationDetailsDrawer = ({
                 color="text.secondary"
                 sx={attemptStyle}
               >
-                {formatTimestamp(attempt.attemptedOn)} — {attempt.channel} →{" "}
+                {formatTimestamp(attempt.attemptedAt)} — {attempt.channel} →{" "}
                 {attempt.status}
                 {failureSuffix}
               </Typography>
@@ -701,7 +702,7 @@ const NotificationDetailsDrawer = ({
     <SideDrawerContainer>
       <SideDrawerHeader
         title={data.title}
-        subtitle={occurredOnLabel}
+        subtitle={occurredAtLabel}
         onBack={onBack}
       />
       <SideDrawerContent>

@@ -27,10 +27,6 @@ public sealed class CurrentUserAccess(
         "tid"
     ];
 
-    public string? TenantId => TryGetTenantId(out var tenantId) ? tenantId : null;
-
-    public string? ActorId => TryGetCurrentUserId(out var userId) ? userId.ToString() : null;
-
     public bool TryGetCurrentUserId(out UlidId userId)
     {
         var user = httpContextAccessor.HttpContext?.User;
@@ -133,6 +129,10 @@ public sealed class CurrentUserAccess(
 
         return await userAccessQueries.IsOperationsAsync(userId, tenantId, cancellationToken);
     }
+
+    public string? TenantId => TryGetTenantId(out var tenantId) ? tenantId : null;
+
+    public string? ActorId => TryGetCurrentUserId(out var userId) ? userId.ToString() : null;
 
     private bool TryGetTenantId(out string tenantId)
     {

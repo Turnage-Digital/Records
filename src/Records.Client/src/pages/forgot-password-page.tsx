@@ -3,7 +3,8 @@ import * as React from "react";
 import { Button, Link, Stack, Typography } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-import { AuthPageLayout, ForgotPasswordForm } from "../components";
+import AuthPageLayout from "../components/auth-page-layout";
+import ForgotPasswordForm from "../components/forgot-password-form";
 
 const ForgotPasswordPage = () => {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ const ForgotPasswordPage = () => {
 
   const content = successEmail ? (
     <Stack spacing={2} alignItems="center">
-      <Typography variant="h5" align="center" gutterBottom>
+      <Typography variant="h5" component="h1" align="center" gutterBottom>
         Check your inbox
       </Typography>
 
@@ -47,7 +48,7 @@ const ForgotPasswordPage = () => {
   ) : (
     <>
       <Stack spacing={2} alignItems="center">
-        <Typography variant="h5" align="center" gutterBottom>
+        <Typography variant="h5" component="h1" align="center" gutterBottom>
           Forgot password
         </Typography>
         <Typography variant="body2" color="text.secondary" align="center">

@@ -44,10 +44,10 @@ namespace Records.Recordsets.Infrastructure.Sql.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     PlanJson = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedOn = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    StartedOn = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    CompletedOn = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    BackupRemovedOn = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    StartedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CompletedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    BackupRemovedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     Attempts = table.Column<int>(type: "int", nullable: false),
                     LastError = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -58,7 +58,7 @@ namespace Records.Recordsets.Infrastructure.Sql.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     NewRecordsetId = table.Column<string>(type: "varchar(26)", maxLength: 26, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    BackupExpiresOn = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    BackupExpiresAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     Stage = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false, defaultValue: "Pending")
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },

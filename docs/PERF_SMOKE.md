@@ -5,17 +5,18 @@ Use `scripts/perf-smoke.ps1` for quick endpoint latency/error baselines in local
 ## Basic usage
 
 - Run against local host defaults:
-  - `./scripts/perf-smoke.ps1`
+    - `./scripts/perf-smoke.ps1`
 - Run against multiple endpoints:
-  - `./scripts/perf-smoke.ps1 -BaseUrl "http://localhost:8080" -Endpoints "/health","/metrics"`
+    - `./scripts/perf-smoke.ps1 -BaseUrl "http://localhost:8080" -Endpoints "/health","/metrics"`
 - Run authenticated endpoints:
-  - `./scripts/perf-smoke.ps1 -Endpoints "/api/recordsets?page=0&pageSize=10" -BearerToken "<token>"`
+    - `./scripts/perf-smoke.ps1 -Endpoints "/api/recordsets?page=0&pageSize=10" -BearerToken "<token>"`
 - Fail build/run on non-2xx responses:
-  - `./scripts/perf-smoke.ps1 -Endpoints "/health","/metrics" -FailOnErrors`
+    - `./scripts/perf-smoke.ps1 -Endpoints "/health","/metrics" -FailOnErrors`
 
 ## Output
 
 For each endpoint, the script reports:
+
 - request count
 - success rate
 - average/min/max latency

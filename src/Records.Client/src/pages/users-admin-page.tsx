@@ -89,6 +89,7 @@ const UsersAdminPage = () => {
   const auth = useAuth();
   const actorId = resolveActorUlid(auth.user);
   const queryClient = useQueryClient();
+  const [isSelectingUser, startUserSelectionTransition] = React.useTransition();
 
   const usersQuery = useSuspenseQuery(userSummariesQueryOptions());
   const tenantsQuery = useSuspenseQuery(tenantSummariesQueryOptions());
@@ -113,6 +114,15 @@ const UsersAdminPage = () => {
 
   const [selectedUserId, setSelectedUserId] = React.useState<string | null>(
     sortedUsers[0]?.userId ?? null,
+  );
+
+  const handleSelectUser = React.useCallback(
+    (userId: string) => {
+      startUserSelectionTransition(() => {
+        setSelectedUserId(userId);
+      });
+    },
+    [startUserSelectionTransition],
   );
 
   React.useEffect(() => {
@@ -453,7 +463,9 @@ const UsersAdminPage = () => {
   const grantTenantValue = grantTenantDisabled ? "" : grantTenantId;
 
   const inviteErrorAlert = inviteError ? (
-    <Alert severity="error">{inviteError}</Alert>
+    <Alert severity="error" aria-live="assertive">
+      {inviteError}
+    </Alert>
   ) : null;
 
   const usersEmptyState =
@@ -462,7 +474,9 @@ const UsersAdminPage = () => {
     ) : null;
 
   const suspendErrorAlert = suspendError ? (
-    <Alert severity="error">{suspendError}</Alert>
+    <Alert severity="error" aria-live="assertive">
+      {suspendError}
+    </Alert>
   ) : null;
 
   const selectedUserCaption = selectedUser ? (
@@ -477,7 +491,9 @@ const UsersAdminPage = () => {
   ) : null;
 
   const grantErrorAlert = grantError ? (
-    <Alert severity="error">{grantError}</Alert>
+    <Alert severity="error" aria-live="assertive">
+      {grantError}
+    </Alert>
   ) : null;
 
   const sortedMemberships = React.useMemo(() => {
@@ -566,7 +582,7 @@ const UsersAdminPage = () => {
 
   let roleMembershipsContent: React.ReactNode = (
     <TableContainer>
-      <Table size="small">
+      <Table size="small" aria-label="Selected user role memberships">
         <TableHead>
           <TableRow>
             <TableCell>Role</TableCell>
@@ -591,11 +607,13 @@ const UsersAdminPage = () => {
     );
   } else if (userRolesQuery.isLoading) {
     roleMembershipsContent = (
-      <Typography color="text.secondary">Loading roles...</Typography>
+      <Typography color="text.secondary" role="status" aria-live="polite">
+        Loading roles...
+      </Typography>
     );
   } else if (userRolesQuery.isError) {
     roleMembershipsContent = (
-      <Alert severity="error">
+      <Alert severity="error" aria-live="assertive">
         {userRolesQuery.error.message || "Failed to load role memberships."}
       </Alert>
     );
@@ -633,6 +651,7 @@ const UsersAdminPage = () => {
               type="email"
               value={inviteEmail}
               onChange={(event) => setInviteEmail(event.target.value)}
+              autoComplete="email"
               required
               fullWidth
             />
@@ -696,7 +715,7 @@ const UsersAdminPage = () => {
       >
         <Stack spacing={2}>
           <TableContainer>
-            <Table size="small">
+            <Table size="small" aria-label="User directory">
               <TableHead>
                 <TableRow>
                   <TableCell>User</TableCell>
@@ -718,8 +737,23 @@ const UsersAdminPage = () => {
                       key={user.userId}
                       hover
                       selected={isSelected}
-                      onClick={() => setSelectedUserId(user.userId)}
-                      sx={{ cursor: "pointer" }}
+                      onClick={() => handleSelectUser(user.userId)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          handleSelectUser(user.userId);
+                        }
+                      }}
+                      tabIndex={0}
+                      aria-selected={isSelected}
+                      sx={{
+                        cursor: "pointer",
+                        "&:focus-visible": {
+                          outline: (theme) =>
+                            `2px solid ${theme.palette.primary.main}`,
+                          outlineOffset: -2,
+                        },
+                      }}
                     >
                       <TableCell>
                         <Stack>
@@ -770,7 +804,10 @@ const UsersAdminPage = () => {
         description="Grant or revoke access for the selected user."
         actions={selectedUserCaption}
       >
-        <Stack spacing={2}>
+        <Stack
+          spacing={2}
+          aria-busy={userRolesQuery.isLoading || isSelectingUser}
+        >
           <Stack
             spacing={2}
             direction={{ xs: "column", lg: "row" }}

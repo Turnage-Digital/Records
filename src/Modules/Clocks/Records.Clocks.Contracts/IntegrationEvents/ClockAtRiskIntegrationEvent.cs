@@ -17,7 +17,7 @@ public sealed class ClockAtRiskIntegrationEvent : IIntegrationEvent
     )
     {
         EventId = Guid.NewGuid();
-        OccurredOn = atRiskAt;
+        OccurredAt = atRiskAt;
         EventType = nameof(ClockAtRiskIntegrationEvent);
         ClockId = clockId;
         TenantId = tenantId;
@@ -39,6 +39,6 @@ public sealed class ClockAtRiskIntegrationEvent : IIntegrationEvent
     public DateTimeOffset BreachDueAt { get; }
 
     public Guid EventId { get; }
-    public DateTimeOffset OccurredOn { get; }
+    public DateTimeOffset OccurredAt { get; }
     public string EventType { get; }
 }
