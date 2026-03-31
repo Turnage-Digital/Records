@@ -9,7 +9,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Records.Agents.Infrastructure.Sql;
 using Records.Core.Infrastructure.Sql;
+using Records.Notifications.Infrastructure.Sql;
+using Records.Recordsets.Infrastructure.Sql;
 using Records.Tenants.Infrastructure.Sql;
 using Records.Users.Infrastructure.Sql;
 
@@ -65,9 +68,15 @@ public sealed class RecordsWebApplicationFactory : WebApplicationFactory<Program
         services.RemoveAll<DbContextOptions<CoreDbContext>>();
         services.RemoveAll<DbContextOptions<UsersDbContext>>();
         services.RemoveAll<DbContextOptions<TenantsDbContext>>();
+        services.RemoveAll<DbContextOptions<AgentsDbContext>>();
+        services.RemoveAll<DbContextOptions<RecordsetsDbContext>>();
+        services.RemoveAll<DbContextOptions<NotificationsDbContext>>();
         services.RemoveAll<CoreDbContext>();
         services.RemoveAll<UsersDbContext>();
         services.RemoveAll<TenantsDbContext>();
+        services.RemoveAll<AgentsDbContext>();
+        services.RemoveAll<RecordsetsDbContext>();
+        services.RemoveAll<NotificationsDbContext>();
 
         services.AddEntityFrameworkInMemoryDatabase();
 
@@ -77,6 +86,12 @@ public sealed class RecordsWebApplicationFactory : WebApplicationFactory<Program
             options.UseInMemoryDatabase($"records-users-{databaseId}"));
         services.AddDbContext<TenantsDbContext>(options =>
             options.UseInMemoryDatabase($"records-tenants-{databaseId}"));
+        services.AddDbContext<AgentsDbContext>(options =>
+            options.UseInMemoryDatabase($"records-agents-{databaseId}"));
+        services.AddDbContext<RecordsetsDbContext>(options =>
+            options.UseInMemoryDatabase($"records-recordsets-{databaseId}"));
+        services.AddDbContext<NotificationsDbContext>(options =>
+            options.UseInMemoryDatabase($"records-notifications-{databaseId}"));
     }
 }
 
@@ -91,6 +106,7 @@ internal sealed class TestAuthHandler(
     public const string UserIdHeader = "X-Test-UserId";
     public const string EmailHeader = "X-Test-Email";
     public const string NameHeader = "X-Test-Name";
+    public const string TenantIdHeader = "X-Test-TenantId";
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
@@ -125,6 +141,14 @@ internal sealed class TestAuthHandler(
         if (!string.IsNullOrWhiteSpace(name))
         {
             claims.Add(new Claim(ClaimTypes.Name, name));
+        }
+
+        var tenantId = Request.Headers.TryGetValue(TenantIdHeader, out var tenantIdValues)
+            ? tenantIdValues.FirstOrDefault()
+            : null;
+        if (!string.IsNullOrWhiteSpace(tenantId))
+        {
+            claims.Add(new Claim("tenantId", tenantId));
         }
 
         var identity = new ClaimsIdentity(claims, SchemeName);

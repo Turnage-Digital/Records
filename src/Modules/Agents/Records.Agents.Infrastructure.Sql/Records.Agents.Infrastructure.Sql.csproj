@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\Core\Records.Core.Infrastructure.Sql\Records.Core.Infrastructure.Sql.csproj"/>
+        <ProjectReference Include="..\Records.Agents.Contracts\Records.Agents.Contracts.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Records.Agents.Tests"/>
+    </ItemGroup>
+
+</Project>

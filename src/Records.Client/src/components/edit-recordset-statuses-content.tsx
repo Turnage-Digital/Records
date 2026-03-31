@@ -17,10 +17,12 @@ import {
   Typography,
 } from "@mui/material";
 
-import { Status, statusColors } from "../models";
 import StatusBullet from "./status-bullet";
+import { statusColors } from "../models/status-colors";
 
-interface Props {
+import type { Status } from "../models/status";
+
+interface EditRecordsetStatusesContentProps {
   statuses: Status[] | null;
   onStatusesChanged: (statuses: Status[]) => void;
 }
@@ -28,7 +30,7 @@ interface Props {
 const EditRecordsetStatusesContent = ({
   statuses,
   onStatusesChanged,
-}: Props) => {
+}: EditRecordsetStatusesContentProps) => {
   const [statusName, setStatusName] = useState<string | null>(null);
   const [statusColor, setStatusColor] = useState(statusColors[0]);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -36,20 +38,25 @@ const EditRecordsetStatusesContent = ({
   const menuOpen = Boolean(anchorEl);
 
   const handleAddClicked = () => {
-    const notNull = statuses ?? [];
-    const added = [...notNull, { name: statusName!, color: statusColor.value }];
+    const existingStatuses = statuses ?? [];
+    const nextStatuses = [
+      ...existingStatuses,
+      { name: statusName!, color: statusColor.value },
+    ];
 
     setStatusName(null);
     setStatusColor(statusColors[0]);
     setSelectedIndex(0);
-    onStatusesChanged(added);
+    onStatusesChanged(nextStatuses);
   };
 
   const handleRemoveClicked = (name: string) => {
-    const notNull = statuses ?? [];
-    const updated = notNull.filter((sd) => sd.name !== name);
+    const existingStatuses = statuses ?? [];
+    const updatedStatuses = existingStatuses.filter(
+      (status) => status.name !== name,
+    );
 
-    onStatusesChanged(updated);
+    onStatusesChanged(updatedStatuses);
   };
 
   const handleMenuItemClicked = (index: number) => {

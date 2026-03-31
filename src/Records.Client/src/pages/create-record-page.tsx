@@ -9,11 +9,18 @@ import {
 } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { Loading, RecordEditor, Titlebar } from "../components";
+import Loading from "../components/loading";
+import RecordEditor from "../components/record-editor/record-editor";
+import Titlebar from "../components/titlebar";
 import { extractRecordId } from "../lib/identifiers";
+import {
+  recordDetailsPath,
+  recordsetRecordsPath,
+  recordsetsPath,
+} from "../lib/routes";
 import { recordsetItemDefinitionQueryOptions } from "../query-options";
 
-import type { RecordItem } from "../models";
+import type { RecordItem } from "../models/record-item";
 
 const SmartPasteDialog = React.lazy(
   () => import("../components/smart-paste-dialog"),
@@ -106,11 +113,11 @@ const CreateRecordPage = () => {
   };
 
   const handleNavigateToRecordsets = () => {
-    navigate("/");
+    navigate(recordsetsPath());
   };
 
   const handleNavigateToRecordset = () => {
-    navigate(`/${recordsetId}`);
+    navigate(recordsetRecordsPath(recordsetId));
   };
 
   const handleOpenSmartPaste = () => {
@@ -145,7 +152,7 @@ const CreateRecordPage = () => {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const mutated = await createRecordMutation.mutateAsync(formState);
-    navigate(`/${recordsetId}/${mutated.id}`);
+    navigate(recordDetailsPath(recordsetId, mutated.id));
   };
 
   const actions = [

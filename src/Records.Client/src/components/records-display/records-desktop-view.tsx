@@ -1,12 +1,18 @@
 import * as React from "react";
 
 import { Paper } from "@mui/material";
-import { DataGrid, GridPaginationModel, GridSortModel } from "@mui/x-data-grid";
+import {
+  DataGrid,
+  type GridPaginationModel,
+  type GridSortModel,
+} from "@mui/x-data-grid";
 
-import { RecordsetItemDefinition, RecordsetPagedRecords } from "../../models";
 import { getGridColDefs } from "../col-defs";
 
-interface Props {
+import type { RecordsetItemDefinition } from "../../models/recordset-item-definition";
+import type { RecordsetPagedRecords } from "../../models/recordset-paged-records";
+
+interface RecordsDesktopViewProps {
   data: RecordsetPagedRecords;
   definition: RecordsetItemDefinition;
   paginationModel: GridPaginationModel;
@@ -31,7 +37,7 @@ const RecordsDesktopView = ({
   onViewRecord,
   onEditRecord,
   onDeleteRecord,
-}: Props) => {
+}: RecordsDesktopViewProps) => {
   const gridColDefs = getGridColDefs(
     definition,
     onViewRecord,

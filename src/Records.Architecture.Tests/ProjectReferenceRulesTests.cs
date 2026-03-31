@@ -50,7 +50,9 @@ public sealed partial class ProjectReferenceRulesTests
                     continue;
                 }
 
-                var allowed = sourceLayer == "Application" && targetLayer == "Contracts";
+                var allowed =
+                    (sourceLayer == "Application" && targetLayer == "Contracts") ||
+                    (sourceLayer == "Infrastructure.Sql" && targetLayer == "Contracts");
                 if (!allowed)
                 {
                     var relativeSource = Path.GetRelativePath(modulesRoot, csproj);

@@ -18,10 +18,11 @@ internal static class EndpointTestSupport
     };
 
     internal static HttpClient CreateAuthenticatedClient(
-        this RecordsWebApplicationFactory factory,
+        this WebApplicationFactory<Program> factory,
         UlidId userId,
         string? email = null,
-        string? name = null
+        string? name = null,
+        UlidId? tenantId = null
     )
     {
         var client = factory.CreateClient(new WebApplicationFactoryClientOptions
@@ -45,11 +46,17 @@ internal static class EndpointTestSupport
             client.DefaultRequestHeaders.Add(TestAuthHandler.NameHeader, name);
         }
 
+        if (tenantId.HasValue)
+        {
+            client.DefaultRequestHeaders.Remove(TestAuthHandler.TenantIdHeader);
+            client.DefaultRequestHeaders.Add(TestAuthHandler.TenantIdHeader, tenantId.Value.ToString());
+        }
+
         return client;
     }
 
     internal static async Task SeedRoleMembershipAsync(
-        this RecordsWebApplicationFactory factory,
+        this WebApplicationFactory<Program> factory,
         UlidId userId,
         UserRole role,
         UlidId? tenantId = null,
@@ -73,7 +80,7 @@ internal static class EndpointTestSupport
     }
 
     internal static async Task SeedUserProjectionAsync(
-        this RecordsWebApplicationFactory factory,
+        this WebApplicationFactory<Program> factory,
         UlidId userId,
         string email,
         UserStatus status = UserStatus.Active,
@@ -94,7 +101,7 @@ internal static class EndpointTestSupport
     }
 
     internal static async Task<int> CountRoleMembershipsAsync(
-        this RecordsWebApplicationFactory factory,
+        this WebApplicationFactory<Program> factory,
         UlidId userId,
         UserRole role,
         UlidId? tenantId = null

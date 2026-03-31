@@ -13,7 +13,9 @@ import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
 
 import { AuthProvider } from "./auth";
-import { Loading, SideDrawer, SideDrawerProvider } from "./components";
+import DetailPanel from "./components/detail-panel/detail-panel";
+import DetailPanelProvider from "./components/detail-panel/detail-panel-provider";
+import Loading from "./components/loading";
 import { createAppRouter } from "./router";
 import theme from "./theme";
 
@@ -28,17 +30,17 @@ root.render(
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <LocalizationProvider dateAdapter={AdapterDateFns}>
-        <AuthProvider>
-          <SideDrawerProvider>
-            <QueryClientProvider client={queryClient}>
-              <SideDrawer />
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <DetailPanelProvider>
+              <DetailPanel />
               <Suspense fallback={<Loading />}>
                 <RouterProvider router={router} />
               </Suspense>
               {/* <ReactQueryDevtools />*/}
-            </QueryClientProvider>
-          </SideDrawerProvider>
-        </AuthProvider>
+            </DetailPanelProvider>
+          </AuthProvider>
+        </QueryClientProvider>
       </LocalizationProvider>
     </ThemeProvider>
   </StyledEngineProvider>,

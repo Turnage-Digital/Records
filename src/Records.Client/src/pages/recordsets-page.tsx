@@ -12,9 +12,10 @@ import { useNavigate } from "react-router-dom";
 import ConfirmDeleteDialog from "../components/confirm-delete-dialog";
 import RecordsetCard from "../components/recordset-card";
 import Titlebar from "../components/titlebar";
+import { createRecordsetPath } from "../lib/routes";
 import { recordsetNamesQueryOptions } from "../query-options";
 
-import type { RecordsetName } from "../models";
+import type { RecordsetName } from "../models/recordset-name";
 
 const RecordsetsPage = () => {
   const navigate = useNavigate();
@@ -68,7 +69,7 @@ const RecordsetsPage = () => {
   };
 
   const handleCreateRecordset = () => {
-    navigate("/create");
+    navigate(createRecordsetPath());
   };
 
   const actions = [

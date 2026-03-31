@@ -60,6 +60,20 @@
 - EF Core entity classes in `.Infrastructure.Sql` projects end with `Db` (tables unchanged).
 - Architecture boundaries: Domain, Application, Contracts, Infrastructure, Hosts; prefer DI/constructor injection.
 
+## Records.Client Frontend Conventions
+
+- `src/Records.Client/src` imports should target the exact source file they use; do not add or rely on barrel
+  `index.ts` files under `components/`, `models/`, or `pages/`.
+- Keep single-file UI components as single files. Create a component directory only when the component owns multiple
+  implementation files or a small internal surface area (for example, `app-sidebar/`, `detail-panel/`, or
+  `recordset-editor/`).
+- `app-sidebar/` is the primary left-side application navigation surface. Do not use that area for contextual editors
+  or record detail workflows.
+- `detail-panel/` is the right-side contextual workspace for tangential tasks such as notifications, history, and
+  secondary editors launched from the current page.
+- Prefer descriptive props/type names in shared client components (`RecordCardProps`, `DetailPanelHeaderProps`) rather
+  than generic `Props` names when the type is exported or the component is reused.
+
 ## Testing Guidelines
 
 - Frameworks: follow module conventions (keep consistent within a module).

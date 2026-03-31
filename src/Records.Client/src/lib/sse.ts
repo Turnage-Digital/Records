@@ -1,4 +1,7 @@
-import { ChangeFeedHandler, ChangeFeedMessage } from "../models";
+import type {
+  ChangeFeedHandler,
+  ChangeFeedMessage,
+} from "../models/change-feed";
 
 export interface ConnectOptions {
   url?: string;

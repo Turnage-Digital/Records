@@ -1,33 +1,102 @@
 import * as React from "react";
 
+import MenuIcon from "@mui/icons-material/Menu";
 import {
   AppBar,
   Box,
   CircularProgress,
   Container,
-  Tab,
-  Tabs,
+  IconButton,
+  Stack,
   Toolbar,
   Typography,
-  useTheme,
 } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  Link as RouterLink,
-  Navigate,
-  Outlet,
-  useLocation,
-} from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 import { useAuth } from "./auth";
-import { NotificationsBell, UserMenu } from "./components";
+import AppSidebar from "./components/app-sidebar/app-sidebar";
+import NotificationsBell from "./components/notifications/notifications-bell";
+import UserMenu from "./components/user-menu";
 import { connectChangeFeed, createChangeFeedRouter } from "./lib/sse";
+
+const collapsedSidebarWidth = 88;
+const expandedSidebarWidth = 320;
+
+const getSectionLabel = (pathname: string) => {
+  if (pathname === "/" || pathname.startsWith("/threads/")) {
+    return "Agents";
+  }
+
+  if (pathname.startsWith("/recordsets")) {
+    return "Recordsets";
+  }
+
+  if (pathname.startsWith("/admin/tenants")) {
+    return "Tenants";
+  }
+
+  if (pathname.startsWith("/admin/users")) {
+    return "Users";
+  }
+
+  return "Records";
+};
+
+const getPageLabel = (pathname: string) => {
+  if (pathname === "/") {
+    return "Chat-first operations";
+  }
+
+  if (pathname.startsWith("/threads/")) {
+    return "Conversation";
+  }
+
+  if (pathname === "/recordsets") {
+    return "Browse recordsets";
+  }
+
+  if (pathname === "/recordsets/create") {
+    return "Create a recordset";
+  }
+
+  if (/^\/recordsets\/[^/]+\/edit$/.test(pathname)) {
+    return "Edit recordset";
+  }
+
+  if (/^\/recordsets\/[^/]+\/records\/create$/.test(pathname)) {
+    return "Create record";
+  }
+
+  if (/^\/recordsets\/[^/]+\/records\/[^/]+\/edit$/.test(pathname)) {
+    return "Edit record";
+  }
+
+  if (/^\/recordsets\/[^/]+\/records\/[^/]+$/.test(pathname)) {
+    return "Record details";
+  }
+
+  if (/^\/recordsets\/[^/]+\/records$/.test(pathname)) {
+    return "Record list";
+  }
+
+  if (pathname.startsWith("/admin/tenants")) {
+    return "Tenant administration";
+  }
+
+  if (pathname.startsWith("/admin/users")) {
+    return "User administration";
+  }
+
+  return "Operational tracking";
+};
 
 const Shell = () => {
   const auth = useAuth();
   const queryClient = useQueryClient();
-  const theme = useTheme();
   const location = useLocation();
+  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (auth.status !== "loggedIn") {
@@ -278,93 +347,99 @@ const Shell = () => {
   }
 
   const canManageGlobalAdminAreas = auth.access.isGlobalAdmin;
-
-  let selectedNav: "recordsets" | "tenants" | "users" = "recordsets";
-  if (location.pathname.startsWith("/admin/tenants")) {
-    selectedNav = "tenants";
-  } else if (location.pathname.startsWith("/admin/users")) {
-    selectedNav = "users";
-  }
-
-  const tenantsTab = canManageGlobalAdminAreas ? (
-    <Tab
-      value="tenants"
-      label="Tenants"
-      component={RouterLink}
-      to="/admin/tenants"
-      sx={{ minHeight: 48, textTransform: "none" }}
-    />
-  ) : null;
-
-  const usersTab = canManageGlobalAdminAreas ? (
-    <Tab
-      value="users"
-      label="Users"
-      component={RouterLink}
-      to="/admin/users"
-      sx={{ minHeight: 48, textTransform: "none" }}
-    />
-  ) : null;
+  const sectionLabel = getSectionLabel(location.pathname);
+  const pageLabel = getPageLabel(location.pathname);
 
   return (
-    <>
-      <Box sx={{ minHeight: "100vh" }}>
-        <AppBar
-          position="fixed"
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        backgroundColor: "background.default",
+      }}
+    >
+      <AppSidebar
+        canManageGlobalAdminAreas={canManageGlobalAdminAreas}
+        collapsed={sidebarCollapsed}
+        mobileOpen={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
+        onToggleCollapse={() =>
+          setSidebarCollapsed((currentValue) => !currentValue)
+        }
+      />
+
+      <AppBar
+        position="fixed"
+        sx={{
+          backgroundColor: "background.paper",
+          color: "text.primary",
+          boxShadow: "none",
+          borderBottom: 1,
+          borderColor: "divider",
+          width: {
+            xs: "100%",
+            lg: sidebarCollapsed
+              ? `calc(100% - ${collapsedSidebarWidth}px)`
+              : `calc(100% - ${expandedSidebarWidth}px)`,
+          },
+          ml: {
+            xs: 0,
+            lg: sidebarCollapsed
+              ? `${collapsedSidebarWidth}px`
+              : `${expandedSidebarWidth}px`,
+          },
+        }}
+      >
+        <Toolbar
           sx={{
-            backgroundColor: theme.palette.background.paper,
-            color: theme.palette.text.primary,
-            boxShadow: theme.shadows[1],
-            borderBottom: `1px solid ${theme.palette.divider}`,
+            minHeight: 72,
+            px: { xs: 2, md: 3 },
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 2,
           }}
         >
-          <Toolbar>
-            <Typography
-              component="h1"
-              variant="h4"
-              fontWeight="bold"
-              color="primary"
-              sx={{ mr: 3 }}
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <IconButton
+              onClick={() => setMobileSidebarOpen(true)}
+              sx={{ display: { xs: "inline-flex", lg: "none" } }}
             >
-              Records
-            </Typography>
+              <MenuIcon />
+            </IconButton>
 
-            <Tabs
-              value={selectedNav}
-              textColor="primary"
-              indicatorColor="primary"
-              sx={{ flexGrow: 1, minHeight: 48 }}
-            >
-              <Tab
-                value="recordsets"
-                label="Recordsets"
-                component={RouterLink}
-                to="/"
-                sx={{ minHeight: 48, textTransform: "none" }}
-              />
-              {tenantsTab}
-              {usersTab}
-            </Tabs>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                variant="overline"
+                sx={{ color: "text.secondary", letterSpacing: "0.14em" }}
+              >
+                {sectionLabel}
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 700 }} noWrap>
+                {pageLabel}
+              </Typography>
+            </Box>
+          </Stack>
 
+          <Stack direction="row" spacing={1.5} alignItems="center">
             <NotificationsBell />
             <UserMenu />
-          </Toolbar>
-        </AppBar>
+          </Stack>
+        </Toolbar>
+      </AppBar>
 
-        <Container
-          component="main"
-          maxWidth="xl"
-          sx={{
-            minHeight: "100vh",
-            backgroundColor: theme.palette.background.default,
-            py: 4,
-          }}
-        >
-          <Box sx={(muiTheme) => ({ ...muiTheme.mixins.toolbar })} />
+      <Box
+        component="main"
+        sx={{
+          flex: 1,
+          minWidth: 0,
+        }}
+      >
+        <Toolbar sx={{ minHeight: 72 }} />
+        <Container maxWidth="xl" sx={{ py: { xs: 3, md: 4 } }}>
           <Outlet />
         </Container>
       </Box>
-    </>
+    </Box>
   );
 };
 

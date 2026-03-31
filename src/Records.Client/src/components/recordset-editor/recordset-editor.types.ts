@@ -1,12 +1,10 @@
-import {
-  ClockThresholdUnit,
-  Column,
-  MigrationPlan,
-  NotificationRuleInput,
-  RecordsetItemDefinition,
-  Status,
-  StatusTransition,
-} from "../../models";
+import type { ClockThresholdUnit } from "../../models/clock-threshold-unit";
+import type { Column } from "../../models/column";
+import type { MigrationPlan } from "../../models/migration-plan";
+import type { NotificationRuleInput } from "../../models/notification-rule";
+import type { RecordsetItemDefinition } from "../../models/recordset-item-definition";
+import type { Status } from "../../models/status";
+import type { StatusTransition } from "../../models/status-transition";
 
 export interface NotificationRuleFormValue extends NotificationRuleInput {
   id?: string;

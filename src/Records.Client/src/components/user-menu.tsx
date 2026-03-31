@@ -14,13 +14,11 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
 
 import { useAuth } from "../auth";
 
 const UserMenu = () => {
   const auth = useAuth();
-  const queryClient = useQueryClient();
   const [userMenuAnchor, setUserMenuAnchor] =
     React.useState<null | HTMLElement>(null);
   const [logoutDialogOpen, setLogoutDialogOpen] = React.useState(false);
@@ -44,8 +42,7 @@ const UserMenu = () => {
     });
     const response = await fetch(request);
     if (response.ok) {
-      auth.logout();
-      queryClient.clear();
+      await auth.logout();
     }
     setLogoutDialogOpen(false);
   };

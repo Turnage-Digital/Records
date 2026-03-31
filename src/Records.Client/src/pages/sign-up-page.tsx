@@ -1,7 +1,6 @@
 import * as React from "react";
 
 import { Link, Stack, Typography } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { useAuth } from "../auth";
@@ -11,7 +10,6 @@ import SignUpForm from "../components/sign-up-form";
 const SignUpPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const queryClient = useQueryClient();
   const auth = useAuth();
 
   const handleNavigateToSignIn = () => {
@@ -19,11 +17,16 @@ const SignUpPage = () => {
     navigate(searchString ? `/sign-in?${searchString}` : "/sign-in");
   };
 
-  const handleSignedUp = (email: string) => {
-    auth.login(email);
-    queryClient.clear();
+  const handleSignedUp = async () => {
+    const session = await auth.login();
+    if (!session) {
+      throw new Error("Authenticated session was not established.");
+    }
+
     const callbackUrl = searchParams.get("callbackUrl") ?? "/";
-    navigate(callbackUrl, { replace: true });
+    navigate(session.access.canAccessOps ? callbackUrl : "/access-denied", {
+      replace: true,
+    });
   };
 
   return (

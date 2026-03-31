@@ -15,13 +15,12 @@ import {
   type UseInfiniteQueryResult,
 } from "@tanstack/react-query";
 
-import { HistoryPage } from "../../models";
-import {
-  SideDrawerContainer,
-  SideDrawerContent,
-  SideDrawerFooter,
-  SideDrawerHeader,
-} from "../side-drawer";
+import DetailPanelContainer from "../detail-panel/detail-panel-container";
+import DetailPanelContent from "../detail-panel/detail-panel-content";
+import DetailPanelFooter from "../detail-panel/detail-panel-footer";
+import DetailPanelHeader from "../detail-panel/detail-panel-header";
+
+import type { HistoryPage } from "../../models/history";
 
 const formatTimestamp = (isoString: string | undefined) => {
   if (isoString === undefined || isoString === "") {
@@ -273,9 +272,9 @@ const HistoryDrawer = ({ subtitle, query }: HistoryDrawerProps) => {
   }
 
   return (
-    <SideDrawerContainer>
-      <SideDrawerHeader subtitle={subtitle} actions={headerActions} />
-      <SideDrawerContent>
+    <DetailPanelContainer>
+      <DetailPanelHeader subtitle={subtitle} actions={headerActions} />
+      <DetailPanelContent>
         <Box
           sx={{
             display: "flex",
@@ -296,8 +295,8 @@ const HistoryDrawer = ({ subtitle, query }: HistoryDrawerProps) => {
             {contentNode}
           </Box>
         </Box>
-      </SideDrawerContent>
-      <SideDrawerFooter>
+      </DetailPanelContent>
+      <DetailPanelFooter>
         <Box
           sx={{
             display: "flex",
@@ -307,8 +306,8 @@ const HistoryDrawer = ({ subtitle, query }: HistoryDrawerProps) => {
         >
           {loadMoreNode}
         </Box>
-      </SideDrawerFooter>
-    </SideDrawerContainer>
+      </DetailPanelFooter>
+    </DetailPanelContainer>
   );
 };
 

@@ -1,4 +1,4 @@
-import type { RecordsetSearch } from "../models";
+import type { RecordsetSearch } from "../models/recordset-search";
 
 export const getRecordsetSearch = (
   params: URLSearchParams,

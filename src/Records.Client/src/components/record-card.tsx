@@ -24,13 +24,12 @@ import {
   useTheme,
 } from "@mui/material";
 
-import {
-  ColumnType,
-  getStatusFromName,
-  RecordItem,
-  RecordsetItemDefinition,
-} from "../models";
 import StatusChip from "./status-chip";
+import { ColumnType } from "../models/column-type";
+import { getStatusFromName } from "../models/status";
+
+import type { RecordItem } from "../models/record-item";
+import type { RecordsetItemDefinition } from "../models/recordset-item-definition";
 
 interface RecordCardProps {
   record: RecordItem;

@@ -24,6 +24,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Modules\Agents\Records.Agents.Domain\Records.Agents.Domain.csproj"/>
         <ProjectReference Include="..\Modules\Core\Records.Core.Domain\Records.Core.Domain.csproj"/>
         <ProjectReference Include="..\Modules\Clocks\Records.Clocks.Domain\Records.Clocks.Domain.csproj"/>
         <ProjectReference Include="..\Modules\Notifications\Records.Notifications.Domain\Records.Notifications.Domain.csproj"/>

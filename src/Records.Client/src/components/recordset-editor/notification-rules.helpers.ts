@@ -1,15 +1,14 @@
-import {
-  type NotificationChannel,
-  NotificationChannelType,
-  NotificationRule,
-  NotificationScheduleType,
-  NotificationTriggerType,
-} from "../../models";
-
 import type {
   NotificationRuleFormValue,
   NotificationRuleSubmission,
 } from "./recordset-editor.types";
+import type {
+  NotificationChannel,
+  NotificationChannelType,
+  NotificationRule,
+  NotificationScheduleType,
+  NotificationTriggerType,
+} from "../../models/notification-rule";
 
 const createClientId = () => {
   const cryptoApi = globalThis.crypto;

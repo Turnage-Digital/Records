@@ -8,17 +8,16 @@ import {
   Typography,
 } from "@mui/material";
 
-import { Status } from "../../models";
-import {
-  SideDrawerContainer,
-  SideDrawerContent,
-  SideDrawerFooter,
-  SideDrawerHeader,
-  useSideDrawer,
-} from "../side-drawer";
 import NotificationRulesEditor from "./notification-rules-editor";
 import { createEmptyRuleFormValue } from "./notification-rules.helpers";
-import { NotificationRuleFormValue } from "./recordset-editor.types";
+import DetailPanelContainer from "../detail-panel/detail-panel-container";
+import DetailPanelContent from "../detail-panel/detail-panel-content";
+import DetailPanelFooter from "../detail-panel/detail-panel-footer";
+import DetailPanelHeader from "../detail-panel/detail-panel-header";
+import useDetailPanel from "../detail-panel/use-detail-panel";
+
+import type { NotificationRuleFormValue } from "./recordset-editor.types";
+import type { Status } from "../../models/status";
 
 interface NotificationRulesDrawerProps {
   initialRules: NotificationRuleFormValue[];
@@ -53,7 +52,7 @@ const NotificationRulesDrawer = ({
   statuses,
   onSave,
 }: NotificationRulesDrawerProps) => {
-  const { closeDrawer } = useSideDrawer();
+  const { closeDetailPanel } = useDetailPanel();
   const [rules, setRules] = React.useState<NotificationRuleFormValue[]>(() =>
     initialRules.map(cloneRule),
   );
@@ -95,7 +94,7 @@ const NotificationRulesDrawer = ({
     setIsSaving(true);
     try {
       await onSave(rules.map(cloneRule), deletedRuleIds);
-      closeDrawer();
+      closeDetailPanel();
     } catch (error) {
       if (error instanceof Error && error.message.trim().length > 0) {
         setSaveError(error.message);
@@ -110,9 +109,9 @@ const NotificationRulesDrawer = ({
   const saveButtonIcon = isSaving ? <CircularProgress size={14} /> : undefined;
 
   return (
-    <SideDrawerContainer>
-      <SideDrawerHeader subtitle="Configure rule triggers, channels, and schedules for this recordset." />
-      <SideDrawerContent>
+    <DetailPanelContainer>
+      <DetailPanelHeader subtitle="Configure rule triggers, channels, and schedules for this recordset." />
+      <DetailPanelContent>
         <Stack spacing={2} sx={{ p: 2.5 }}>
           {saveError && <Alert severity="error">{saveError}</Alert>}
           <NotificationRulesEditor
@@ -123,8 +122,8 @@ const NotificationRulesDrawer = ({
             onRemoveRule={handleRemoveRule}
           />
         </Stack>
-      </SideDrawerContent>
-      <SideDrawerFooter>
+      </DetailPanelContent>
+      <DetailPanelFooter>
         <Stack
           direction="row"
           spacing={1.5}
@@ -136,7 +135,11 @@ const NotificationRulesDrawer = ({
             {rules.length} rule{rulesLabelSuffix} configured
           </Typography>
           <Stack direction="row" spacing={1}>
-            <Button variant="text" onClick={closeDrawer} disabled={isSaving}>
+            <Button
+              variant="text"
+              onClick={closeDetailPanel}
+              disabled={isSaving}
+            >
               Cancel
             </Button>
             <Button
@@ -149,8 +152,8 @@ const NotificationRulesDrawer = ({
             </Button>
           </Stack>
         </Stack>
-      </SideDrawerFooter>
-    </SideDrawerContainer>
+      </DetailPanelFooter>
+    </DetailPanelContainer>
   );
 };
 

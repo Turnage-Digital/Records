@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Records.Agents.Contracts;
 using Records.Recordsets.Contracts;
 using Records.Recordsets.Contracts.Projections;
 using Records.Recordsets.Contracts.Queries;
@@ -25,6 +27,7 @@ public static class DependencyInjection
         services.AddScoped<IRecordsetQueries, RecordsetQueries>();
         services.AddScoped<IRecordQueries, RecordQueries>();
         services.AddScoped<IRecordsetMigrationJobQueries, RecordsetMigrationJobQueries>();
+        services.TryAddEnumerable(ServiceDescriptor.Scoped<IAgentModuleServer, RecordsetsModuleServer>());
 
         return services;
     }

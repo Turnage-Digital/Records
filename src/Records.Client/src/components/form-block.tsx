@@ -1,15 +1,15 @@
 import * as React from "react";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { Grid, Stack, Typography } from "@mui/material";
 
-interface Props {
+interface FormBlockProps {
   title: string;
   subtitle?: string;
   content: ReactNode;
 }
 
-const FormBlock = ({ title, subtitle, content }: Props) => {
+const FormBlock = ({ title, subtitle, content }: FormBlockProps) => {
   return (
     <Grid
       container

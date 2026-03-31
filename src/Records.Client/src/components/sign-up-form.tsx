@@ -1,22 +1,14 @@
 import * as React from "react";
 
-import { Visibility, VisibilityOff } from "@mui/icons-material";
-import {
-  Alert,
-  Button,
-  IconButton,
-  InputAdornment,
-  Stack,
-  TextField,
-} from "@mui/material";
+import { Alert, Button, Stack, TextField } from "@mui/material";
 
-interface Props {
+import PasswordField from "./password-field";
+
+interface SignUpFormProps {
   onSignedUp: (email: string) => Promise<void> | void;
 }
 
-const SignUpForm = ({ onSignedUp }: Props) => {
-  const [showPassword, setShowPassword] = React.useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+const SignUpForm = ({ onSignedUp }: SignUpFormProps) => {
   const [loading, setLoading] = React.useState(false);
 
   const [email, setEmail] = React.useState("");
@@ -79,52 +71,33 @@ const SignUpForm = ({ onSignedUp }: Props) => {
   };
 
   const validateInputs = () => {
-    let retval = true;
+    let isValid = true;
 
     if (email && /\S+@\S+\.\S+/.test(email)) {
       setEmailErrorMessage(null);
     } else {
       setEmailErrorMessage("Please enter a valid email address.");
-      retval = false;
+      isValid = false;
     }
 
     if (password && password.length >= 6) {
       setPasswordErrorMessage(null);
     } else {
       setPasswordErrorMessage("Password must be at least 6 characters long.");
-      retval = false;
+      isValid = false;
     }
 
     if (confirmPassword && confirmPassword === password) {
       setConfirmPasswordErrorMessage(null);
     } else {
       setConfirmPasswordErrorMessage("Passwords do not match.");
-      retval = false;
+      isValid = false;
     }
 
-    return retval;
+    return isValid;
   };
 
   const emailErrorColor = emailErrorMessage ? "error" : "primary";
-  const passwordErrorColor = passwordErrorMessage ? "error" : "primary";
-  const confirmPasswordErrorColor = confirmPasswordErrorMessage
-    ? "error"
-    : "primary";
-
-  const showPasswordType = showPassword ? "text" : "password";
-  const showPasswordIcon = showPassword ? <VisibilityOff /> : <Visibility />;
-  const passwordVisibilityAriaLabel = showPassword
-    ? "Hide password"
-    : "Show password";
-  const showConfirmPasswordType = showConfirmPassword ? "text" : "password";
-  const showConfirmPasswordIcon = showConfirmPassword ? (
-    <VisibilityOff />
-  ) : (
-    <Visibility />
-  );
-  const confirmPasswordVisibilityAriaLabel = showConfirmPassword
-    ? "Hide confirmation password"
-    : "Show confirmation password";
 
   return (
     <Stack
@@ -152,70 +125,28 @@ const SignUpForm = ({ onSignedUp }: Props) => {
         color={emailErrorColor}
       />
 
-      <TextField
-        margin="normal"
+      <PasswordField
         id="password"
         name="password"
         label="Password"
-        placeholder="••••••"
         autoComplete="new-password"
-        required
-        fullWidth
-        variant="outlined"
-        type={showPasswordType}
         value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        error={passwordErrorMessage !== null}
-        helperText={passwordErrorMessage}
-        color={passwordErrorColor}
-        slotProps={{
-          input: {
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  aria-label={passwordVisibilityAriaLabel}
-                  aria-pressed={showPassword}
-                  onClick={() => setShowPassword((prev) => !prev)}
-                >
-                  {showPasswordIcon}
-                </IconButton>
-              </InputAdornment>
-            ),
-          },
-        }}
+        onChange={setPassword}
+        errorMessage={passwordErrorMessage}
+        showAriaLabel="Show password"
+        hideAriaLabel="Hide password"
       />
 
-      <TextField
-        margin="normal"
+      <PasswordField
         id="confirmPassword"
         name="confirmPassword"
         label="Confirm password"
-        placeholder="••••••"
         autoComplete="new-password"
-        required
-        fullWidth
-        variant="outlined"
-        type={showConfirmPasswordType}
         value={confirmPassword}
-        onChange={(e) => setConfirmPassword(e.target.value)}
-        error={confirmPasswordErrorMessage !== null}
-        helperText={confirmPasswordErrorMessage}
-        color={confirmPasswordErrorColor}
-        slotProps={{
-          input: {
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  aria-label={confirmPasswordVisibilityAriaLabel}
-                  aria-pressed={showConfirmPassword}
-                  onClick={() => setShowConfirmPassword((prev) => !prev)}
-                >
-                  {showConfirmPasswordIcon}
-                </IconButton>
-              </InputAdornment>
-            ),
-          },
-        }}
+        onChange={setConfirmPassword}
+        errorMessage={confirmPasswordErrorMessage}
+        showAriaLabel="Show confirmation password"
+        hideAriaLabel="Hide confirmation password"
       />
 
       <Button

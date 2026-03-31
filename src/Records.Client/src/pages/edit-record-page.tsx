@@ -7,12 +7,19 @@ import {
 } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { RecordEditor, Titlebar } from "../components";
-import { RecordItem } from "../models";
+import RecordEditor from "../components/record-editor/record-editor";
+import Titlebar from "../components/titlebar";
+import {
+  recordDetailsPath,
+  recordsetRecordsPath,
+  recordsetsPath,
+} from "../lib/routes";
 import {
   recordQueryOptions,
   recordsetItemDefinitionQueryOptions,
 } from "../query-options";
+
+import type { RecordItem } from "../models/record-item";
 
 const EditRecordPage = () => {
   const { recordsetId, recordId } = useParams<{
@@ -86,15 +93,15 @@ const EditRecordPage = () => {
   });
 
   const handleNavigateToRecordsets = () => {
-    navigate("/");
+    navigate(recordsetsPath());
   };
 
   const handleNavigateToRecordset = () => {
-    navigate(`/${recordsetId}`);
+    navigate(recordsetRecordsPath(recordsetId));
   };
 
   const handleNavigateToRecordDetails = () => {
-    navigate(`/${recordsetId}/${recordId}`);
+    navigate(recordDetailsPath(recordsetId, recordId));
   };
 
   const handleBagChange = (nextBag: Record<string, unknown>) => {

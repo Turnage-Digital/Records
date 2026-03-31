@@ -1,11 +1,15 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Records.Agents.Application.Commands;
+using Records.Agents.Infrastructure.Sql;
+using Records.Agents.Presentation.Controllers;
 using Records.App.ChangeFeed;
 using Records.App.ChangeFeed.Controllers;
 using Records.App.Infrastructure.Security;
@@ -93,6 +97,7 @@ internal static class HostingExtensions
             .AddApplicationPart(typeof(RecordsetsController).Assembly)
             .AddApplicationPart(typeof(ClockDefinitionsController).Assembly)
             .AddApplicationPart(typeof(NotificationsController).Assembly)
+            .AddApplicationPart(typeof(AgentsController).Assembly)
             .AddApplicationPart(typeof(ChangeStreamController).Assembly);
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
@@ -114,6 +119,7 @@ internal static class HostingExtensions
         builder.Services.AddRecordsetsInfrastructureSql(connectionString, serverVersion);
         builder.Services.AddClocksInfrastructureSql(connectionString, serverVersion);
         builder.Services.AddNotificationsInfrastructureSql(connectionString, serverVersion);
+        builder.Services.AddAgentsInfrastructureSql(connectionString, serverVersion);
 
         builder.Services.AddScoped<IRecordBagValidator, RecordBagValidator>();
         builder.Services.AddScoped<IMigrationValidator, MigrationValidator>();
@@ -147,6 +153,7 @@ internal static class HostingExtensions
             config.RegisterServicesFromAssemblyContaining<CreateNotificationRuleCommandHandler>();
             config.RegisterServicesFromAssemblyContaining<UpdateNotificationRuleCommandHandler>();
             config.RegisterServicesFromAssemblyContaining<DeleteNotificationRuleCommandHandler>();
+            config.RegisterServicesFromAssemblyContaining<CreateAgentThreadCommandHandler>();
         });
 
         if (builder.Environment.IsDevelopment())
@@ -198,6 +205,48 @@ internal static class HostingExtensions
 
         identityGroup.MapIdentityApi<User>();
 
+        identityGroup.MapGet(
+                "session",
+                async (HttpContext context, ICurrentUserAccess currentUserAccess, CancellationToken cancellationToken) =>
+                {
+                    context.Response.Headers.CacheControl = "no-store";
+
+                    if (context.User.Identity?.IsAuthenticated != true)
+                    {
+                        return Results.Unauthorized();
+                    }
+
+                    var userId = FindClaimValue(context.User, ClaimTypes.NameIdentifier, "sub");
+                    var email = FindClaimValue(context.User, ClaimTypes.Email, "email");
+                    var displayName = FindClaimValue(context.User, ClaimTypes.Name, "name") ?? email;
+                    var userName = FindClaimValue(context.User, ClaimTypes.Name, "preferred_username", "unique_name") ??
+                                   email ??
+                                   displayName;
+                    var tenantId = FindClaimValue(context.User, "tenantId", "tenantid", "tenant_id", "tid", "tenant");
+                    var isGlobalAdmin = await currentUserAccess.IsGlobalAdminAsync(cancellationToken);
+                    var canAccessOps = await currentUserAccess.CanAccessOpsAsync(cancellationToken);
+
+                    return Results.Ok(new
+                    {
+                        user = new
+                        {
+                            id = userId,
+                            userId,
+                            sub = userId,
+                            tenantId,
+                            userName,
+                            email,
+                            name = displayName
+                        },
+                        access = new
+                        {
+                            isGlobalAdmin,
+                            canAccessOps
+                        }
+                    });
+                })
+            .AllowAnonymous();
+
         identityGroup.MapPost("logout",
             async (SignInManager<User> signInManager) =>
             {
@@ -240,5 +289,19 @@ internal static class HostingExtensions
         app.MapFallbackToFile("index.html");
 
         return app;
+    }
+
+    private static string? FindClaimValue(ClaimsPrincipal user, params string[] claimTypes)
+    {
+        foreach (var claimType in claimTypes)
+        {
+            var value = user.FindFirst(claimType)?.Value;
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+        }
+
+        return null;
     }
 }

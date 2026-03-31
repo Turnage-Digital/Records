@@ -12,14 +12,6 @@ import {
   Typography,
 } from "@mui/material";
 
-import {
-  Column,
-  MigrationJobStage,
-  MigrationPlan,
-  RecordsetItemDefinition,
-  Status,
-  StatusTransition,
-} from "../../models";
 import EditRecordsetColumnsContent from "../edit-recordset-columns-content";
 import EditRecordsetNameContent from "../edit-recordset-name-content";
 import EditRecordsetStatusesContent from "../edit-recordset-statuses-content";
@@ -30,6 +22,13 @@ import {
   RecordsetMigrationRequiredError,
 } from "./recordset-editor.types";
 import StatusTransitionsEditor from "./status-transitions-editor";
+
+import type { Column } from "../../models/column";
+import type { MigrationPlan } from "../../models/migration-plan";
+import type { MigrationJobStage } from "../../models/migration-progress";
+import type { RecordsetItemDefinition } from "../../models/recordset-item-definition";
+import type { Status } from "../../models/status";
+import type { StatusTransition } from "../../models/status-transition";
 
 interface RecordsetEditorProps {
   initialValue: RecordsetEditorInitialValue;

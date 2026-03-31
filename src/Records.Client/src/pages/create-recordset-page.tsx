@@ -10,19 +10,13 @@ import {
 import { createSearchParams, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../auth";
-import {
-  Loading,
-  RecordsetEditor,
-  Titlebar,
-  toClockDefinitionFormValue,
-  useSideDrawer,
-} from "../components";
+import useDetailPanel from "../components/detail-panel/use-detail-panel";
+import Loading from "../components/loading";
+import { toClockDefinitionFormValue } from "../components/recordset-editor/clock-definitions.helpers";
+import RecordsetEditor from "../components/recordset-editor/recordset-editor";
+import Titlebar from "../components/titlebar";
 import { extractRecordsetId, resolveTenantUlid } from "../lib/identifiers";
-import {
-  NotificationRuleInput,
-  RecordsetItemDefinition,
-  Status,
-} from "../models";
+import { recordsetRecordsPath, recordsetsPath } from "../lib/routes";
 import {
   clockDefinitionsQueryOptions,
   tenantSummariesQueryOptions,
@@ -34,7 +28,10 @@ import type {
   NotificationRuleFormValue,
   RecordsetEditorInitialValue,
   RecordsetEditorSubmitResult,
-} from "../components";
+} from "../components/recordset-editor/recordset-editor.types";
+import type { NotificationRuleInput } from "../models/notification-rule";
+import type { RecordsetItemDefinition } from "../models/recordset-item-definition";
+import type { Status } from "../models/status";
 
 const ClockDefinitionsDrawer = React.lazy(
   () => import("../components/recordset-editor/clock-definitions-drawer"),
@@ -170,7 +167,7 @@ const CreateRecordsetPage = () => {
   const auth = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { openDrawer } = useSideDrawer();
+  const { openDetailPanel } = useDetailPanel();
 
   const tenantsQuery = useSuspenseQuery(tenantSummariesQueryOptions());
   const tenantIds = tenantsQuery.data.map((tenant) => tenant.tenantId);
@@ -345,12 +342,12 @@ const CreateRecordsetPage = () => {
         page: "0",
         pageSize: "10",
       }).toString();
-      navigate(`/${created.id}?${search}`);
+      navigate(`${recordsetRecordsPath(created.id)}?${search}`);
     },
   });
 
   const handleNavigateToRecordsets = () => {
-    navigate("/");
+    navigate(recordsetsPath());
   };
 
   const handleSubmit = async (result: RecordsetEditorSubmitResult) => {
@@ -358,7 +355,7 @@ const CreateRecordsetPage = () => {
   };
 
   const handleOpenNotificationRulesDrawer = () => {
-    openDrawer(
+    openDetailPanel(
       "Notification Rules",
       <NotificationRulesDrawer
         initialRules={notificationRules}
@@ -373,7 +370,7 @@ const CreateRecordsetPage = () => {
   };
 
   const handleOpenClockDefinitionsDrawer = () => {
-    openDrawer(
+    openDetailPanel(
       "Clock Definitions",
       <ClockDefinitionsDrawer
         tenantId={selectedTenantId}

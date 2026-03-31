@@ -18,6 +18,14 @@ public interface IRecordQueries
         CancellationToken cancellationToken
     );
 
+    Task<RecordsetPagedRecordsDto?> SearchAsync(
+        UlidId recordsetId,
+        int page,
+        int pageSize,
+        IReadOnlyCollection<RecordSearchFilterClause> filters,
+        CancellationToken cancellationToken
+    );
+
     Task<RecordItemDetailsDto?> GetDetailsAsync(UlidId recordsetId, int recordId, CancellationToken cancellationToken);
 
     Task<HistoryPageDto> GetRecordsetHistoryAsync(

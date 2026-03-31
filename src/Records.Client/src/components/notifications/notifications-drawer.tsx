@@ -27,20 +27,21 @@ import {
 } from "@tanstack/react-query";
 
 import {
-  NotificationDetails,
-  NotificationPage,
-  NotificationsSearch,
-  NotificationSummary,
-} from "../../models";
-import {
   notificationDetailsQueryOptions,
   notificationsInfiniteQueryOptions,
   unreadCountQueryOptions,
 } from "../../query-options";
-import SideDrawerContainer from "../side-drawer/side-drawer-container";
-import SideDrawerContent from "../side-drawer/side-drawer-content";
-import SideDrawerFooter from "../side-drawer/side-drawer-footer";
-import SideDrawerHeader from "../side-drawer/side-drawer-header";
+import DetailPanelContainer from "../detail-panel/detail-panel-container";
+import DetailPanelContent from "../detail-panel/detail-panel-content";
+import DetailPanelFooter from "../detail-panel/detail-panel-footer";
+import DetailPanelHeader from "../detail-panel/detail-panel-header";
+
+import type {
+  NotificationDetails,
+  NotificationPage,
+  NotificationsSearch,
+  NotificationSummary,
+} from "../../models/notifications";
 
 const PAGE_SIZE = 20;
 
@@ -468,8 +469,8 @@ const NotificationsListDrawer = ({
   );
 
   return (
-    <SideDrawerContainer>
-      <SideDrawerHeader
+    <DetailPanelContainer>
+      <DetailPanelHeader
         subtitle={headerSubtitle}
         actions={
           <Stack direction="row" spacing={1} alignItems="center">
@@ -492,7 +493,7 @@ const NotificationsListDrawer = ({
           </Stack>
         }
       />
-      <SideDrawerContent>
+      <DetailPanelContent>
         <Box
           sx={{
             display: "flex",
@@ -525,9 +526,9 @@ const NotificationsListDrawer = ({
           </Box>
           <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto" }}>{content}</Box>
         </Box>
-      </SideDrawerContent>
-      <SideDrawerFooter>{footerContent}</SideDrawerFooter>
-    </SideDrawerContainer>
+      </DetailPanelContent>
+      <DetailPanelFooter>{footerContent}</DetailPanelFooter>
+    </DetailPanelContainer>
   );
 };
 
@@ -699,13 +700,13 @@ const NotificationDetailsDrawer = ({
   ) : undefined;
 
   return (
-    <SideDrawerContainer>
-      <SideDrawerHeader
+    <DetailPanelContainer>
+      <DetailPanelHeader
         title={data.title}
         subtitle={occurredAtLabel}
         onBack={onBack}
       />
-      <SideDrawerContent>
+      <DetailPanelContent>
         <Box
           sx={{
             p: 2,
@@ -728,8 +729,8 @@ const NotificationDetailsDrawer = ({
           {metadataSection}
           {historySection}
         </Box>
-      </SideDrawerContent>
-      <SideDrawerFooter>
+      </DetailPanelContent>
+      <DetailPanelFooter>
         <Box
           sx={{
             display: "flex",
@@ -749,8 +750,8 @@ const NotificationDetailsDrawer = ({
             {markReadLabel}
           </Button>
         </Box>
-      </SideDrawerFooter>
-    </SideDrawerContainer>
+      </DetailPanelFooter>
+    </DetailPanelContainer>
   );
 };
 

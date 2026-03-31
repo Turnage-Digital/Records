@@ -15,14 +15,19 @@ import {
 } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
 
-import { RecordsetName } from "../models";
+import { editRecordsetPath, recordsetRecordsPath } from "../lib/routes";
 
-interface Props {
+import type { RecordsetName } from "../models/recordset-name";
+
+interface RecordsetCardProps {
   recordsetName: RecordsetName;
   onDeleteClick: (recordset: RecordsetName) => void;
 }
 
-const RecordsetCard = ({ recordsetName, onDeleteClick }: Props) => {
+const RecordsetCard = ({
+  recordsetName,
+  onDeleteClick,
+}: RecordsetCardProps) => {
   const theme = useTheme();
 
   return (
@@ -81,7 +86,7 @@ const RecordsetCard = ({ recordsetName, onDeleteClick }: Props) => {
         <Tooltip title={`View ${recordsetName.name}`}>
           <IconButton
             component={RouterLink}
-            to={`/${recordsetName.id}?page=0&pageSize=10`}
+            to={`${recordsetRecordsPath(recordsetName.id)}?page=0&pageSize=10`}
             color="primary"
             aria-label={`View ${recordsetName.name}`}
           >
@@ -91,7 +96,7 @@ const RecordsetCard = ({ recordsetName, onDeleteClick }: Props) => {
         <Tooltip title={`Edit ${recordsetName.name}`}>
           <IconButton
             component={RouterLink}
-            to={`/${recordsetName.id}/edit`}
+            to={editRecordsetPath(recordsetName.id)}
             color="primary"
             aria-label={`Edit ${recordsetName.name}`}
           >

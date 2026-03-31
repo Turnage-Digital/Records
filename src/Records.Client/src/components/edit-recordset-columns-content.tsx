@@ -20,31 +20,41 @@ import {
   TextField,
 } from "@mui/material";
 
-import { Column, ColumnType } from "../models";
+import { ColumnType } from "../models/column-type";
 
-interface Props {
+import type { Column } from "../models/column";
+
+interface EditRecordsetColumnsContentProps {
   columns: Column[] | null;
   onColumnsChanged: (columns: Column[]) => void;
 }
 
-const EditRecordsetColumnsContent = ({ columns, onColumnsChanged }: Props) => {
+const EditRecordsetColumnsContent = ({
+  columns,
+  onColumnsChanged,
+}: EditRecordsetColumnsContentProps) => {
   const [columnName, setColumnName] = useState<string | null>(null);
   const [columnType, setColumnType] = useState<ColumnType | null>(null);
 
   const handleAddClicked = () => {
-    const notNull = columns ?? [];
-    const added = [...notNull, { name: columnName!, type: columnType! }];
+    const existingColumns = columns ?? [];
+    const nextColumns = [
+      ...existingColumns,
+      { name: columnName!, type: columnType! },
+    ];
 
     setColumnName(null);
     setColumnType(null);
-    onColumnsChanged(added);
+    onColumnsChanged(nextColumns);
   };
 
   const handleRemoveClicked = (name: string) => {
-    const notNull = columns ?? [];
-    const updated = notNull.filter((pd) => pd.name !== name);
+    const existingColumns = columns ?? [];
+    const updatedColumns = existingColumns.filter(
+      (column) => column.name !== name,
+    );
 
-    onColumnsChanged(updated);
+    onColumnsChanged(updatedColumns);
   };
 
   const columnTypes = Object.values(ColumnType);

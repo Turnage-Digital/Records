@@ -1,23 +1,30 @@
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 
 import type {
-  Clock,
-  ClockDefinition,
-  HistoryPage,
-  MigrationProgressRecord,
+  AgentThread,
+  AgentThreadSummary,
+  WorkspaceArtifact,
+  WorkspaceEditorSchema,
+} from "./models/agent";
+import type { Clock } from "./models/clock";
+import type { ClockDefinition } from "./models/clock-definition";
+import type { HistoryPage } from "./models/history";
+import type { MigrationProgressRecord } from "./models/migration-progress";
+import type { NotificationRule } from "./models/notification-rule";
+import type {
   NotificationDetails,
   NotificationPage,
-  NotificationRule,
   NotificationsSearch,
-  RecordDetails,
-  RecordsetItemDefinition,
-  RecordsetName,
-  RecordsetPagedRecords,
-  RecordsetSearch,
-  TenantSummary,
-  UserRoleMembership,
-  UserSummary,
-} from "./models";
+} from "./models/notifications";
+import type { RecordDetails } from "./models/record-details";
+import type { RecordsetItemDefinition } from "./models/recordset-item-definition";
+import type { RecordsetName } from "./models/recordset-name";
+import type { RecordsetPagedRecords } from "./models/recordset-paged-records";
+import type { RecordsetSearch } from "./models/recordset-search";
+import type { AccessInfo, SessionInfo } from "./models/session";
+import type { TenantSummary } from "./models/tenant-summary";
+import type { UserRoleMembership } from "./models/user-role-membership";
+import type { UserSummary } from "./models/user-summary";
 
 const throwIfNotOk = async (response: Response, message: string) => {
   if (response.ok) {
@@ -123,6 +130,64 @@ const fetchNotificationsPage = async (
   } satisfies NotificationPage;
 };
 
+const fetchAgentThreadSummaries = async (): Promise<AgentThreadSummary[]> => {
+  const response = await fetch("/api/agents/threads", {
+    credentials: "include",
+  });
+  await throwIfNotOk(response, "Failed to load agent threads");
+  return (await response.json()) as AgentThreadSummary[];
+};
+
+const fetchAgentThread = async (threadId: string): Promise<AgentThread> => {
+  const response = await fetch(`/api/agents/threads/${threadId}`, {
+    credentials: "include",
+  });
+  await throwIfNotOk(response, "Failed to load agent thread");
+  return (await response.json()) as AgentThread;
+};
+
+const normalizeAccessInfo = (raw: Record<string, unknown>): AccessInfo => ({
+  isGlobalAdmin: raw.isGlobalAdmin === true,
+  canAccessOps: raw.canAccessOps === true,
+});
+
+const fetchSession = async (): Promise<SessionInfo | null> => {
+  const response = await fetch("/identity/session", {
+    credentials: "include",
+  });
+
+  if (response.status === 401) {
+    return null;
+  }
+
+  await throwIfNotOk(response, "Failed to load session");
+
+  const raw = (await response.json()) as Record<string, unknown>;
+  const rawUser =
+    typeof raw.user === "object" && raw.user !== null
+      ? (raw.user as Record<string, unknown>)
+      : {};
+  const rawAccess =
+    typeof raw.access === "object" && raw.access !== null
+      ? (raw.access as Record<string, unknown>)
+      : {};
+
+  return {
+    user: rawUser,
+    access: normalizeAccessInfo(rawAccess),
+  } satisfies SessionInfo;
+};
+
+export const sessionQueryKey = ["session"] as const;
+
+export const sessionQueryOptions = () =>
+  queryOptions({
+    queryKey: sessionQueryKey,
+    queryFn: fetchSession,
+    retry: false,
+    staleTime: 60_000,
+  });
+
 export const notificationsInfiniteQueryOptions = (
   search: NotificationsSearch = {},
 ) =>
@@ -205,6 +270,19 @@ export const recordsetNamesQueryOptions = () =>
       await throwIfNotOk(response, "Failed to load recordset names");
       return (await response.json()) as RecordsetName[];
     },
+  });
+
+export const agentThreadSummariesQueryOptions = () =>
+  queryOptions({
+    queryKey: ["agent-threads"],
+    queryFn: fetchAgentThreadSummaries,
+  });
+
+export const agentThreadQueryOptions = (threadId?: string) =>
+  queryOptions({
+    queryKey: ["agent-thread", threadId],
+    queryFn: async () => fetchAgentThread(threadId!),
+    enabled: Boolean(threadId),
   });
 
 export const recordsetItemDefinitionQueryOptions = (recordsetId?: string) =>

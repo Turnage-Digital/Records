@@ -10,13 +10,17 @@ import {
   TextField,
 } from "@mui/material";
 
-interface Props {
+interface SmartPasteDialogProps {
   open: boolean;
   onClose: () => void;
   onPaste: (text: string) => void;
 }
 
-const SmartPasteDialog = ({ open, onClose, onPaste }: Props) => {
+const SmartPasteDialog = ({
+  open,
+  onClose,
+  onPaste,
+}: SmartPasteDialogProps) => {
   const [text, setText] = React.useState("");
 
   React.useEffect(() => {
