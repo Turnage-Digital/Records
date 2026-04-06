@@ -29,6 +29,7 @@
     <ItemGroup>
         <ProjectReference Include="..\Records.Agents.Application\Records.Agents.Application.csproj"/>
         <ProjectReference Include="..\Records.Agents.Contracts\Records.Agents.Contracts.csproj"/>
+        <ProjectReference Include="..\Records.Agents.Infrastructure.OpenAI\Records.Agents.Infrastructure.OpenAI.csproj"/>
         <ProjectReference Include="..\Records.Agents.Infrastructure.Sql\Records.Agents.Infrastructure.Sql.csproj"/>
     </ItemGroup>
 

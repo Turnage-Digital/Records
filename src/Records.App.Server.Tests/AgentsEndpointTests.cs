@@ -1,11 +1,16 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Records.Agents.Contracts;
 using Records.Agents.Contracts.Dtos;
+using Records.Agents.Infrastructure.OpenAI;
+using Records.Agents.Infrastructure.Sql;
 using Records.Core.Domain.ValueObjects;
+using Records.Recordsets.Contracts.Dtos;
 using Records.Users.Domain;
 
 namespace Records.App.Server.Tests;
@@ -15,9 +20,11 @@ public sealed class AgentsEndpointTests
     [Test]
     public async Task ListThreads_ShouldScopeThreadsByUserAndTenant_WhenSameUserWorksAcrossTenants()
     {
-        var adapter = new FakeWorkspaceBackendAdapter();
         await using var rootFactory = new RecordsWebApplicationFactory();
-        await using var factory = CreateFactory(rootFactory, adapter);
+        await using var factory = CreateFactory(
+            rootFactory,
+            new FakeAgentLlmClient(),
+            new FakeRecordsetsMcpClient());
 
         var userId = UlidId.NewUlid();
         var tenantA = UlidId.NewUlid();
@@ -57,9 +64,10 @@ public sealed class AgentsEndpointTests
     [Test]
     public async Task ConfirmProposal_ShouldApplyChangesOnlyAfterExplicitConfirmation()
     {
-        var adapter = new FakeWorkspaceBackendAdapter();
+        var llmClient = new FakeAgentLlmClient();
+        var mcpClient = new FakeRecordsetsMcpClient();
         await using var rootFactory = new RecordsWebApplicationFactory();
-        await using var factory = CreateFactory(rootFactory, adapter);
+        await using var factory = CreateFactory(rootFactory, llmClient, mcpClient);
 
         var userId = UlidId.NewUlid();
         var tenantId = UlidId.NewUlid();
@@ -91,6 +99,7 @@ public sealed class AgentsEndpointTests
         Assert.That(searchThread, Is.Not.Null);
         Assert.That(searchThread!.CurrentArtifact?.Kind, Is.EqualTo("grid"));
         Assert.That(searchThread.CurrentArtifact?.Grid?.Rows.Length, Is.EqualTo(1));
+        Assert.That(searchThread.Turns.Last().ToolCalls.Select(toolCall => toolCall.Name), Is.EquivalentTo(new[] { "search_records" }));
 
         var proposalResponse = await client.PostAsJsonAsync($"/api/agents/threads/{createdThread.Id}/turns", new
         {
@@ -101,7 +110,8 @@ public sealed class AgentsEndpointTests
         var proposalThread = await proposalResponse.Content.ReadFromJsonAsync<AgentThreadDto>(EndpointTestSupport.JsonOptions);
         Assert.That(proposalThread, Is.Not.Null);
         Assert.That(proposalThread!.PendingProposal, Is.Not.Null);
-        Assert.That(adapter.ApplyCount, Is.Zero);
+        Assert.That(proposalThread.Turns.Last().ToolCalls.Select(toolCall => toolCall.Name), Is.EquivalentTo(new[] { "validate_record_update" }));
+        Assert.That(mcpClient.ApplyCount, Is.Zero);
 
         var confirmResponse = await client.PostAsync(
             $"/api/agents/threads/{createdThread.Id}/proposals/{proposalThread.PendingProposal!.ProposalId}/confirm",
@@ -111,7 +121,7 @@ public sealed class AgentsEndpointTests
         var confirmedThread = await confirmResponse.Content.ReadFromJsonAsync<AgentThreadDto>(EndpointTestSupport.JsonOptions);
         Assert.That(confirmedThread, Is.Not.Null);
         Assert.That(confirmedThread!.PendingProposal, Is.Null);
-        Assert.That(adapter.ApplyCount, Is.EqualTo(1));
+        Assert.That(mcpClient.ApplyCount, Is.EqualTo(1));
 
         var status = confirmedThread.CurrentArtifact?.Detail?.Attributes
             .Single(attribute => attribute.Key == "status")
@@ -124,9 +134,10 @@ public sealed class AgentsEndpointTests
     [Test]
     public async Task ConfirmCreateProposal_ShouldPersistOnlyAfterExplicitConfirmation()
     {
-        var adapter = new FakeWorkspaceBackendAdapter();
+        var llmClient = new FakeAgentLlmClient();
+        var mcpClient = new FakeRecordsetsMcpClient();
         await using var rootFactory = new RecordsWebApplicationFactory();
-        await using var factory = CreateFactory(rootFactory, adapter);
+        await using var factory = CreateFactory(rootFactory, llmClient, mcpClient);
 
         var userId = UlidId.NewUlid();
         var tenantId = UlidId.NewUlid();
@@ -156,7 +167,7 @@ public sealed class AgentsEndpointTests
         Assert.That(proposalThread, Is.Not.Null);
         Assert.That(proposalThread!.PendingProposal, Is.Not.Null);
         Assert.That(proposalThread.PendingProposal!.Kind, Is.EqualTo("create"));
-        Assert.That(adapter.ApplyCount, Is.Zero);
+        Assert.That(mcpClient.ApplyCount, Is.Zero);
 
         var confirmResponse = await client.PostAsync(
             $"/api/agents/threads/{createdThread.Id}/proposals/{proposalThread.PendingProposal.ProposalId}/confirm",
@@ -167,8 +178,8 @@ public sealed class AgentsEndpointTests
             EndpointTestSupport.JsonOptions);
         Assert.That(confirmedThread, Is.Not.Null);
         Assert.That(confirmedThread!.PendingProposal, Is.Null);
-        Assert.That(adapter.ApplyCount, Is.EqualTo(1));
-        Assert.That(adapter.CreatedEntityCount, Is.EqualTo(2));
+        Assert.That(mcpClient.ApplyCount, Is.EqualTo(1));
+        Assert.That(mcpClient.CreatedEntityCount, Is.EqualTo(2));
 
         var clientValue = confirmedThread.CurrentArtifact?.Detail?.Attributes
             .Single(attribute => attribute.Key == "client")
@@ -180,316 +191,365 @@ public sealed class AgentsEndpointTests
 
     private static WebApplicationFactory<Program> CreateFactory(
         RecordsWebApplicationFactory rootFactory,
-        FakeWorkspaceBackendAdapter adapter
+        FakeAgentLlmClient llmClient,
+        FakeRecordsetsMcpClient mcpClient
     )
     {
         return rootFactory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
         {
-            services.RemoveAll<IWorkspaceBackendAdapter>();
-            services.AddSingleton<IWorkspaceBackendAdapter>(adapter);
+            services.RemoveAll<IAgentLlmClient>();
+            services.RemoveAll<IRecordsetsMcpClient>();
+            services.AddSingleton<IAgentLlmClient>(llmClient);
+            services.AddSingleton<IRecordsetsMcpClient>(mcpClient);
         }));
     }
 
-    private sealed class FakeWorkspaceBackendAdapter : IWorkspaceBackendAdapter
+    private sealed class FakeAgentLlmClient : IAgentLlmClient
     {
-        private readonly Dictionary<string, WorkspaceEntityDto> _entities = new(StringComparer.Ordinal)
+        public Task<AgentLlmResponse> CreateResponseAsync(AgentLlmRequest request, CancellationToken cancellationToken)
         {
-            ["101"] = CreateEntity("101", "Open")
+            if (request.Conversation is not null)
+            {
+                var message = request.Conversation.Message;
+
+                if (message.Contains("show me orders", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Task.FromResult(new AgentLlmResponse(
+                        "search-response",
+                        string.Empty,
+                        [new AgentFunctionCallRequest(
+                            "tool-search",
+                            "search_records",
+                            JsonSerializer.Serialize(new
+                            {
+                                collectionId = FakeRecordsetsMcpClient.RecordsetId.ToString(),
+                                page = 0,
+                                pageSize = 20,
+                                filters = new[]
+                                {
+                                    new { field = "client", @operator = "contains", value = "Acme" }
+                                }
+                            }))]));
+                }
+
+                if (message.Contains("update order 101", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Task.FromResult(new AgentLlmResponse(
+                        "update-response",
+                        string.Empty,
+                        [new AgentFunctionCallRequest(
+                            "tool-update",
+                            "validate_record_update",
+                            JsonSerializer.Serialize(new
+                            {
+                                collectionId = FakeRecordsetsMcpClient.RecordsetId.ToString(),
+                                entityId = 101,
+                                changes = new { status = "Complete" }
+                            }))]));
+                }
+
+                if (message.Contains("create an order", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Task.FromResult(new AgentLlmResponse(
+                        "create-response",
+                        string.Empty,
+                        [new AgentFunctionCallRequest(
+                            "tool-create",
+                            "validate_record_create",
+                            JsonSerializer.Serialize(new
+                            {
+                                collectionId = FakeRecordsetsMcpClient.RecordsetId.ToString(),
+                                changes = new { client = "Acme", status = "Open" }
+                            }))]));
+                }
+            }
+
+            if (request.PreviousResponseId == "search-response")
+            {
+                return Task.FromResult(new AgentLlmResponse(
+                    "search-final",
+                    "I found 1 result in Orders.",
+                    []));
+            }
+
+            if (request.PreviousResponseId == "update-response")
+            {
+                return Task.FromResult(new AgentLlmResponse(
+                    "update-final",
+                    "I prepared a proposal with 1 change. Review it before applying.",
+                    []));
+            }
+
+            if (request.PreviousResponseId == "create-response")
+            {
+                return Task.FromResult(new AgentLlmResponse(
+                    "create-final",
+                    "I prepared a proposal with 2 changes. Review it before creating.",
+                    []));
+            }
+
+            return Task.FromResult(new AgentLlmResponse(
+                "fallback",
+                "I could not resolve that request.",
+                []));
+        }
+    }
+
+    private sealed class FakeRecordsetsMcpClient : IRecordsetsMcpClient
+    {
+        private readonly Dictionary<int, Dictionary<string, object?>> _entities = new()
+        {
+            [101] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["client"] = "Acme",
+                ["status"] = "Open"
+            }
         };
+
         private int _nextEntityId = 101;
 
-        public string Id => "records";
+        public static UlidId RecordsetId { get; } = UlidId.NewUlid();
         public int ApplyCount { get; private set; }
         public int CreatedEntityCount => _entities.Count;
 
-        public Task<WorkspaceGridDto?> SearchAsync(
-            WorkspaceSearchRequestDto request,
+        public Task<IReadOnlyList<AgentMcpToolDefinition>> ListToolsAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult<IReadOnlyList<AgentMcpToolDefinition>>(
+            [
+                new("list_recordsets", "List recordsets", "{}"),
+                new("resolve_record_schema", "Resolve schema", "{}"),
+                new("search_records", "Search records", "{}"),
+                new("get_record", "Get record", "{}"),
+                new("get_record_history", "Get history", "{}"),
+                new("validate_record_create", "Validate create", "{}"),
+                new("validate_record_update", "Validate update", "{}"),
+                new("apply_record_create", "Apply create", "{}"),
+                new("apply_record_update", "Apply update", "{}")
+            ]);
+        }
+
+        public Task<AgentMcpToolCallResult> CallToolAsync(
+            string toolName,
+            JsonObject arguments,
+            AgentMcpCallContext callContext,
             CancellationToken cancellationToken
         )
         {
-            var entity = _entities["101"];
-
-            return Task.FromResult<WorkspaceGridDto?>(new WorkspaceGridDto
+            return Task.FromResult(toolName switch
             {
-                CollectionId = "orders",
-                CollectionLabel = "Orders",
-                ResolvedFilters = ["client contains Acme", "orderDate on_or_after yesterday"],
-                Page = 0,
-                PageSize = 20,
-                TotalCount = 1,
-                Columns =
-                [
-                    new WorkspaceGridColumnDto { Key = "client", Label = "Client", Type = "text" },
-                    new WorkspaceGridColumnDto { Key = "status", Label = "Status", Type = "enum" }
-                ],
-                Rows =
-                [
-                    new WorkspaceGridRowDto
+                "search_records" => Success(new RecordsetSearchToolResultDto
+                {
+                    Schema = CreateSchema(),
+                    Page = new RecordsetPagedRecordsDto
                     {
-                        EntityId = "101",
-                        DisplayName = "Order 101",
-                        AvailableActions = ["inspect", "update"],
-                        Attributes =
+                        RecordsetId = RecordsetId,
+                        Name = "Orders",
+                        Count = 1,
+                        Items =
                         [
-                            new WorkspaceAttributeDto
+                            new RecordListItemDto
                             {
-                                Key = "client",
-                                Label = "Client",
-                                Type = "text",
-                                Value = "Acme"
-                            },
-                            new WorkspaceAttributeDto
-                            {
-                                Key = "status",
-                                Label = "Status",
-                                Type = "enum",
-                                Value = entity.Attributes.Single(attribute => attribute.Key == "status").Value
+                                Id = 101,
+                                RecordsetId = RecordsetId,
+                                Bag = _entities[101]
                             }
                         ]
                     }
-                ]
+                }),
+                "validate_record_update" => Success(BuildUpdateProposal(arguments)),
+                "validate_record_create" => Success(BuildCreateProposal(arguments)),
+                "apply_record_update" => ApplyUpdate(arguments),
+                "apply_record_create" => ApplyCreate(arguments),
+                _ => new AgentMcpToolCallResult("{\"error\":\"Unsupported tool.\"}", true, "Unsupported tool.")
             });
         }
 
-        public Task<WorkspaceEntityDto?> GetEntityAsync(
-            WorkspaceEntityRequestDto request,
-            CancellationToken cancellationToken
-        )
+        private AgentMcpToolCallResult ApplyUpdate(JsonObject arguments)
         {
-            return Task.FromResult(_entities.TryGetValue(request.EntityId, out var entity) ? entity : null);
-        }
-
-        public Task<WorkspaceHistoryDto?> GetHistoryAsync(
-            WorkspaceEntityRequestDto request,
-            CancellationToken cancellationToken
-        )
-        {
-            return Task.FromResult<WorkspaceHistoryDto?>(new WorkspaceHistoryDto
+            ApplyCount++;
+            var entityId = arguments["entityId"]?.GetValue<int>() ?? 0;
+            var changes = arguments["changes"]?.AsObject() ?? new JsonObject();
+            foreach (var change in changes)
             {
-                EntityId = request.EntityId,
-                Entries =
-                [
-                    new WorkspaceHistoryEntryDto
-                    {
-                        Type = "Updated",
-                        OccurredAt = DateTimeOffset.UtcNow.AddMinutes(-15),
-                        ActorId = "ops-user",
-                        Attributes =
-                        [
-                            new WorkspaceAttributeDto
-                            {
-                                Key = "status",
-                                Label = "Status",
-                                Type = "enum",
-                                Value = _entities[request.EntityId].Attributes.Single(attribute => attribute.Key == "status").Value
-                            }
-                        ]
-                    }
-                ]
+                _entities[entityId][change.Key] = ReadNodeValue(change.Value);
+            }
+
+            return Success(new RecordsetApplyToolResultDto
+            {
+                Schema = CreateSchema(),
+                Detail = new RecordItemDetailsDto
+                {
+                    Id = entityId,
+                    RecordsetId = RecordsetId,
+                    Bag = _entities[entityId]
+                }
             });
         }
 
-        public Task<WorkspaceEditorSchemaDto?> ResolveSchemaAsync(
-            WorkspaceResolveSchemaRequestDto request,
-            CancellationToken cancellationToken
-        )
+        private AgentMcpToolCallResult ApplyCreate(JsonObject arguments)
         {
-            return Task.FromResult<WorkspaceEditorSchemaDto?>(CreateSchema());
+            ApplyCount++;
+            var changes = arguments["changes"]?.AsObject() ?? new JsonObject();
+            var entityId = ++_nextEntityId;
+            _entities[entityId] = changes.ToDictionary(
+                pair => pair.Key,
+                pair => ReadNodeValue(pair.Value),
+                StringComparer.OrdinalIgnoreCase);
+
+            return Success(new RecordsetApplyToolResultDto
+            {
+                Schema = CreateSchema(),
+                Detail = new RecordItemDetailsDto
+                {
+                    Id = entityId,
+                    RecordsetId = RecordsetId,
+                    Bag = _entities[entityId]
+                }
+            });
         }
 
-        public Task<WorkspaceProposalDto?> ProposeUpdateAsync(
-            WorkspaceProposeUpdateRequestDto request,
-            CancellationToken cancellationToken
-        )
+        private RecordMutationProposalDto BuildUpdateProposal(JsonObject arguments)
         {
-            const string entityId = "101";
-            var current = _entities[entityId];
-            var nextStatus = request.Prompt.Contains("complete", StringComparison.OrdinalIgnoreCase)
-                ? "Complete"
-                : "Open";
-            var proposed = CreateEntity(entityId, nextStatus);
+            var changes = arguments["changes"]?.AsObject() ?? new JsonObject();
+            var currentBag = new Dictionary<string, object?>(_entities[101], StringComparer.OrdinalIgnoreCase);
+            var proposedBag = new Dictionary<string, object?>(currentBag, StringComparer.OrdinalIgnoreCase);
 
-            return Task.FromResult<WorkspaceProposalDto?>(new WorkspaceProposalDto
+            foreach (var change in changes)
+            {
+                proposedBag[change.Key] = ReadNodeValue(change.Value);
+            }
+
+            return new RecordMutationProposalDto
             {
                 Kind = "update",
                 ProposalId = UlidId.NewUlid().ToString(),
-                Target = current,
-                Current = current,
-                Proposed = proposed,
-                Rationale = "Prepared from the requested status change.",
-                State = "pending",
-                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
+                RecordsetId = RecordsetId,
+                RecordsetName = "Orders",
+                Schema = CreateSchema(),
+                Current = new RecordItemDetailsDto
+                {
+                    Id = 101,
+                    RecordsetId = RecordsetId,
+                    Bag = currentBag
+                },
+                Proposed = new RecordItemDetailsDto
+                {
+                    Id = 101,
+                    RecordsetId = RecordsetId,
+                    Bag = proposedBag
+                },
                 Diffs =
                 [
-                    new WorkspaceProposalDiffDto
+                    new RecordMutationDiffDto
                     {
                         Key = "status",
                         Label = "Status",
-                        Before = current.Attributes.Single(x => x.Key == "status").Value,
-                        After = nextStatus
+                        Before = currentBag["status"],
+                        After = proposedBag["status"]
                     }
-                ]
-            });
+                ],
+                Rationale = "Prepared from the requested field changes.",
+                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10)
+            };
         }
 
-        public Task<WorkspaceProposalDto?> ProposeCreateAsync(
-            WorkspaceProposeCreateRequestDto request,
-            CancellationToken cancellationToken
-        )
+        private RecordMutationProposalDto BuildCreateProposal(JsonObject arguments)
         {
-            var client = request.Prompt.Contains("Acme", StringComparison.OrdinalIgnoreCase)
-                ? "Acme"
-                : "New client";
-            var status = request.Prompt.Contains("complete", StringComparison.OrdinalIgnoreCase)
-                ? "Complete"
-                : "Open";
-            var proposed = CreateEntity("draft-order", status, client);
+            var changes = arguments["changes"]?.AsObject() ?? new JsonObject();
+            var proposedBag = changes.ToDictionary(
+                pair => pair.Key,
+                pair => ReadNodeValue(pair.Value),
+                StringComparer.OrdinalIgnoreCase);
 
-            return Task.FromResult<WorkspaceProposalDto?>(new WorkspaceProposalDto
+            return new RecordMutationProposalDto
             {
                 Kind = "create",
                 ProposalId = UlidId.NewUlid().ToString(),
-                Target = proposed,
-                Current = CreateEntity("draft-order", string.Empty, string.Empty),
-                Proposed = proposed,
-                Rationale = "Prepared a draft order from the requested field values.",
-                State = "pending",
-                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
+                RecordsetId = RecordsetId,
+                RecordsetName = "Orders",
+                Schema = CreateSchema(),
+                Current = new RecordItemDetailsDto
+                {
+                    RecordsetId = RecordsetId,
+                    Bag = new Dictionary<string, object?>()
+                },
+                Proposed = new RecordItemDetailsDto
+                {
+                    RecordsetId = RecordsetId,
+                    Bag = proposedBag
+                },
                 Diffs =
                 [
-                    new WorkspaceProposalDiffDto
+                    new RecordMutationDiffDto
                     {
                         Key = "client",
                         Label = "Client",
                         Before = null,
-                        After = client
+                        After = proposedBag["client"]
                     },
-                    new WorkspaceProposalDiffDto
+                    new RecordMutationDiffDto
                     {
                         Key = "status",
                         Label = "Status",
                         Before = null,
-                        After = status
-                    }
-                ]
-            });
-        }
-
-        public Task<WorkspaceEntityDto?> ApplyConfirmedProposalAsync(
-            WorkspaceApplyProposalRequestDto request,
-            CancellationToken cancellationToken
-        )
-        {
-            ApplyCount++;
-
-            if (string.Equals(request.Proposal.Kind, "create", StringComparison.OrdinalIgnoreCase))
-            {
-                var createdId = Interlocked.Increment(ref _nextEntityId).ToString();
-                var status = request.Proposal.Diffs.SingleOrDefault(diff => diff.Key == "status")?.After?.ToString() ?? "Open";
-                var client = request.Proposal.Diffs.SingleOrDefault(diff => diff.Key == "client")?.After?.ToString() ?? "New client";
-                var created = CreateEntity(createdId, status, client);
-                _entities[createdId] = created;
-                return Task.FromResult<WorkspaceEntityDto?>(created);
-            }
-
-            var targetEntityId = request.Proposal.Target.EntityId;
-            var current = _entities[targetEntityId];
-            var statusDiff = request.Proposal.Diffs.Single(diff => diff.Key == "status");
-            var nextStatus = statusDiff.After?.ToString() ?? current.Attributes.Single(attribute => attribute.Key == "status").Value?.ToString() ?? "Open";
-            var updated = CreateEntity(targetEntityId, nextStatus);
-            _entities[targetEntityId] = updated;
-            return Task.FromResult<WorkspaceEntityDto?>(updated);
-        }
-
-        public Task<WorkspaceNotificationsDto?> GetContextNotificationsAsync(
-            WorkspaceEntityRequestDto request,
-            CancellationToken cancellationToken
-        )
-        {
-            return Task.FromResult<WorkspaceNotificationsDto?>(new WorkspaceNotificationsDto
-            {
-                EntityId = request.EntityId,
-                UnreadCount = 1,
-                Items =
-                [
-                    new WorkspaceNotificationDto
-                    {
-                        Id = "notification-1",
-                        Title = "Order updated",
-                        Body = "Operations requested a follow-up on this order.",
-                        OccurredAt = DateTimeOffset.UtcNow.AddMinutes(-5)
-                    }
-                ]
-            });
-        }
-
-        private static WorkspaceEditorSchemaDto CreateSchema()
-        {
-            return new WorkspaceEditorSchemaDto
-            {
-                CollectionId = "orders",
-                CollectionLabel = "Orders",
-                Fields =
-                [
-                    new WorkspaceSchemaFieldDto
-                    {
-                        Key = "client",
-                        Label = "Client",
-                        Type = "text",
-                        Required = true
-                    },
-                    new WorkspaceSchemaFieldDto
-                    {
-                        Key = "status",
-                        Label = "Status",
-                        Type = "enum",
-                        Required = true,
-                        AllowedValues = ["Open", "Complete"]
+                        After = proposedBag["status"]
                     }
                 ],
-                StateTransitions =
+                Rationale = "Prepared from the requested field values.",
+                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10)
+            };
+        }
+
+        private static RecordsetItemDefinitionDto CreateSchema()
+        {
+            return new RecordsetItemDefinitionDto
+            {
+                Id = RecordsetId,
+                Name = "Orders",
+                Columns =
                 [
-                    new WorkspaceStateTransitionDto
+                    new RecordsetColumnDto
                     {
-                        From = "Open",
-                        AllowedNext = ["Complete"]
+                        Name = "Client",
+                        Property = "client",
+                        Type = Records.Recordsets.Domain.ColumnType.Text,
+                        Required = true
                     }
+                ],
+                Statuses =
+                [
+                    new RecordsetStatusDto { Name = "Open", Color = "#ccc" },
+                    new RecordsetStatusDto { Name = "Complete", Color = "#090" }
                 ]
             };
         }
 
-        private static WorkspaceEntityDto CreateEntity(
-            string entityId,
-            string status,
-            string client = "Acme"
-        )
+        private static AgentMcpToolCallResult Success<T>(T value)
         {
-            var schema = CreateSchema();
-            return new WorkspaceEntityDto
+            var json = JsonSerializer.Serialize(value, SerializerOptions);
+            return new AgentMcpToolCallResult(json, false, null);
+        }
+
+        private static object? ReadNodeValue(JsonNode? value)
+        {
+            return value switch
             {
-                EntityType = "order",
-                EntityId = entityId,
-                CollectionId = "orders",
-                DisplayName = $"Order {entityId}",
-                Schema = schema,
-                Attributes =
-                [
-                    new WorkspaceAttributeDto
-                    {
-                        Key = "client",
-                        Label = "Client",
-                        Type = "text",
-                        Value = client
-                    },
-                    new WorkspaceAttributeDto
-                    {
-                        Key = "status",
-                        Label = "Status",
-                        Type = "enum",
-                        Value = status
-                    }
-                ]
+                null => null,
+                JsonValue jsonValue when jsonValue.TryGetValue<string>(out var text) => text,
+                JsonValue jsonValue when jsonValue.TryGetValue<int>(out var number) => number,
+                JsonValue jsonValue when jsonValue.TryGetValue<long>(out var longValue) => longValue,
+                JsonValue jsonValue when jsonValue.TryGetValue<bool>(out var booleanValue) => booleanValue,
+                _ => value.ToJsonString()
             };
+        }
+
+        private static readonly JsonSerializerOptions SerializerOptions = CreateSerializerOptions();
+
+        private static JsonSerializerOptions CreateSerializerOptions()
+        {
+            var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+            options.Converters.Add(new UlidIdJsonConverter());
+            return options;
         }
     }
 }

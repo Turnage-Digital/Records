@@ -7,6 +7,9 @@ public sealed record AgentProviderContextDto
     [JsonPropertyName("threadId")]
     public string ThreadId { get; init; } = string.Empty;
 
+    [JsonPropertyName("backendId")]
+    public string BackendId { get; init; } = string.Empty;
+
     [JsonPropertyName("message")]
     public string Message { get; init; } = string.Empty;
 
@@ -30,6 +33,9 @@ public sealed record AgentTurnResultDto
 
     [JsonPropertyName("proposal")]
     public WorkspaceProposalDto? Proposal { get; init; }
+
+    [JsonPropertyName("toolCalls")]
+    public AgentToolCallDto[] ToolCalls { get; init; } = [];
 }
 
 public sealed record AgentStreamEventDto
@@ -48,6 +54,36 @@ public sealed record AgentStreamEventDto
 
     [JsonPropertyName("proposal")]
     public WorkspaceProposalDto? Proposal { get; init; }
+
+    [JsonPropertyName("toolCall")]
+    public AgentToolCallDto? ToolCall { get; init; }
+}
+
+public sealed record AgentToolCallDto
+{
+    [JsonPropertyName("id")]
+    public string Id { get; init; } = string.Empty;
+
+    [JsonPropertyName("name")]
+    public string Name { get; init; } = string.Empty;
+
+    [JsonPropertyName("argumentsJson")]
+    public string ArgumentsJson { get; init; } = "{}";
+
+    [JsonPropertyName("status")]
+    public string Status { get; init; } = string.Empty;
+
+    [JsonPropertyName("summary")]
+    public string? Summary { get; init; }
+
+    [JsonPropertyName("error")]
+    public string? Error { get; init; }
+
+    [JsonPropertyName("startedAt")]
+    public DateTimeOffset StartedAt { get; init; }
+
+    [JsonPropertyName("completedAt")]
+    public DateTimeOffset? CompletedAt { get; init; }
 }
 
 public sealed record WorkspaceSearchRequestDto

@@ -51,6 +51,12 @@ public sealed class AgentThreadQueries(
             .OrderBy(x => x.CreatedAt)
             .ToArrayAsync(cancellationToken);
 
+        var toolCalls = await dbContext.AgentToolCalls
+            .AsNoTracking()
+            .Where(x => x.ThreadId == threadId)
+            .OrderBy(x => x.StartedAt)
+            .ToArrayAsync(cancellationToken);
+
         var artifactDb = await dbContext.AgentArtifacts
             .AsNoTracking()
             .Where(x => x.ThreadId == threadId && x.IsCurrent)
@@ -81,7 +87,21 @@ public sealed class AgentThreadQueries(
                     Role = x.Role,
                     Content = x.Content,
                     PastedText = x.PastedText,
-                    CreatedAt = x.CreatedAt
+                    CreatedAt = x.CreatedAt,
+                    ToolCalls = toolCalls
+                        .Where(toolCall => toolCall.TurnId == x.Id)
+                        .Select(toolCall => new AgentToolCallDto
+                        {
+                            Id = toolCall.Id,
+                            Name = toolCall.Name,
+                            ArgumentsJson = toolCall.ArgumentsJson,
+                            Status = toolCall.Status,
+                            Summary = toolCall.Summary,
+                            Error = toolCall.Error,
+                            StartedAt = toolCall.StartedAt,
+                            CompletedAt = toolCall.CompletedAt
+                        })
+                        .ToArray()
                 })
                 .ToArray(),
             CurrentArtifact = artifactDb is null

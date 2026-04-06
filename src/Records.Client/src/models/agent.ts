@@ -10,6 +10,18 @@ export interface AgentTurn {
   content: string;
   pastedText?: string | null;
   createdAt: string;
+  toolCalls: AgentToolCall[];
+}
+
+export interface AgentToolCall {
+  id: string;
+  name: string;
+  argumentsJson: string;
+  status: string;
+  summary?: string | null;
+  error?: string | null;
+  startedAt: string;
+  completedAt?: string | null;
 }
 
 export interface WorkspaceAttribute {
@@ -144,4 +156,5 @@ export interface AgentStreamEvent {
   message?: string | null;
   artifact?: WorkspaceArtifact | null;
   proposal?: WorkspaceProposal | null;
+  toolCall?: AgentToolCall | null;
 }

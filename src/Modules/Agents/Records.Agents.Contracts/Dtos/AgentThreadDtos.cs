@@ -51,4 +51,7 @@ public sealed record AgentTurnDto
 
     [JsonPropertyName("createdAt")]
     public DateTimeOffset CreatedAt { get; init; }
+
+    [JsonPropertyName("toolCalls")]
+    public AgentToolCallDto[] ToolCalls { get; init; } = [];
 }

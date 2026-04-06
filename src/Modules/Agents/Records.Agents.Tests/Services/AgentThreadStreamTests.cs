@@ -1,5 +1,5 @@
 using Records.Agents.Contracts.Dtos;
-using Records.Agents.Infrastructure.Sql;
+using Records.Agents.Infrastructure.OpenAI;
 
 namespace Records.Agents.Tests.Services;
 

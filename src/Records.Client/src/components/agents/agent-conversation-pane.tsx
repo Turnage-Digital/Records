@@ -106,6 +106,63 @@ const AgentConversationPane = ({
       );
     }
 
+    const toolCallsNode =
+      turn.toolCalls.length === 0 ? null : (
+        <Stack spacing={1}>
+          {turn.toolCalls.map((toolCall) => {
+            let toolColor = captionColor;
+            if (toolCall.status === "failed") {
+              toolColor = isAssistant ? "error.light" : "error.main";
+            }
+            const toolBackgroundColor = isAssistant
+              ? "rgba(255,255,255,0.06)"
+              : "grey.50";
+            const toolBorderColor = isAssistant
+              ? "rgba(255,255,255,0.12)"
+              : "divider";
+            const summaryNode = toolCall.summary ? (
+              <Typography variant="body2">{toolCall.summary}</Typography>
+            ) : null;
+            const errorNode = toolCall.error ? (
+              <Typography variant="body2" color="error">
+                {toolCall.error}
+              </Typography>
+            ) : null;
+
+            return (
+              <Paper
+                key={toolCall.id}
+                variant="outlined"
+                sx={{
+                  px: 1.5,
+                  py: 1.25,
+                  backgroundColor: toolBackgroundColor,
+                  borderColor: toolBorderColor,
+                }}
+              >
+                <Stack spacing={0.75}>
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    spacing={2}
+                  >
+                    <Typography variant="caption" sx={{ color: toolColor }}>
+                      {toolCall.name}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: toolColor }}>
+                      {toolCall.status}
+                    </Typography>
+                  </Stack>
+
+                  {summaryNode}
+                  {errorNode}
+                </Stack>
+              </Paper>
+            );
+          })}
+        </Stack>
+      );
+
     return (
       <Paper
         key={turn.id}
@@ -146,6 +203,7 @@ const AgentConversationPane = ({
             {turn.content}
           </Typography>
 
+          {toolCallsNode}
           {pastedTextNode}
         </Stack>
       </Paper>

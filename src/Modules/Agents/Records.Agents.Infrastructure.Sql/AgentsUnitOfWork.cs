@@ -83,6 +83,32 @@ public sealed class AgentsUnitOfWork : UnitOfWork<AgentsDbContext>, IAgentsUnitO
         }, cancellationToken);
     }
 
+    public async Task AddToolCallsAsync(IEnumerable<AgentToolCall> toolCalls, CancellationToken cancellationToken)
+    {
+        var rows = toolCalls
+            .Select(toolCall => new AgentToolCallDb
+            {
+                Id = toolCall.Id,
+                ThreadId = toolCall.ThreadId,
+                TurnId = toolCall.TurnId,
+                Name = toolCall.Name,
+                ArgumentsJson = toolCall.ArgumentsJson,
+                Status = toolCall.Status,
+                Summary = toolCall.Summary,
+                Error = toolCall.Error,
+                StartedAt = toolCall.StartedAt,
+                CompletedAt = toolCall.CompletedAt
+            })
+            .ToArray();
+
+        if (rows.Length == 0)
+        {
+            return;
+        }
+
+        await _dbContext.AgentToolCalls.AddRangeAsync(rows, cancellationToken);
+    }
+
     public async Task ReplaceCurrentArtifactAsync(AgentArtifact artifact, CancellationToken cancellationToken)
     {
         var threadId = artifact.ThreadId.ToString();

@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Records.Agents.Infrastructure.OpenAI;
 using Records.Agents.Application.Commands;
 using Records.Agents.Infrastructure.Sql;
 using Records.Agents.Presentation.Controllers;
@@ -120,6 +121,7 @@ internal static class HostingExtensions
         builder.Services.AddClocksInfrastructureSql(connectionString, serverVersion);
         builder.Services.AddNotificationsInfrastructureSql(connectionString, serverVersion);
         builder.Services.AddAgentsInfrastructureSql(connectionString, serverVersion);
+        builder.Services.AddAgentsInfrastructureOpenAi(builder.Configuration);
 
         builder.Services.AddScoped<IRecordBagValidator, RecordBagValidator>();
         builder.Services.AddScoped<IMigrationValidator, MigrationValidator>();

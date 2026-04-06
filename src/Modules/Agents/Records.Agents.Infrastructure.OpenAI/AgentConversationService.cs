@@ -3,16 +3,18 @@ using Records.Agents.Contracts.Dtos;
 using Records.Agents.Contracts.Projections;
 using Records.Agents.Contracts.Queries;
 using Records.Agents.Domain;
+using Records.Agents.Infrastructure.Sql;
 using Records.Core.Contracts;
 using Records.Core.Domain.ValueObjects;
 
-namespace Records.Agents.Infrastructure.Sql;
+namespace Records.Agents.Infrastructure.OpenAI;
 
-public sealed class AgentConversationService(
+internal sealed class AgentConversationService(
     IAgentsUnitOfWork unitOfWork,
     IAgentThreadQueries threadQueries,
+    IAgentBackendRegistry backendRegistry,
     IAgentProvider agentProvider,
-    IEnumerable<IWorkspaceBackendAdapter> backendAdapters,
+    IAgentProposalExecutor proposalExecutor,
     IAgentThreadProjectionWriter threadProjectionWriter,
     ICurrentUserAccess currentUserAccess,
     ITenantContext tenantContext,
@@ -21,17 +23,18 @@ public sealed class AgentConversationService(
 {
     public async Task<AgentThreadSummaryDto> CreateThreadAsync(
         string? title,
+        string? backendId,
         CancellationToken cancellationToken
     )
     {
         var userId = currentUserAccess.GetCurrentUserIdOrThrow().ToString();
         var now = DateTimeOffset.UtcNow;
-        var backend = ResolveBackend("records");
+        var resolvedBackendId = backendRegistry.GetRequiredBackend(backendId).BackendId;
         var thread = AgentThread.Create(
             UlidId.NewUlid(),
             userId,
             AgentTenantId.Normalize(tenantContext.TenantId),
-            backend.Id,
+            resolvedBackendId,
             title,
             now);
 
@@ -89,22 +92,15 @@ public sealed class AgentConversationService(
             return null;
         }
 
-        await threadStream.PublishAsync(threadId, new AgentStreamEventDto
-        {
-            Type = "tool_start",
-            OccurredAt = now,
-            Message = "Handling turn"
-        }, cancellationToken);
-
-        var backend = ResolveBackend(thread.BackendId);
         var result = await agentProvider.ExecuteTurnAsync(new AgentProviderContextDto
         {
             ThreadId = threadId,
+            BackendId = thread.BackendId,
             Message = message,
             PastedText = pastedText,
             CurrentArtifact = currentState.CurrentArtifact,
             PendingProposal = currentState.PendingProposal
-        }, backend, cancellationToken);
+        }, cancellationToken);
 
         var assistantTurn = new AgentTurn(
             UlidId.NewUlid(),
@@ -114,6 +110,19 @@ public sealed class AgentConversationService(
             null,
             DateTimeOffset.UtcNow);
         await unitOfWork.AddTurnAsync(assistantTurn, cancellationToken);
+        await unitOfWork.AddToolCallsAsync(
+            result.ToolCalls.Select(toolCall => new AgentToolCall(
+                toolCall.Id,
+                thread.Id.ToString(),
+                assistantTurn.Id.ToString(),
+                toolCall.Name,
+                toolCall.ArgumentsJson,
+                toolCall.Status,
+                toolCall.Summary,
+                toolCall.Error,
+                toolCall.StartedAt,
+                toolCall.CompletedAt)),
+            cancellationToken);
 
         if (result.Artifact is not null)
         {
@@ -141,6 +150,25 @@ public sealed class AgentConversationService(
         await unitOfWork.SaveChangesAsync(cancellationToken);
         await UpsertThreadProjectionAsync(thread, cancellationToken);
 
+        foreach (var toolCall in result.ToolCalls)
+        {
+            await threadStream.PublishAsync(threadId, new AgentStreamEventDto
+            {
+                Type = "tool_call_started",
+                OccurredAt = toolCall.StartedAt,
+                ToolCall = toolCall
+            }, cancellationToken);
+
+            await threadStream.PublishAsync(threadId, new AgentStreamEventDto
+            {
+                Type = toolCall.Status is "failed" or "rejected"
+                    ? "tool_call_failed"
+                    : "tool_call_completed",
+                OccurredAt = toolCall.CompletedAt ?? toolCall.StartedAt,
+                ToolCall = toolCall
+            }, cancellationToken);
+        }
+
         await threadStream.PublishAsync(threadId, new AgentStreamEventDto
         {
             Type = "assistant_final_message",
@@ -167,13 +195,6 @@ public sealed class AgentConversationService(
                 Proposal = result.Proposal
             }, cancellationToken);
         }
-
-        await threadStream.PublishAsync(threadId, new AgentStreamEventDto
-        {
-            Type = "tool_end",
-            OccurredAt = DateTimeOffset.UtcNow,
-            Message = "Turn completed"
-        }, cancellationToken);
 
         return await threadQueries.GetByIdAsync(threadId, cancellationToken);
     }
@@ -215,11 +236,10 @@ public sealed class AgentConversationService(
             return null;
         }
 
-        var backend = ResolveBackend(thread.BackendId);
-        var updatedEntity = await backend.ApplyConfirmedProposalAsync(new WorkspaceApplyProposalRequestDto
-        {
-            Proposal = proposalDto
-        }, cancellationToken);
+        var updatedEntity = await proposalExecutor.ApplyConfirmedProposalAsync(
+            thread.BackendId,
+            proposalDto,
+            cancellationToken);
 
         proposal.Confirm();
         await unitOfWork.ReplacePendingProposalAsync(proposal, cancellationToken);
@@ -311,11 +331,6 @@ public sealed class AgentConversationService(
         }, cancellationToken);
 
         return await threadQueries.GetByIdAsync(threadId, cancellationToken);
-    }
-
-    private IWorkspaceBackendAdapter ResolveBackend(string backendId)
-    {
-        return backendAdapters.First(adapter => string.Equals(adapter.Id, backendId, StringComparison.OrdinalIgnoreCase));
     }
 
     private Task UpsertThreadProjectionAsync(AgentThread thread, CancellationToken cancellationToken)

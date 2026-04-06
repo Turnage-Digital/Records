@@ -5,7 +5,7 @@
 - Source in `src/` organized by host and capability.
     - Hosts: `Records.App.Server` and `Records.App.Infrastructure.Security`.
     - Modules under `src/Modules/{ModuleName}` (e.g., `Core`, `Tenants`, `Users`, `Recordsets`, `Notifications`).
-    - Feature modules follow: Domain, Application, Contracts, Infrastructure.Sql, Presentation, Tests.
+    - Feature modules follow: Domain, Application, Contracts, Infrastructure.Sql, optional provider-specific infrastructure such as Infrastructure.OpenAI, Presentation, Tests.
     - `Core` is the shared base exception and does not define a `Presentation` project.
 - Docs in `docs/` and included in `Records.sln` as solution items.
 
@@ -30,6 +30,8 @@
 - `Records.{Module}.Infrastructure.Sql`
     - Keep only `Entities/`, `Mappers/`, `Migrations/`, and `QueryCriteria/`.
     - Place repositories, queries, projection writers, and unit of work at project root.
+    - Keep MySql-specific infrastructure here. Do not place LLM providers, MCP clients, or other non-SQL runtime integrations in `*.Infrastructure.Sql`.
+    - When a module needs provider-specific runtime orchestration, place it in a dedicated sibling project such as `Records.{Module}.Infrastructure.OpenAI`.
     - Namespace must match directory path.
 
 - `Records.{Module}.Presentation`

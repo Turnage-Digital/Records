@@ -4,7 +4,7 @@ using System.Threading.Channels;
 using Records.Agents.Contracts;
 using Records.Agents.Contracts.Dtos;
 
-namespace Records.Agents.Infrastructure.Sql;
+namespace Records.Agents.Infrastructure.OpenAI;
 
 public sealed class AgentThreadStream : IAgentThreadStream
 {

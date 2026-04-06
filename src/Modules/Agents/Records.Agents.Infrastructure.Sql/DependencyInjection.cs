@@ -1,9 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Records.Agents.Contracts;
 using Records.Agents.Contracts.Projections;
 using Records.Agents.Contracts.Queries;
 using Records.Agents.Domain;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Records.Agents.Infrastructure.Sql;
 
@@ -22,10 +21,6 @@ public static class DependencyInjection
         services.AddScoped<IAgentsUnitOfWork, AgentsUnitOfWork>();
         services.AddScoped<IAgentThreadProjectionWriter, AgentThreadProjectionWriter>();
         services.AddScoped<IAgentThreadQueries, AgentThreadQueries>();
-        services.AddScoped<IAgentConversationService, AgentConversationService>();
-        services.AddScoped<IAgentProvider, RuleBasedAgentProvider>();
-        services.AddScoped<IWorkspaceBackendAdapter, RecordsBackendAdapter>();
-        services.AddSingleton<IAgentThreadStream, AgentThreadStream>();
 
         return services;
     }

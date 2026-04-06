@@ -4,7 +4,7 @@ using Records.Agents.Contracts.Dtos;
 
 namespace Records.Agents.Application.Commands;
 
-public sealed record CreateAgentThreadCommand(string? Title = null)
+public sealed record CreateAgentThreadCommand(string? Title = null, string? BackendId = null)
     : IRequest<AgentThreadSummaryDto>;
 
 public sealed class CreateAgentThreadCommandHandler(
@@ -16,6 +16,6 @@ public sealed class CreateAgentThreadCommandHandler(
         CancellationToken cancellationToken
     )
     {
-        return conversationService.CreateThreadAsync(request.Title, cancellationToken);
+        return conversationService.CreateThreadAsync(request.Title, request.BackendId, cancellationToken);
     }
 }

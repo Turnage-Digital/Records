@@ -4,7 +4,11 @@ namespace Records.Agents.Contracts;
 
 public interface IAgentConversationService
 {
-    Task<AgentThreadSummaryDto> CreateThreadAsync(string? title, CancellationToken cancellationToken);
+    Task<AgentThreadSummaryDto> CreateThreadAsync(
+        string? title,
+        string? backendId,
+        CancellationToken cancellationToken
+    );
 
     Task<AgentThreadDto?> PostTurnAsync(
         string threadId,

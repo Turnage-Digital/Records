@@ -6,7 +6,6 @@ public interface IAgentProvider
 {
     Task<AgentTurnResultDto> ExecuteTurnAsync(
         AgentProviderContextDto context,
-        IWorkspaceBackendAdapter backendAdapter,
         CancellationToken cancellationToken
     );
 }

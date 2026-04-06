@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.11"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.11"/>
+        <PackageReference Include="ModelContextProtocol" Version="1.2.0"/>
+        <PackageReference Include="OpenAI" Version="2.9.1"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\Core\Records.Core.Contracts\Records.Core.Contracts.csproj"/>
+        <ProjectReference Include="..\Records.Agents.Domain\Records.Agents.Domain.csproj"/>
+        <ProjectReference Include="..\Records.Agents.Contracts\Records.Agents.Contracts.csproj"/>
+        <ProjectReference Include="..\Records.Agents.Infrastructure.Sql\Records.Agents.Infrastructure.Sql.csproj"/>
+        <ProjectReference Include="..\..\Recordsets\Records.Recordsets.Contracts\Records.Recordsets.Contracts.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Records.Agents.Tests"/>
+        <InternalsVisibleTo Include="Records.App.Server.Tests"/>
+    </ItemGroup>
+
+</Project>

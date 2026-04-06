@@ -9,6 +9,7 @@ public interface IAgentsUnitOfWork : IUnitOfWork
     Task AddThreadAsync(AgentThread thread, CancellationToken cancellationToken);
     Task UpdateThreadAsync(AgentThread thread, CancellationToken cancellationToken);
     Task AddTurnAsync(AgentTurn turn, CancellationToken cancellationToken);
+    Task AddToolCallsAsync(IEnumerable<AgentToolCall> toolCalls, CancellationToken cancellationToken);
     Task ReplaceCurrentArtifactAsync(AgentArtifact artifact, CancellationToken cancellationToken);
     Task<AgentProposal?> GetProposalByIdAsync(UlidId proposalId, CancellationToken cancellationToken);
     Task ReplacePendingProposalAsync(AgentProposal proposal, CancellationToken cancellationToken);

@@ -8,11 +8,14 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\Core\Records.Core.Infrastructure.Sql\Records.Core.Infrastructure.Sql.csproj"/>
+        <ProjectReference Include="..\Records.Agents.Domain\Records.Agents.Domain.csproj"/>
         <ProjectReference Include="..\Records.Agents.Contracts\Records.Agents.Contracts.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="Records.Agents.Infrastructure.OpenAI"/>
         <InternalsVisibleTo Include="Records.Agents.Tests"/>
+        <InternalsVisibleTo Include="Records.App.Server.Tests"/>
     </ItemGroup>
 
 </Project>
