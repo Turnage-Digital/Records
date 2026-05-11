@@ -62,27 +62,11 @@ public sealed class RecordQueries(
         CancellationToken cancellationToken
     )
     {
-        var recordsetKey = recordsetId.ToString();
         var builder = new SqlBuilder();
         var parameters = new DynamicParameters();
-        parameters.Add("recordsetId", recordsetKey);
+        parameters.Add("recordsetId", recordsetId.ToString());
         parameters.Add("pageSize", pageSize);
         parameters.Add("offset", page * pageSize);
-        const string sql = """
-                           SELECT SQL_CALC_FOUND_ROWS
-                               i.BagJson, i.Id, i.RecordsetId
-                           FROM
-                               RecordsetItems i
-                           WHERE
-                               i.RecordsetId = @recordsetId
-                           /**where**/
-                           /**orderby**/
-                           LIMIT @pageSize OFFSET @offset;
-                           SELECT FOUND_ROWS();
-                           SELECT Name FROM Recordsets WHERE Id = @recordsetId;
-                           """;
-
-        var template = builder.AddTemplate(sql, parameters);
         if (!string.IsNullOrWhiteSpace(status))
         {
             builder.Where("JSON_UNQUOTE(JSON_EXTRACT(i.BagJson, '$.\"status\"')) = @status");
@@ -90,38 +74,64 @@ public sealed class RecordQueries(
         }
 
         builder.OrderBy(BuildOrderByClause(field, sort));
+        return await ExecutePageQueryAsync(recordsetId, builder, parameters, cancellationToken);
+    }
 
-        var connection = dbContext.Database.GetDbConnection();
-        var command = new CommandDefinition(
-            template.RawSql,
-            template.Parameters,
-            cancellationToken: cancellationToken);
-        var multi = await connection.QueryMultipleAsync(command);
+    public async Task<RecordsetPagedRecordsDto?> SearchAsync(
+        UlidId recordsetId,
+        int page,
+        int pageSize,
+        IReadOnlyCollection<RecordSearchFilterClause> filters,
+        CancellationToken cancellationToken
+    )
+    {
+        var builder = new SqlBuilder();
+        var parameters = new DynamicParameters();
+        parameters.Add("recordsetId", recordsetId.ToString());
+        parameters.Add("pageSize", pageSize);
+        parameters.Add("offset", page * pageSize);
 
-        var rows = await multi.ReadAsync<RecordPageRow>();
-        var items = rows
-            .Select(row => new RecordListItemDto
-            {
-                Id = (int)row.Id,
-                RecordsetId = UlidId.Parse(row.RecordsetId),
-                Bag = DeserializeBag(row.BagJson)
-            })
-            .ToArray();
-
-        var count = await multi.ReadSingleAsync<long>();
-        var recordsetName = await multi.ReadSingleOrDefaultAsync<string?>();
-        if (recordsetName is null)
+        var filterIndex = 0;
+        foreach (var filter in filters)
         {
-            return null;
+            if (string.IsNullOrWhiteSpace(filter.Field))
+            {
+                continue;
+            }
+
+            var normalizedField = filter.Field.Trim();
+            if (!FieldPathRegex.IsMatch(normalizedField))
+            {
+                continue;
+            }
+
+            var path = BuildJsonPath(normalizedField);
+            var parameterName = $"filterValue{filterIndex++}";
+            var value = filter.Value.Trim();
+
+            switch (filter.Operator.Trim().ToLowerInvariant())
+            {
+                case "contains":
+                    builder.Where($"LOWER(JSON_UNQUOTE(JSON_EXTRACT(i.BagJson, '{path}'))) LIKE @{parameterName}");
+                    parameters.Add(parameterName, $"%{value.ToLowerInvariant()}%");
+                    break;
+                case "on_or_after":
+                    builder.Where($"JSON_UNQUOTE(JSON_EXTRACT(i.BagJson, '{path}')) >= @{parameterName}");
+                    parameters.Add(parameterName, value);
+                    break;
+                case "on_or_before":
+                    builder.Where($"JSON_UNQUOTE(JSON_EXTRACT(i.BagJson, '{path}')) <= @{parameterName}");
+                    parameters.Add(parameterName, value);
+                    break;
+                default:
+                    builder.Where($"JSON_UNQUOTE(JSON_EXTRACT(i.BagJson, '{path}')) = @{parameterName}");
+                    parameters.Add(parameterName, value);
+                    break;
+            }
         }
 
-        return new RecordsetPagedRecordsDto
-        {
-            RecordsetId = recordsetId,
-            Name = recordsetName,
-            Count = count,
-            Items = items
-        };
+        builder.OrderBy("i.Id DESC");
+        return await ExecutePageQueryAsync(recordsetId, builder, parameters, cancellationToken);
     }
 
     public async Task<RecordItemDetailsDto?> GetDetailsAsync(
@@ -243,13 +253,73 @@ public sealed class RecordQueries(
             return $"i.Id {direction}";
         }
 
-        var path = "$." + string.Join(
+        var path = BuildJsonPath(normalizedField);
+
+        return $"JSON_EXTRACT(i.BagJson, '{path}') {direction}, i.Id {direction}";
+    }
+
+    private async Task<RecordsetPagedRecordsDto?> ExecutePageQueryAsync(
+        UlidId recordsetId,
+        SqlBuilder builder,
+        DynamicParameters parameters,
+        CancellationToken cancellationToken
+    )
+    {
+        const string sql = """
+                           SELECT SQL_CALC_FOUND_ROWS
+                               i.BagJson, i.Id, i.RecordsetId
+                           FROM
+                               RecordsetItems i
+                           WHERE
+                               i.RecordsetId = @recordsetId
+                           /**where**/
+                           /**orderby**/
+                           LIMIT @pageSize OFFSET @offset;
+                           SELECT FOUND_ROWS();
+                           SELECT Name FROM Recordsets WHERE Id = @recordsetId;
+                           """;
+
+        var template = builder.AddTemplate(sql, parameters);
+        var connection = dbContext.Database.GetDbConnection();
+        var command = new CommandDefinition(
+            template.RawSql,
+            template.Parameters,
+            cancellationToken: cancellationToken);
+        var multi = await connection.QueryMultipleAsync(command);
+
+        var rows = await multi.ReadAsync<RecordPageRow>();
+        var items = rows
+            .Select(row => new RecordListItemDto
+            {
+                Id = (int)row.Id,
+                RecordsetId = UlidId.Parse(row.RecordsetId),
+                Bag = DeserializeBag(row.BagJson)
+            })
+            .ToArray();
+
+        var count = await multi.ReadSingleAsync<long>();
+        var recordsetName = await multi.ReadSingleOrDefaultAsync<string?>();
+        if (recordsetName is null)
+        {
+            return null;
+        }
+
+        return new RecordsetPagedRecordsDto
+        {
+            RecordsetId = recordsetId,
+            Name = recordsetName,
+            Count = count,
+            Items = items
+        };
+    }
+
+    private static string BuildJsonPath(string normalizedField)
+    {
+        return "$." + string.Join(
             ".",
             normalizedField
                 .Split('.', StringSplitOptions.RemoveEmptyEntries)
                 .Select(segment => $"\"{segment}\""));
-
-        return $"JSON_EXTRACT(i.BagJson, '{path}') {direction}, i.Id {direction}";
     }
 
     private async Task<IReadOnlyList<HistoryEntryDto>> LoadRecordsetHistoryAsync(

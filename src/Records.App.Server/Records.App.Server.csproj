@@ -34,6 +34,10 @@
         </ProjectReference>
         <ProjectReference Include="..\Records.App.ChangeFeed\Records.App.ChangeFeed.csproj"/>
         <ProjectReference Include="..\Records.App.Infrastructure.Security\Records.App.Infrastructure.Security.csproj"/>
+        <ProjectReference Include="..\Modules\Agents\Records.Agents.Application\Records.Agents.Application.csproj"/>
+        <ProjectReference Include="..\Modules\Agents\Records.Agents.Infrastructure.OpenAI\Records.Agents.Infrastructure.OpenAI.csproj"/>
+        <ProjectReference Include="..\Modules\Agents\Records.Agents.Infrastructure.Sql\Records.Agents.Infrastructure.Sql.csproj"/>
+        <ProjectReference Include="..\Modules\Agents\Records.Agents.Presentation\Records.Agents.Presentation.csproj"/>
         <ProjectReference Include="..\Modules\Clocks\Records.Clocks.Application\Records.Clocks.Application.csproj"/>
         <ProjectReference Include="..\Modules\Clocks\Records.Clocks.Infrastructure.Sql\Records.Clocks.Infrastructure.Sql.csproj"/>
         <ProjectReference Include="..\Modules\Clocks\Records.Clocks.Presentation\Records.Clocks.Presentation.csproj"/>

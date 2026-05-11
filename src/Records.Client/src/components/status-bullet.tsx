@@ -2,13 +2,13 @@ import * as React from "react";
 
 import { Box } from "@mui/material";
 
-import { StatusColor } from "../models";
+import type { StatusColor } from "../models/status-colors";
 
-interface Props {
+interface StatusBulletProps {
   statusColor: StatusColor;
 }
 
-const StatusBullet = ({ statusColor }: Props) => {
+const StatusBullet = ({ statusColor }: StatusBulletProps) => {
   return (
     <Box
       component="span"

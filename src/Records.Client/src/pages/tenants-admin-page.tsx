@@ -21,9 +21,12 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 
-import { ConfirmDeleteDialog, PageSection, Titlebar } from "../components";
-import { TenantSummary } from "../models";
+import ConfirmDeleteDialog from "../components/confirm-delete-dialog";
+import PageSection from "../components/page-section";
+import Titlebar from "../components/titlebar";
 import { tenantSummariesQueryOptions } from "../query-options";
+
+import type { TenantSummary } from "../models/tenant-summary";
 
 const formatTimestamp = (value: string) => {
   const parsed = new Date(value);

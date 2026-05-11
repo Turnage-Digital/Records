@@ -5,14 +5,20 @@ import { createBrowserRouter, Navigate, redirect } from "react-router-dom";
 
 import { getRecordsetSearch } from "./lib/recordset-search";
 import {
+  agentThreadQueryOptions,
+  agentThreadSummariesQueryOptions,
   notificationRulesQueryOptions,
   pagedRecordsQueryOptions,
   recordQueryOptions,
   recordsetItemDefinitionQueryOptions,
+  sessionQueryOptions,
   tenantSummariesQueryOptions,
   userSummariesQueryOptions,
 } from "./query-options";
 
+const AccessDeniedPage = React.lazy(() => import("./pages/access-denied-page"));
+const AgentsHomePage = React.lazy(() => import("./pages/agents-home-page"));
+const AgentThreadPage = React.lazy(() => import("./pages/agent-thread-page"));
 const Shell = React.lazy(() => import("./shell"));
 const CreateRecordPage = React.lazy(() => import("./pages/create-record-page"));
 const CreateRecordsetPage = React.lazy(
@@ -38,10 +44,6 @@ const SignUpPage = React.lazy(() => import("./pages/sign-up-page"));
 const TenantsAdminPage = React.lazy(() => import("./pages/tenants-admin-page"));
 const UsersAdminPage = React.lazy(() => import("./pages/users-admin-page"));
 
-interface IdentityAccessResponse {
-  isGlobalAdmin?: boolean;
-}
-
 const buildSignInRedirect = (request: Request) => {
   const url = new URL(request.url);
   const callbackUrl = `${url.pathname}${url.search}${url.hash}`;
@@ -51,23 +53,66 @@ const buildSignInRedirect = (request: Request) => {
   return redirect(`/sign-in${search}`);
 };
 
-const ensureGlobalAdminAccess = async (request: Request) => {
-  const response = await fetch("/identity/access", {
-    method: "GET",
-    credentials: "include",
-  });
+const getPostAuthDestination = (request: Request) =>
+  new URL(request.url).searchParams.get("callbackUrl") ?? "/";
 
-  if (response.status === 401) {
+const loadSession = (queryClient: QueryClient) =>
+  queryClient.ensureQueryData(sessionQueryOptions());
+
+const requireOpsSession = async (
+  queryClient: QueryClient,
+  request: Request,
+) => {
+  const session = await loadSession(queryClient);
+
+  if (!session) {
     throw buildSignInRedirect(request);
   }
 
-  if (!response.ok) {
+  if (!session.access.canAccessOps) {
+    throw redirect("/access-denied");
+  }
+
+  return session;
+};
+
+const requireGlobalAdminSession = async (
+  queryClient: QueryClient,
+  request: Request,
+) => {
+  const session = await requireOpsSession(queryClient, request);
+  if (!session.access.isGlobalAdmin) {
     throw redirect("/");
   }
 
-  const access = (await response.json()) as IdentityAccessResponse;
-  if (access.isGlobalAdmin !== true) {
-    throw redirect("/");
+  return session;
+};
+
+const redirectAuthenticatedUser = async (
+  queryClient: QueryClient,
+  request: Request,
+) => {
+  const session = await loadSession(queryClient);
+
+  if (!session) {
+    return null;
+  }
+
+  throw redirect(
+    session.access.canAccessOps
+      ? getPostAuthDestination(request)
+      : "/access-denied",
+  );
+};
+
+const ensureAgentThreadData = async (
+  queryClient: QueryClient,
+  threadId?: string,
+) => {
+  await queryClient.ensureQueryData(agentThreadSummariesQueryOptions());
+
+  if (threadId) {
+    await queryClient.ensureQueryData(agentThreadQueryOptions(threadId));
   }
 };
 
@@ -75,95 +120,149 @@ export const createAppRouter = (queryClient: QueryClient) =>
   createBrowserRouter([
     {
       path: "/",
+      loader: async ({ request }) => {
+        await requireOpsSession(queryClient, request);
+        return null;
+      },
       element: <Shell />,
       children: [
         {
           index: true,
-          element: <RecordsetsPage />,
-        },
-        {
-          path: "create",
-          element: <CreateRecordsetPage />,
-        },
-        {
-          path: ":recordsetId",
-          loader: async ({ params }) => {
-            const recordsetId = params.recordsetId;
-            if (!recordsetId) {
-              throw new Response("Not Found", { status: 404 });
-            }
-            await queryClient.ensureQueryData(
-              recordsetItemDefinitionQueryOptions(recordsetId),
-            );
+          loader: async ({ request }) => {
+            await requireOpsSession(queryClient, request);
+            await ensureAgentThreadData(queryClient);
             return null;
           },
+          element: <AgentsHomePage />,
+        },
+        {
+          path: "threads/:threadId",
+          loader: async ({ params, request }) => {
+            const threadId = params.threadId;
+            if (!threadId) {
+              throw new Response("Not Found", { status: 404 });
+            }
+
+            await requireOpsSession(queryClient, request);
+            await ensureAgentThreadData(queryClient, threadId);
+            return null;
+          },
+          element: <AgentThreadPage />,
+        },
+        {
+          path: "recordsets",
           children: [
             {
               index: true,
-              loader: async ({ request, params }) => {
-                const recordsetId = params.recordsetId;
-                if (!recordsetId) {
-                  throw new Response("Not Found", { status: 404 });
-                }
-                const searchParams = new URL(request.url).searchParams;
-                const search = getRecordsetSearch(searchParams);
-                await queryClient.ensureQueryData(
-                  pagedRecordsQueryOptions(search, recordsetId),
-                );
+              loader: async ({ request }) => {
+                await requireOpsSession(queryClient, request);
                 return null;
               },
-              element: <RecordsPage />,
-            },
-            {
-              path: "edit",
-              loader: async ({ params }) => {
-                const recordsetId = params.recordsetId;
-                if (!recordsetId) {
-                  throw new Response("Not Found", { status: 404 });
-                }
-                await queryClient.ensureQueryData(
-                  notificationRulesQueryOptions(recordsetId),
-                );
-                return null;
-              },
-              element: <EditRecordsetPage />,
+              element: <RecordsetsPage />,
             },
             {
               path: "create",
-              element: <CreateRecordPage />,
+              loader: async ({ request }) => {
+                await requireOpsSession(queryClient, request);
+                return null;
+              },
+              element: <CreateRecordsetPage />,
             },
             {
-              path: ":recordId",
-              loader: async ({ params }) => {
+              path: ":recordsetId",
+              loader: async ({ params, request }) => {
+                await requireOpsSession(queryClient, request);
                 const recordsetId = params.recordsetId;
-                const recordId = params.recordId;
-                if (!recordsetId || !recordId) {
+                if (!recordsetId) {
                   throw new Response("Not Found", { status: 404 });
                 }
                 await queryClient.ensureQueryData(
-                  recordQueryOptions(recordsetId, Number(recordId)),
+                  recordsetItemDefinitionQueryOptions(recordsetId),
                 );
                 return null;
               },
               children: [
                 {
-                  index: true,
-                  element: <RecordDetailsPage />,
+                  path: "records",
+                  children: [
+                    {
+                      index: true,
+                      loader: async ({ request, params }) => {
+                        await requireOpsSession(queryClient, request);
+                        const recordsetId = params.recordsetId;
+                        if (!recordsetId) {
+                          throw new Response("Not Found", { status: 404 });
+                        }
+                        const searchParams = new URL(request.url).searchParams;
+                        const search = getRecordsetSearch(searchParams);
+                        await queryClient.ensureQueryData(
+                          pagedRecordsQueryOptions(search, recordsetId),
+                        );
+                        return null;
+                      },
+                      element: <RecordsPage />,
+                    },
+                    {
+                      path: "create",
+                      loader: async ({ request }) => {
+                        await requireOpsSession(queryClient, request);
+                        return null;
+                      },
+                      element: <CreateRecordPage />,
+                    },
+                    {
+                      path: ":recordId",
+                      loader: async ({ params, request }) => {
+                        await requireOpsSession(queryClient, request);
+                        const recordsetId = params.recordsetId;
+                        const recordId = params.recordId;
+                        if (!recordsetId || !recordId) {
+                          throw new Response("Not Found", { status: 404 });
+                        }
+                        await queryClient.ensureQueryData(
+                          recordQueryOptions(recordsetId, Number(recordId)),
+                        );
+                        return null;
+                      },
+                      children: [
+                        {
+                          index: true,
+                          element: <RecordDetailsPage />,
+                        },
+                        {
+                          path: "edit",
+                          loader: async ({ params, request }) => {
+                            await requireOpsSession(queryClient, request);
+                            const recordsetId = params.recordsetId;
+                            const recordId = params.recordId;
+                            if (!recordsetId || !recordId) {
+                              throw new Response("Not Found", { status: 404 });
+                            }
+                            await queryClient.ensureQueryData(
+                              recordQueryOptions(recordsetId, Number(recordId)),
+                            );
+                            return null;
+                          },
+                          element: <EditRecordPage />,
+                        },
+                      ],
+                    },
+                  ],
                 },
                 {
                   path: "edit",
-                  loader: async ({ params }) => {
+                  loader: async ({ params, request }) => {
+                    await requireOpsSession(queryClient, request);
                     const recordsetId = params.recordsetId;
-                    const recordId = params.recordId;
-                    if (!recordsetId || !recordId) {
+                    if (!recordsetId) {
                       throw new Response("Not Found", { status: 404 });
                     }
                     await queryClient.ensureQueryData(
-                      recordQueryOptions(recordsetId, Number(recordId)),
+                      notificationRulesQueryOptions(recordsetId),
                     );
                     return null;
                   },
-                  element: <EditRecordPage />,
+                  element: <EditRecordsetPage />,
                 },
               ],
             },
@@ -172,7 +271,7 @@ export const createAppRouter = (queryClient: QueryClient) =>
         {
           path: "admin/tenants",
           loader: async ({ request }) => {
-            await ensureGlobalAdminAccess(request);
+            await requireGlobalAdminSession(queryClient, request);
             await queryClient.ensureQueryData(tenantSummariesQueryOptions());
             return null;
           },
@@ -181,7 +280,7 @@ export const createAppRouter = (queryClient: QueryClient) =>
         {
           path: "admin/users",
           loader: async ({ request }) => {
-            await ensureGlobalAdminAccess(request);
+            await requireGlobalAdminSession(queryClient, request);
             await Promise.all([
               queryClient.ensureQueryData(userSummariesQueryOptions()),
               queryClient.ensureQueryData(tenantSummariesQueryOptions()),
@@ -193,19 +292,52 @@ export const createAppRouter = (queryClient: QueryClient) =>
       ],
     },
     {
+      path: "/access-denied",
+      loader: async ({ request }) => {
+        const session = await loadSession(queryClient);
+
+        if (!session) {
+          throw buildSignInRedirect(request);
+        }
+
+        if (session.access.canAccessOps) {
+          throw redirect("/");
+        }
+
+        return null;
+      },
+      element: <AccessDeniedPage />,
+    },
+    {
       path: "/sign-in",
+      loader: async ({ request }) => {
+        await redirectAuthenticatedUser(queryClient, request);
+        return null;
+      },
       element: <SignInPage />,
     },
     {
       path: "/sign-up",
+      loader: async ({ request }) => {
+        await redirectAuthenticatedUser(queryClient, request);
+        return null;
+      },
       element: <SignUpPage />,
     },
     {
       path: "/forgot-password",
+      loader: async ({ request }) => {
+        await redirectAuthenticatedUser(queryClient, request);
+        return null;
+      },
       element: <ForgotPasswordPage />,
     },
     {
       path: "/reset-password",
+      loader: async ({ request }) => {
+        await redirectAuthenticatedUser(queryClient, request);
+        return null;
+      },
       element: <ResetPasswordPage />,
     },
     {

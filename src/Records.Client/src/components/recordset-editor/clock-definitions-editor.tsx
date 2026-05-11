@@ -24,11 +24,10 @@ import {
   TextField,
 } from "@mui/material";
 
-import { ClockThresholdUnit } from "../../models";
-
 import type { ClockDefinitionFormValue } from "./recordset-editor.types";
+import type { ClockThresholdUnit } from "../../models/clock-threshold-unit";
 
-interface Props {
+interface ClockDefinitionsEditorProps {
   tenantId?: string | null;
   definitions: ClockDefinitionFormValue[];
   onAddDefinition: (definition: ClockDefinitionFormValue) => void;
@@ -70,7 +69,7 @@ const ClockDefinitionsEditor = ({
   onAddDefinition,
   onUpdateDefinition,
   onRemoveDefinition,
-}: Props) => {
+}: ClockDefinitionsEditorProps) => {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [dialogMode, setDialogMode] = React.useState<"create" | "edit">(
     "create",

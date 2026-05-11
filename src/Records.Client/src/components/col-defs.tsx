@@ -1,15 +1,14 @@
 import * as React from "react";
 
 import { Delete, Edit, Visibility } from "@mui/icons-material";
-import { GridActionsCellItem, GridColDef } from "@mui/x-data-grid";
+import { GridActionsCellItem, type GridColDef } from "@mui/x-data-grid";
 
-import {
-  Column,
-  ColumnType,
-  getStatusFromName,
-  RecordsetItemDefinition,
-} from "../models";
 import StatusChip from "./status-chip";
+import { ColumnType } from "../models/column-type";
+import { getStatusFromName } from "../models/status";
+
+import type { Column } from "../models/column";
+import type { RecordsetItemDefinition } from "../models/recordset-item-definition";
 
 export const getGridColDefs = (
   recordsetDefinition: RecordsetItemDefinition,
@@ -17,9 +16,9 @@ export const getGridColDefs = (
   handleEditClicked: (recordsetId: string, recordId: number) => void,
   handleDeleteClicked: (recordsetId: string, recordId: number) => void,
 ): GridColDef[] => {
-  const retval: GridColDef[] = [];
+  const columnDefinitions: GridColDef[] = [];
 
-  retval.push({
+  columnDefinitions.push({
     field: "id",
     headerName: "ID",
     width: 75,
@@ -27,26 +26,25 @@ export const getGridColDefs = (
     disableColumnMenu: true,
   });
 
-  const mapped = recordsetDefinition.columns.map((column: Column) => {
-    const retval: GridColDef = {
+  const mappedColumns = recordsetDefinition.columns.map((column: Column) => {
+    const columnDefinition: GridColDef = {
       field: column.property!,
       headerName: column.name,
       flex: 1,
     };
 
     if (column.type === ColumnType.Date) {
-      retval.valueFormatter = (params) => {
+      columnDefinition.valueFormatter = (params) => {
         const date = new Date(params);
-        const retval = date.toLocaleDateString();
-        return retval;
+        return date.toLocaleDateString();
       };
     }
-    return retval;
+    return columnDefinition;
   });
 
-  retval.push(...mapped);
+  columnDefinitions.push(...mappedColumns);
 
-  retval.push({
+  columnDefinitions.push({
     field: "status",
     headerName: "Status",
     width: 150,
@@ -57,7 +55,7 @@ export const getGridColDefs = (
     ),
   });
 
-  retval.push({
+  columnDefinitions.push({
     field: "actions",
     type: "actions",
     headerName: "",
@@ -98,5 +96,5 @@ export const getGridColDefs = (
     },
   });
 
-  return retval;
+  return columnDefinitions;
 };

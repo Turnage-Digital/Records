@@ -1,9 +1,8 @@
-import { ClockDefinition } from "../../models";
-
 import type {
   ClockDefinitionFormValue,
   ClockDefinitionSubmission,
 } from "./recordset-editor.types";
+import type { ClockDefinition } from "../../models/clock-definition";
 
 const createClientId = () => {
   const cryptoApi = globalThis.crypto;

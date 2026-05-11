@@ -1,20 +1,14 @@
 import * as React from "react";
 
-import { Visibility, VisibilityOff } from "@mui/icons-material";
-import {
-  Alert,
-  Button,
-  IconButton,
-  InputAdornment,
-  Stack,
-  TextField,
-} from "@mui/material";
+import { Alert, Button, Stack, TextField } from "@mui/material";
 
-interface Props {
+import PasswordField from "./password-field";
+
+interface SignInFormProps {
   onSignedIn: (email: string) => Promise<void> | void;
 }
 
-const SignInForm = ({ onSignedIn }: Props) => {
+const SignInForm = ({ onSignedIn }: SignInFormProps) => {
   const [showPassword, setShowPassword] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
 
@@ -34,7 +28,7 @@ const SignInForm = ({ onSignedIn }: Props) => {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (emailErrorMessage || passwordErrorMessage) {
+    if (!validateInputs()) {
       return;
     }
 
@@ -65,33 +59,21 @@ const SignInForm = ({ onSignedIn }: Props) => {
   };
 
   const validateInputs = () => {
-    let retval = true;
+    const nextEmailErrorMessage =
+      email && /\S+@\S+\.\S+/.test(email)
+        ? null
+        : "Please enter a valid email address.";
+    const nextPasswordErrorMessage = password
+      ? null
+      : "Please enter a password.";
 
-    if (email && /\S+@\S+\.\S+/.test(email)) {
-      setEmailErrorMessage(null);
-    } else {
-      setEmailErrorMessage("Please enter a valid email address.");
-      retval = false;
-    }
+    setEmailErrorMessage(nextEmailErrorMessage);
+    setPasswordErrorMessage(nextPasswordErrorMessage);
 
-    if (password) {
-      setPasswordErrorMessage(null);
-    } else {
-      setPasswordErrorMessage("Please enter a password.");
-      retval = false;
-    }
-
-    return retval;
+    return !nextEmailErrorMessage && !nextPasswordErrorMessage;
   };
 
   const emailErrorColor = emailErrorMessage ? "error" : "primary";
-  const passwordErrorColor = passwordErrorMessage ? "error" : "primary";
-
-  const showPasswordType = showPassword ? "text" : "password";
-  const showPasswordIcon = showPassword ? <VisibilityOff /> : <Visibility />;
-  const passwordVisibilityAriaLabel = showPassword
-    ? "Hide password"
-    : "Show password";
 
   return (
     <Stack
@@ -119,37 +101,16 @@ const SignInForm = ({ onSignedIn }: Props) => {
         color={emailErrorColor}
       />
 
-      <TextField
-        margin="normal"
+      <PasswordField
         id="password"
         name="password"
         label="Password"
-        placeholder="••••••"
         autoComplete="current-password"
-        required
-        fullWidth
-        variant="outlined"
-        type={showPasswordType}
         value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        error={passwordErrorMessage !== null}
-        helperText={passwordErrorMessage}
-        color={passwordErrorColor}
-        slotProps={{
-          input: {
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  aria-label={passwordVisibilityAriaLabel}
-                  aria-pressed={showPassword}
-                  onClick={() => setShowPassword((prev) => !prev)}
-                >
-                  {showPasswordIcon}
-                </IconButton>
-              </InputAdornment>
-            ),
-          },
-        }}
+        onChange={setPassword}
+        errorMessage={passwordErrorMessage}
+        showAriaLabel="Show password"
+        hideAriaLabel="Hide password"
       />
 
       <Button
@@ -158,7 +119,6 @@ const SignInForm = ({ onSignedIn }: Props) => {
         size="large"
         fullWidth
         loading={loading}
-        onClick={validateInputs}
       >
         Sign in
       </Button>

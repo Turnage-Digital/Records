@@ -4,7 +4,15 @@ import { History } from "@mui/icons-material";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { RecordCard, Titlebar, useSideDrawer } from "../components";
+import useDetailPanel from "../components/detail-panel/use-detail-panel";
+import RecordCard from "../components/record-card";
+import Titlebar from "../components/titlebar";
+import {
+  editRecordPath,
+  recordDetailsPath,
+  recordsetRecordsPath,
+  recordsetsPath,
+} from "../lib/routes";
 import {
   recordQueryOptions,
   recordsetItemDefinitionQueryOptions,
@@ -24,7 +32,7 @@ const RecordDetailsPage = () => {
   }
 
   const navigate = useNavigate();
-  const { openDrawer } = useSideDrawer();
+  const { openDetailPanel } = useDetailPanel();
 
   const recordsetDefinitionQuery = useSuspenseQuery(
     recordsetItemDefinitionQueryOptions(recordsetId),
@@ -38,15 +46,15 @@ const RecordDetailsPage = () => {
   const record = recordQuery.data;
 
   const handleNavigateToRecordsets = () => {
-    navigate("/");
+    navigate(recordsetsPath());
   };
 
   const handleNavigateToRecordset = () => {
-    navigate(`/${recordsetId}`);
+    navigate(recordsetRecordsPath(recordsetId));
   };
 
   const handleShowHistory = () => {
-    openDrawer(
+    openDetailPanel(
       "Record history",
       <RecordHistoryDrawer
         recordsetId={recordsetId}
@@ -59,14 +67,14 @@ const RecordDetailsPage = () => {
     currentRecordsetId: string,
     currentRecordId: number,
   ) => {
-    navigate(`/${currentRecordsetId}/${currentRecordId}/edit`);
+    navigate(editRecordPath(currentRecordsetId, currentRecordId));
   };
 
   const handleViewRecord = (
     currentRecordsetId: string,
     currentRecordId: number,
   ) => {
-    navigate(`/${currentRecordsetId}/${currentRecordId}`);
+    navigate(recordDetailsPath(currentRecordsetId, currentRecordId));
   };
 
   const breadcrumbs = [

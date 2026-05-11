@@ -17,23 +17,27 @@ import {
 } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
-import {
-  ConfirmDeleteDialog,
-  RecordsDesktopView,
-  RecordsMobileView,
-  Titlebar,
-  useSideDrawer,
-} from "../components";
+import ConfirmDeleteDialog from "../components/confirm-delete-dialog";
+import useDetailPanel from "../components/detail-panel/use-detail-panel";
+import RecordsDesktopView from "../components/records-display/records-desktop-view";
+import RecordsMobileView from "../components/records-display/records-mobile-view";
+import Titlebar from "../components/titlebar";
 import {
   getRecordsetSearch,
   setRecordsetSearchParams,
 } from "../lib/recordset-search";
 import {
+  createRecordPath,
+  editRecordPath,
+  recordDetailsPath,
+  recordsetsPath,
+} from "../lib/routes";
+import {
   pagedRecordsQueryOptions,
   recordsetItemDefinitionQueryOptions,
 } from "../query-options";
 
-import type { RecordsetSearch } from "../models";
+import type { RecordsetSearch } from "../models/recordset-search";
 
 const NotificationsDrawer = React.lazy(
   () => import("../components/notifications/notifications-drawer"),
@@ -49,7 +53,7 @@ const RecordsPage = () => {
   }
 
   const navigate = useNavigate();
-  const { openDrawer } = useSideDrawer();
+  const { openDetailPanel } = useDetailPanel();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const search = getRecordsetSearch(searchParams);
@@ -149,11 +153,11 @@ const RecordsPage = () => {
   };
 
   const handleViewRecord = (currentRecordsetId: string, recordId: number) => {
-    navigate(`/${currentRecordsetId}/${recordId}`);
+    navigate(recordDetailsPath(currentRecordsetId, recordId));
   };
 
   const handleEditRecord = (currentRecordsetId: string, recordId: number) => {
-    navigate(`/${currentRecordsetId}/${recordId}/edit`);
+    navigate(editRecordPath(currentRecordsetId, recordId));
   };
 
   const handleDeleteRecord = (currentRecordsetId: string, recordId: number) => {
@@ -196,18 +200,18 @@ const RecordsPage = () => {
   };
 
   const handleCreateRecord = () => {
-    navigate(`/${recordsetId}/create`);
+    navigate(createRecordPath(recordsetId));
   };
 
   const handleShowHistory = () => {
-    openDrawer(
+    openDetailPanel(
       "Recordset history",
       <RecordsetHistoryDrawer recordsetId={recordsetId} />,
     );
   };
 
   const handleShowNotifications = () => {
-    openDrawer(
+    openDetailPanel(
       "Recordset notifications",
       <NotificationsDrawer
         recordsetId={recordsetId}
@@ -217,7 +221,7 @@ const RecordsPage = () => {
   };
 
   const handleNavigateToRecordsets = () => {
-    navigate("/");
+    navigate(recordsetsPath());
   };
 
   const paginationModel: GridPaginationModel = {

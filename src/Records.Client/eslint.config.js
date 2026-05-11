@@ -1,5 +1,26 @@
 import shopifyEslintPlugin from "@shopify/eslint-plugin";
 
+const buildRestrictedImportPaths = (path) => [
+    `./${path}`,
+    `../${path}`,
+    `../../${path}`,
+    `./${path}/index`,
+    `../${path}/index`,
+    `../../${path}/index`,
+];
+
+const restrictedBarrelImports = [
+    ...buildRestrictedImportPaths("components"),
+    ...buildRestrictedImportPaths("models"),
+    ...buildRestrictedImportPaths("pages"),
+    ...buildRestrictedImportPaths("history"),
+    ...buildRestrictedImportPaths("notifications"),
+    ...buildRestrictedImportPaths("record-editor"),
+    ...buildRestrictedImportPaths("records-display"),
+    ...buildRestrictedImportPaths("recordset-editor"),
+    ...buildRestrictedImportPaths("side-drawer"),
+];
+
 // eslint-disable-next-line import/no-anonymous-default-export
 export default [
     ...shopifyEslintPlugin.configs.typescript,
@@ -15,6 +36,7 @@ export default [
     ...shopifyEslintPlugin.configs.prettier,
     {
         rules: {
+            "@shopify/strict-component-boundaries": "off",
             "@shopify/jsx-no-hardcoded-content": "off",
             "@typescript-eslint/naming-convention": "off",
             "@typescript-eslint/no-misused-promises": "off",
@@ -22,6 +44,16 @@ export default [
             "no-process-env": "off",
             "no-implicit-coercion": "off",
             "no-template-curly-in-string": "off",
+            "no-restricted-imports": [
+                "error",
+                {
+                    paths: restrictedBarrelImports.map((name) => ({
+                        name,
+                        message:
+                            "Import from the exact source file instead of a barrel directory.",
+                    })),
+                },
+            ],
             "import/order": [
                 "error",
                 {

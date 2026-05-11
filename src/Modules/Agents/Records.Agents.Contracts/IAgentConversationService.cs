@@ -1,0 +1,36 @@
+using Records.Agents.Contracts.Dtos;
+
+namespace Records.Agents.Contracts;
+
+public interface IAgentConversationService
+{
+    Task<AgentThreadSummaryDto> CreateThreadAsync(
+        string? title,
+        string? backendId,
+        CancellationToken cancellationToken
+    );
+
+    Task<bool> DeleteThreadAsync(
+        string threadId,
+        CancellationToken cancellationToken
+    );
+
+    Task<AgentThreadDto?> PostTurnAsync(
+        string threadId,
+        string message,
+        string? pastedText,
+        CancellationToken cancellationToken
+    );
+
+    Task<AgentThreadDto?> ConfirmProposalAsync(
+        string threadId,
+        string proposalId,
+        CancellationToken cancellationToken
+    );
+
+    Task<AgentThreadDto?> RejectProposalAsync(
+        string threadId,
+        string proposalId,
+        CancellationToken cancellationToken
+    );
+}

@@ -21,17 +21,16 @@ import {
   Typography,
 } from "@mui/material";
 
-import {
+import type { NotificationRuleFormValue } from "./recordset-editor.types";
+import type {
   NotificationChannel,
   NotificationChannelType,
   NotificationSchedule,
   NotificationScheduleType,
   NotificationTrigger,
   NotificationTriggerType,
-  Status,
-} from "../../models";
-
-import type { NotificationRuleFormValue } from "./recordset-editor.types";
+} from "../../models/notification-rule";
+import type { Status } from "../../models/status";
 
 const weekDayOptions = [
   "Sunday",
@@ -43,7 +42,7 @@ const weekDayOptions = [
   "Saturday",
 ] as const;
 
-interface Props {
+interface NotificationRulesEditorProps {
   rules: NotificationRuleFormValue[];
   statuses: Status[];
   onAddRule: () => void;
@@ -135,7 +134,7 @@ const NotificationRulesEditor = ({
   onAddRule,
   onRemoveRule,
   onUpdateRule,
-}: Props) => {
+}: NotificationRulesEditorProps) => {
   const statusNames = React.useMemo(
     () => statuses.map((status) => status.name),
     [statuses],

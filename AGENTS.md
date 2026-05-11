@@ -5,7 +5,7 @@
 - Source in `src/` organized by host and capability.
     - Hosts: `Records.App.Server` and `Records.App.Infrastructure.Security`.
     - Modules under `src/Modules/{ModuleName}` (e.g., `Core`, `Tenants`, `Users`, `Recordsets`, `Notifications`).
-    - Feature modules follow: Domain, Application, Contracts, Infrastructure.Sql, Presentation, Tests.
+    - Feature modules follow: Domain, Application, Contracts, Infrastructure.Sql, optional provider-specific infrastructure such as Infrastructure.OpenAI, Presentation, Tests.
     - `Core` is the shared base exception and does not define a `Presentation` project.
 - Docs in `docs/` and included in `Records.sln` as solution items.
 
@@ -30,6 +30,8 @@
 - `Records.{Module}.Infrastructure.Sql`
     - Keep only `Entities/`, `Mappers/`, `Migrations/`, and `QueryCriteria/`.
     - Place repositories, queries, projection writers, and unit of work at project root.
+    - Keep MySql-specific infrastructure here. Do not place LLM providers, MCP clients, or other non-SQL runtime integrations in `*.Infrastructure.Sql`.
+    - When a module needs provider-specific runtime orchestration, place it in a dedicated sibling project such as `Records.{Module}.Infrastructure.OpenAI`.
     - Namespace must match directory path.
 
 - `Records.{Module}.Presentation`
@@ -59,6 +61,20 @@
   `Async`.
 - EF Core entity classes in `.Infrastructure.Sql` projects end with `Db` (tables unchanged).
 - Architecture boundaries: Domain, Application, Contracts, Infrastructure, Hosts; prefer DI/constructor injection.
+
+## Records.Client Frontend Conventions
+
+- `src/Records.Client/src` imports should target the exact source file they use; do not add or rely on barrel
+  `index.ts` files under `components/`, `models/`, or `pages/`.
+- Keep single-file UI components as single files. Create a component directory only when the component owns multiple
+  implementation files or a small internal surface area (for example, `app-sidebar/`, `detail-panel/`, or
+  `recordset-editor/`).
+- `app-sidebar/` is the primary left-side application navigation surface. Do not use that area for contextual editors
+  or record detail workflows.
+- `detail-panel/` is the right-side contextual workspace for tangential tasks such as notifications, history, and
+  secondary editors launched from the current page.
+- Prefer descriptive props/type names in shared client components (`RecordCardProps`, `DetailPanelHeaderProps`) rather
+  than generic `Props` names when the type is exported or the component is reused.
 
 ## Testing Guidelines
 

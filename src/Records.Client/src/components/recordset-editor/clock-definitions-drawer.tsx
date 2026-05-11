@@ -8,15 +8,14 @@ import {
   Typography,
 } from "@mui/material";
 
-import {
-  SideDrawerContainer,
-  SideDrawerContent,
-  SideDrawerFooter,
-  SideDrawerHeader,
-  useSideDrawer,
-} from "../side-drawer";
 import ClockDefinitionsEditor from "./clock-definitions-editor";
-import { ClockDefinitionFormValue } from "./recordset-editor.types";
+import DetailPanelContainer from "../detail-panel/detail-panel-container";
+import DetailPanelContent from "../detail-panel/detail-panel-content";
+import DetailPanelFooter from "../detail-panel/detail-panel-footer";
+import DetailPanelHeader from "../detail-panel/detail-panel-header";
+import useDetailPanel from "../detail-panel/use-detail-panel";
+
+import type { ClockDefinitionFormValue } from "./recordset-editor.types";
 
 interface ClockDefinitionsDrawerProps {
   tenantId?: string | null;
@@ -40,7 +39,7 @@ const ClockDefinitionsDrawer = ({
   initialDisabledDefinitionIds,
   onSave,
 }: ClockDefinitionsDrawerProps) => {
-  const { closeDrawer } = useSideDrawer();
+  const { closeDetailPanel } = useDetailPanel();
   const [definitions, setDefinitions] = React.useState<
     ClockDefinitionFormValue[]
   >(() => initialDefinitions.map(cloneDefinition));
@@ -81,7 +80,7 @@ const ClockDefinitionsDrawer = ({
     setIsSaving(true);
     try {
       await onSave(definitions.map(cloneDefinition), disabledDefinitionIds);
-      closeDrawer();
+      closeDetailPanel();
     } catch (error) {
       if (error instanceof Error && error.message.trim().length > 0) {
         setSaveError(error.message);
@@ -96,9 +95,9 @@ const ClockDefinitionsDrawer = ({
   const saveButtonIcon = isSaving ? <CircularProgress size={14} /> : undefined;
 
   return (
-    <SideDrawerContainer>
-      <SideDrawerHeader subtitle="Configure reusable timers used when clocks are started on records." />
-      <SideDrawerContent>
+    <DetailPanelContainer>
+      <DetailPanelHeader subtitle="Configure reusable timers used when clocks are started on records." />
+      <DetailPanelContent>
         <Stack spacing={2} sx={{ p: 2.5 }}>
           {saveError && <Alert severity="error">{saveError}</Alert>}
           <ClockDefinitionsEditor
@@ -109,8 +108,8 @@ const ClockDefinitionsDrawer = ({
             onRemoveDefinition={handleRemoveDefinition}
           />
         </Stack>
-      </SideDrawerContent>
-      <SideDrawerFooter>
+      </DetailPanelContent>
+      <DetailPanelFooter>
         <Stack
           direction="row"
           spacing={1.5}
@@ -123,7 +122,11 @@ const ClockDefinitionsDrawer = ({
             {definitionsLabelSuffix} configured
           </Typography>
           <Stack direction="row" spacing={1}>
-            <Button variant="text" onClick={closeDrawer} disabled={isSaving}>
+            <Button
+              variant="text"
+              onClick={closeDetailPanel}
+              disabled={isSaving}
+            >
               Cancel
             </Button>
             <Button
@@ -136,8 +139,8 @@ const ClockDefinitionsDrawer = ({
             </Button>
           </Stack>
         </Stack>
-      </SideDrawerFooter>
-    </SideDrawerContainer>
+      </DetailPanelFooter>
+    </DetailPanelContainer>
   );
 };
 

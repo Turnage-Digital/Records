@@ -9,14 +9,14 @@ import {
 } from "@mui/icons-material";
 import { alpha, Chip, darken } from "@mui/material";
 
-import { Status } from "../models";
+import type { Status } from "../models/status";
 
-interface Props {
+interface StatusChipProps {
   status?: Status;
   onDelete?: () => void;
 }
 
-const StatusChip = ({ status, onDelete }: Props) => {
+const StatusChip = ({ status, onDelete }: StatusChipProps) => {
   // Get appropriate icon based on status name (you can customize this logic)
   const getStatusIcon = (statusName: string) => {
     const name = statusName.toLowerCase();

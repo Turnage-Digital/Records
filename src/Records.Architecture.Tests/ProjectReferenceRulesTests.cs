@@ -50,7 +50,10 @@ public sealed partial class ProjectReferenceRulesTests
                     continue;
                 }
 
-                var allowed = sourceLayer == "Application" && targetLayer == "Contracts";
+                var allowed =
+                    (sourceLayer == "Application" && targetLayer == "Contracts") ||
+                    (sourceLayer == "Infrastructure.Sql" && targetLayer == "Contracts") ||
+                    (sourceLayer == "Infrastructure.OpenAI" && targetLayer == "Contracts");
                 if (!allowed)
                 {
                     var relativeSource = Path.GetRelativePath(modulesRoot, csproj);
@@ -100,6 +103,11 @@ public sealed partial class ProjectReferenceRulesTests
         if (projectName.EndsWith(".Infrastructure.Sql", StringComparison.Ordinal))
         {
             return "Infrastructure.Sql";
+        }
+
+        if (projectName.EndsWith(".Infrastructure.OpenAI", StringComparison.Ordinal))
+        {
+            return "Infrastructure.OpenAI";
         }
 
         if (projectName.EndsWith(".Infrastructure", StringComparison.Ordinal))

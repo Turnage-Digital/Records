@@ -49,13 +49,19 @@ context is a self-contained module under `src/Modules/{ModuleName}/` with the fo
     - Namespace policy: namespaces must match file paths exactly (`Records.{Module}.Infrastructure.Sql` for root files,
       `...Sql.Entities`, `...Sql.Mappers`, `...Sql.QueryCriteria`, `...Sql.Migrations` for foldered files)
     - `DependencyInjection.cs` for service registration
+    - Keep MySql-specific persistence concerns here; do not place LLM providers, MCP clients, or other non-SQL runtime integrations in this project.
 
-5. `Records.{Module}.Presentation`
+5. `Records.{Module}.Infrastructure.OpenAI` (optional)
+    - OpenAI-backed orchestration, MCP clients, tool loops, and other provider-specific runtime integrations
+    - May depend on the same module's `Infrastructure.Sql` project plus Contracts and Domain
+    - No EF Core entities, migrations, or MySql persistence implementations
+
+6. `Records.{Module}.Presentation`
     - HTTP controllers under `Controllers/`
     - API-only concerns (routing, auth attributes, request/response mapping)
     - No domain persistence logic
 
-6. `Records.{Module}.Tests`
+7. `Records.{Module}.Tests`
     - Unit tests for the module
 
 `Core` is the shared base module and is the current exception: it does not define a `Presentation` project.
@@ -65,6 +71,7 @@ Dependency graph:
 ```
 Presentation ────► Application ──────► Contracts ◄────── Infrastructure.Sql
        │                   │                        │                              │
+       │                   │                        └─────────────◄── Infrastructure.OpenAI
        └───────────────────└────────► Domain ◄──────┴──────────────────────────────┘
 ```
 
@@ -73,6 +80,7 @@ Presentation ────► Application ──────► Contracts ◄─�
 - Application depends on Domain and Contracts
 - Presentation depends on Application and Contracts
 - Infrastructure.Sql depends on Domain and Contracts (NOT Application)
+- Infrastructure.OpenAI depends on Domain, Contracts, and optionally the same module's Infrastructure.Sql (NOT Application)
 
 ---
 
@@ -121,9 +129,10 @@ Presentation ────► Application ──────► Contracts ◄─�
 
 ## 4) Cross-Module Integration (Rules)
 
-- Allowed references: `ModuleA.Application` → `ModuleB.Contracts` and
-  `ModuleA.Infrastructure.Sql` → `ModuleB.Contracts`.
-- Forbidden references: direct dependencies on another module's Domain, Application, or Infrastructure.Sql.
+- Allowed references: `ModuleA.Application` → `ModuleB.Contracts`,
+  `ModuleA.Infrastructure.Sql` → `ModuleB.Contracts`, and
+  `ModuleA.Infrastructure.OpenAI` → `ModuleB.Contracts`.
+- Forbidden references: direct dependencies on another module's Domain, Application, Infrastructure.Sql, or Infrastructure.OpenAI.
 - Cross-module integration handlers live in the consuming module's Application and only reference the
   producer's Contracts.
 - Integration event contracts live in the producer's `Contracts/IntegrationEvents/`.

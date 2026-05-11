@@ -2,13 +2,17 @@ import * as React from "react";
 
 import { Stack, TextField } from "@mui/material";
 
-interface Props {
+interface EditRecordsetNameContentProps {
   name: string | null;
   onNameChanged: (name: string) => void;
   disabled?: boolean;
 }
 
-const EditRecordsetNameContent = ({ name, onNameChanged, disabled }: Props) => {
+const EditRecordsetNameContent = ({
+  name,
+  onNameChanged,
+  disabled,
+}: EditRecordsetNameContentProps) => {
   return (
     <Stack spacing={2}>
       <TextField

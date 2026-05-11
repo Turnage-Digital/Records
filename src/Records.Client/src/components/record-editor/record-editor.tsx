@@ -20,14 +20,13 @@ import {
 import { DateField } from "@mui/x-date-pickers";
 import { isValid } from "date-fns";
 
-import {
-  Column,
-  ColumnType,
-  getStatusFromName,
-  RecordsetItemDefinition,
-} from "../../models";
+import { ColumnType } from "../../models/column-type";
+import { getStatusFromName } from "../../models/status";
 import FormBlock from "../form-block";
 import StatusChip from "../status-chip";
+
+import type { Column } from "../../models/column";
+import type { RecordsetItemDefinition } from "../../models/recordset-item-definition";
 
 interface RecordFormProps {
   definition: RecordsetItemDefinition;
@@ -210,7 +209,7 @@ interface RecordEditorProps {
   onCancel?: () => void;
 }
 
-export const RecordEditor = ({
+const RecordEditor = ({
   definition,
   bag,
   onBagChange,

@@ -6,6 +6,7 @@ bin
 obj
 dist
 node_modules
+.playwright-cli
 build
 TestResults
 
@@ -13,5 +14,4 @@ global.json
 *.user
 .env.development.local
 tsconfig.tsbuildinfo
-
 

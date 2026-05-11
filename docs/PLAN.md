@@ -91,7 +91,7 @@ This plan tracks the staged migration from Lister to Records with a Holmes-style
 ## Stage 8 — Frontend/UI Port (React)
 
 - [x] Port base client app shell + routing
-- [x] Recordset setup flow uses in-context side drawers for notifications + clock definitions
+- [x] Recordset setup flow uses in-context detail panels for notifications + clock definitions
 - [x] Recordset page exposes scoped notifications drawer (query + unread + mark-all within recordset context)
 - [x] Recordset page supports URL-backed status filtering with server-side query filtering
 - [x] Lists/Recordsets UI parity (list view, record view, filters, schema editor)

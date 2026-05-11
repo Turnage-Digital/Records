@@ -9,6 +9,7 @@ public sealed class DomainReferenceRulesTests
         "Records.Core.Domain",
         "Records.Tenants.Domain",
         "Records.Users.Domain",
+        "Records.Agents.Domain",
         "Records.Recordsets.Domain",
         "Records.Notifications.Domain",
         "Records.Clocks.Domain"

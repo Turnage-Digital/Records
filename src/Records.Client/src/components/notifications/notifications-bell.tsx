@@ -5,16 +5,16 @@ import { Badge, IconButton, Tooltip } from "@mui/material";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { unreadCountQueryOptions } from "../../query-options";
-import useSideDrawer from "../side-drawer/use-side-drawer";
+import useDetailPanel from "../detail-panel/use-detail-panel";
 
 const NotificationsDrawer = React.lazy(() => import("./notifications-drawer"));
 
 const NotificationsBell = () => {
   const { data: unreadCount } = useSuspenseQuery(unreadCountQueryOptions());
-  const { openDrawer } = useSideDrawer();
+  const { openDetailPanel } = useDetailPanel();
 
   const onClick = (): void => {
-    openDrawer("Notifications", <NotificationsDrawer />);
+    openDetailPanel("Notifications", <NotificationsDrawer />);
   };
 
   return (

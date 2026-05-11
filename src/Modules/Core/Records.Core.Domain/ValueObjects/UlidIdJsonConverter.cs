@@ -10,13 +10,40 @@ public sealed class UlidIdJsonConverter : JsonConverter<UlidId>
 {
     public override UlidId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        var value = reader.GetString();
-        if (string.IsNullOrEmpty(value))
+        if (reader.TokenType == JsonTokenType.String)
+        {
+            var value = reader.GetString();
+            return string.IsNullOrEmpty(value)
+                ? default
+                : UlidId.Parse(value);
+        }
+
+        if (reader.TokenType == JsonTokenType.StartObject)
+        {
+            using var document = JsonDocument.ParseValue(ref reader);
+            var root = document.RootElement;
+
+            foreach (var propertyName in new[] { "value", "Value" })
+            {
+                if (!root.TryGetProperty(propertyName, out var property) ||
+                    property.ValueKind != JsonValueKind.String)
+                {
+                    continue;
+                }
+
+                var value = property.GetString();
+                return string.IsNullOrEmpty(value)
+                    ? default
+                    : UlidId.Parse(value);
+            }
+        }
+
+        if (reader.TokenType == JsonTokenType.Null)
         {
             return default;
         }
 
-        return UlidId.Parse(value);
+        throw new JsonException($"Unexpected token {reader.TokenType} when parsing {nameof(UlidId)}.");
     }
 
     public override void Write(Utf8JsonWriter writer, UlidId value, JsonSerializerOptions options)

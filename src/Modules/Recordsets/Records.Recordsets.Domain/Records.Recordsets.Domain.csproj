@@ -10,4 +10,8 @@
         <ProjectReference Include="..\..\Core\Records.Core.Domain\Records.Core.Domain.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <InternalsVisibleTo Include="Records.Recordsets.Infrastructure.Sql"/>
+    </ItemGroup>
+
 </Project>

@@ -9,7 +9,8 @@ import {
   Typography,
 } from "@mui/material";
 
-import { Status, StatusTransition } from "../../models";
+import type { Status } from "../../models/status";
+import type { StatusTransition } from "../../models/status-transition";
 
 interface StatusTransitionsEditorProps {
   statuses: Status[];

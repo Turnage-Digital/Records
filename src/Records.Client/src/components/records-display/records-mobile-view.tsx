@@ -2,10 +2,12 @@ import * as React from "react";
 
 import { Box, Grid, Pagination, Stack } from "@mui/material";
 
-import { RecordItem, RecordsetItemDefinition } from "../../models";
 import RecordCard from "../record-card";
 
-interface Props {
+import type { RecordItem } from "../../models/record-item";
+import type { RecordsetItemDefinition } from "../../models/recordset-item-definition";
+
+interface RecordsMobileViewProps {
   records: RecordItem[];
   definition: RecordsetItemDefinition;
   totalCount: number;
@@ -36,7 +38,7 @@ const RecordsMobileView = ({
   onViewRecord,
   onEditRecord,
   onDeleteRecord,
-}: Props) => {
+}: RecordsMobileViewProps) => {
   const totalPages = Math.ceil(totalCount / pageSize);
   const showPagination = totalPages > 1;
   return (

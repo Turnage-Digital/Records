@@ -27,14 +27,19 @@ import {
 } from "@tanstack/react-query";
 
 import { useAuth } from "../auth";
-import { ConfirmDeleteDialog, PageSection, Titlebar } from "../components";
+import ConfirmDeleteDialog from "../components/confirm-delete-dialog";
+import PageSection from "../components/page-section";
+import Titlebar from "../components/titlebar";
 import { resolveActorUlid } from "../lib/identifiers";
-import { TenantSummary, UserRole, UserSummary } from "../models";
 import {
   tenantSummariesQueryOptions,
   userRoleMembershipsQueryOptions,
   userSummariesQueryOptions,
 } from "../query-options";
+
+import type { TenantSummary } from "../models/tenant-summary";
+import type { UserRole } from "../models/user-role-membership";
+import type { UserSummary } from "../models/user-summary";
 
 const roleDisplayNames: Record<UserRole, string> = {
   GlobalAdmin: "Global Admin",
