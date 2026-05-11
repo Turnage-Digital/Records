@@ -241,28 +241,31 @@ internal sealed class RecordsetsMcpClient(
                 : JsonSerializer.Deserialize<object>(pair.Value.ToJsonString(), AgentJsonSerializer.Options));
     }
 
-    private static string SerializeToolResult(CallToolResult result)
+    internal static string SerializeToolResult(CallToolResult result)
     {
-        object? structuredContent = result.StructuredContent;
-
-        if (structuredContent is JsonElement structuredElement)
+        if (TrySerializeStructuredValue(result.StructuredContent, out var structuredJson))
         {
-            return structuredElement.GetRawText();
+            return structuredJson;
         }
 
-        if (structuredContent is JsonDocument structuredDocument)
+        var toolResultBlocks = result.Content.OfType<ToolResultContentBlock>().ToArray();
+        if (toolResultBlocks.Length > 0)
         {
-            return structuredDocument.RootElement.GetRawText();
-        }
+            foreach (var toolResultBlock in toolResultBlocks)
+            {
+                if (TrySerializeStructuredValue(toolResultBlock.StructuredContent, out structuredJson))
+                {
+                    return structuredJson;
+                }
+            }
 
-        if (structuredContent is JsonNode structuredNode)
-        {
-            return structuredNode.ToJsonString(AgentJsonSerializer.Options);
-        }
-
-        if (structuredContent is not null)
-        {
-            return JsonSerializer.Serialize(structuredContent, AgentJsonSerializer.Options);
+            var nestedContent = toolResultBlocks
+                .SelectMany(toolResultBlock => toolResultBlock.Content)
+                .ToArray();
+            if (nestedContent.Length > 0)
+            {
+                return JsonSerializer.Serialize(nestedContent, AgentJsonSerializer.Options);
+            }
         }
 
         if (result.Content.Count == 0)
@@ -271,5 +274,35 @@ internal sealed class RecordsetsMcpClient(
         }
 
         return JsonSerializer.Serialize(result.Content, AgentJsonSerializer.Options);
+    }
+
+    private static bool TrySerializeStructuredValue(object? structuredContent, out string json)
+    {
+        if (structuredContent is JsonElement structuredElement)
+        {
+            json = structuredElement.GetRawText();
+            return true;
+        }
+
+        if (structuredContent is JsonDocument structuredDocument)
+        {
+            json = structuredDocument.RootElement.GetRawText();
+            return true;
+        }
+
+        if (structuredContent is JsonNode structuredNode)
+        {
+            json = structuredNode.ToJsonString(AgentJsonSerializer.Options);
+            return true;
+        }
+
+        if (structuredContent is not null)
+        {
+            json = JsonSerializer.Serialize(structuredContent, AgentJsonSerializer.Options);
+            return true;
+        }
+
+        json = string.Empty;
+        return false;
     }
 }

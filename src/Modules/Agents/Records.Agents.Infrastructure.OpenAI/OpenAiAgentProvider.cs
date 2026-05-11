@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json.Nodes;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Records.Agents.Contracts;
 using Records.Agents.Contracts.Dtos;
@@ -12,11 +13,13 @@ internal sealed class OpenAiAgentProvider(
     IAgentLlmClient llmClient,
     IAgentBackendRegistry backendRegistry,
     IOptions<AgentLlmOptions> options,
-    ITenantContext tenantContext
+    ITenantContext tenantContext,
+    ILogger<OpenAiAgentProvider> logger
 ) : IAgentProvider
 {
     public async Task<AgentTurnResultDto> ExecuteTurnAsync(
         AgentProviderContextDto context,
+        Func<AgentStreamEventDto, CancellationToken, Task>? onProgress,
         CancellationToken cancellationToken
     )
     {
@@ -29,8 +32,8 @@ internal sealed class OpenAiAgentProvider(
                 context.ThreadId,
                 context.Message,
                 context.PastedText,
-                context.CurrentArtifact is null ? null : AgentJsonSerializer.Serialize(context.CurrentArtifact),
-                context.PendingProposal is null ? null : AgentJsonSerializer.Serialize(context.PendingProposal)),
+                context.CurrentArtifact is null ? null : backend.CreatePromptArtifactJson(context.CurrentArtifact),
+                context.PendingProposal is null ? null : backend.CreatePromptProposalJson(context.PendingProposal)),
             PreviousResponseId: null,
             Tools: availableTools,
             ToolOutputs: []);
@@ -43,7 +46,25 @@ internal sealed class OpenAiAgentProvider(
 
         for (var turn = 0; turn <= maxToolCalls; turn++)
         {
-            var llmResponse = await llmClient.CreateResponseAsync(currentRequest, cancellationToken);
+            var llmResponse = await llmClient.CreateResponseAsync(
+                currentRequest,
+                async (delta, progressCancellationToken) =>
+                {
+                    finalMessage += delta;
+
+                    if (onProgress is null)
+                    {
+                        return;
+                    }
+
+                    await onProgress(new AgentStreamEventDto
+                    {
+                        Type = "assistant_message_delta",
+                        OccurredAt = DateTimeOffset.UtcNow,
+                        Message = delta
+                    }, progressCancellationToken);
+                },
+                cancellationToken);
             finalMessage = llmResponse.AssistantMessage;
 
             if (llmResponse.ToolCalls.Count == 0)
@@ -61,7 +82,30 @@ internal sealed class OpenAiAgentProvider(
             foreach (var toolCall in llmResponse.ToolCalls)
             {
                 var arguments = ParseArguments(toolCall.ArgumentsJson);
+                logger.LogInformation(
+                    "Agent thread {ThreadId} selected tool {ToolName}",
+                    context.ThreadId,
+                    toolCall.Name);
                 var startedAt = DateTimeOffset.UtcNow;
+                var startedToolCall = new AgentToolCallDto
+                {
+                    Id = toolCall.CallId,
+                    Name = toolCall.Name,
+                    ArgumentsJson = arguments.ToJsonString(),
+                    Status = "running",
+                    StartedAt = startedAt
+                };
+
+                if (onProgress is not null)
+                {
+                    await onProgress(new AgentStreamEventDto
+                    {
+                        Type = "tool_call_started",
+                        OccurredAt = startedAt,
+                        ToolCall = startedToolCall
+                    }, cancellationToken);
+                }
+
                 var toolResult = await backend.ExecuteModelToolAsync(
                     toolCall.Name,
                     arguments,
@@ -72,13 +116,33 @@ internal sealed class OpenAiAgentProvider(
                     cancellationToken);
                 var completedAt = DateTimeOffset.UtcNow;
 
+                logger.LogInformation(
+                    "Agent thread {ThreadId} completed tool {ToolName} with status {Status}, payloadLength {PayloadLength}, artifactKind {ArtifactKind}, hasProposal {HasProposal}",
+                    context.ThreadId,
+                    toolCall.Name,
+                    toolResult.Status,
+                    toolResult.OutputJson.Length,
+                    toolResult.Artifact?.Kind ?? "(none)",
+                    toolResult.Proposal is not null);
+
+                if (toolResult.Status == "completed" &&
+                    toolResult.Artifact is null &&
+                    toolResult.Proposal is null &&
+                    toolCall.Name is "list_recordsets" or "resolve_record_schema" or "search_records" or "get_record" or "get_record_history")
+                {
+                    logger.LogWarning(
+                        "Agent thread {ThreadId} completed structured tool {ToolName} without a mapped artifact or proposal",
+                        context.ThreadId,
+                        toolCall.Name);
+                }
+
                 if (toolResult.Status == "completed")
                 {
                     artifact = toolResult.Artifact ?? artifact;
                     proposal = toolResult.Proposal ?? proposal;
                 }
 
-                toolAudit.Add(new AgentToolCallDto
+                var completedToolCall = new AgentToolCallDto
                 {
                     Id = toolCall.CallId,
                     Name = toolCall.Name,
@@ -88,9 +152,23 @@ internal sealed class OpenAiAgentProvider(
                     Error = toolResult.Error,
                     StartedAt = startedAt,
                     CompletedAt = completedAt
-                });
+                };
 
-                toolOutputs.Add(new AgentFunctionCallOutput(toolCall.CallId, toolResult.OutputJson));
+                toolAudit.Add(completedToolCall);
+
+                if (onProgress is not null)
+                {
+                    await onProgress(new AgentStreamEventDto
+                    {
+                        Type = toolResult.Status is "failed" or "rejected"
+                            ? "tool_call_failed"
+                            : "tool_call_completed",
+                        OccurredAt = completedAt,
+                        ToolCall = completedToolCall
+                    }, cancellationToken);
+                }
+
+                toolOutputs.Add(new AgentFunctionCallOutput(toolCall.CallId, toolResult.ModelReceiptJson));
             }
 
             currentRequest = new AgentLlmRequest(

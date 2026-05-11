@@ -38,12 +38,13 @@ internal sealed class RecordsetsAgentBackend(IRecordsetsMcpClient mcpClient) : I
     {
         if (!ModelVisibleTools.Contains(toolName))
         {
-            const string error = "The requested tool is not available for direct model execution.";
+            const string toolUnavailableError = "The requested tool is not available for direct model execution.";
             return new AgentBackendToolExecutionResult(
-                CreateErrorJson(error),
+                CreateErrorJson(toolUnavailableError),
+                RecordsetsWorkspaceMapper.CreateToolReceiptJson(toolName, "rejected", null, toolUnavailableError, null, null),
                 "rejected",
                 Summary: null,
-                Error: error,
+                Error: toolUnavailableError,
                 Artifact: null,
                 Proposal: null);
         }
@@ -52,14 +53,29 @@ internal sealed class RecordsetsAgentBackend(IRecordsetsMcpClient mcpClient) : I
         var summary = toolResult.IsError
             ? null
             : RecordsetsWorkspaceMapper.SummarizeToolResult(toolName, toolResult.OutputJson);
+        var artifact = toolResult.IsError ? null : RecordsetsWorkspaceMapper.TryMapArtifact(toolName, toolResult.OutputJson);
+        var proposal = toolResult.IsError ? null : RecordsetsWorkspaceMapper.TryMapProposal(toolName, toolResult.OutputJson);
+        var status = toolResult.IsError ? "failed" : "completed";
+        var error = toolResult.IsError ? toolResult.Error ?? toolResult.OutputJson : null;
 
         return new AgentBackendToolExecutionResult(
             toolResult.OutputJson,
-            toolResult.IsError ? "failed" : "completed",
+            RecordsetsWorkspaceMapper.CreateToolReceiptJson(toolName, status, summary, error, artifact, proposal),
+            status,
             summary,
-            toolResult.IsError ? toolResult.Error ?? toolResult.OutputJson : null,
-            toolResult.IsError ? null : RecordsetsWorkspaceMapper.TryMapArtifact(toolName, toolResult.OutputJson),
-            toolResult.IsError ? null : RecordsetsWorkspaceMapper.TryMapProposal(toolName, toolResult.OutputJson));
+            error,
+            artifact,
+            proposal);
+    }
+
+    public string? CreatePromptArtifactJson(WorkspaceArtifactDto artifact)
+    {
+        return RecordsetsWorkspaceMapper.CreateArtifactPromptJson(artifact);
+    }
+
+    public string? CreatePromptProposalJson(WorkspaceProposalDto proposal)
+    {
+        return RecordsetsWorkspaceMapper.CreateProposalPromptJson(proposal);
     }
 
     public async Task<WorkspaceEntityDto?> ApplyConfirmedProposalAsync(

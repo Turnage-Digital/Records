@@ -7,6 +7,7 @@ public interface IAgentsUnitOfWork : IUnitOfWork
 {
     Task<AgentThread?> GetThreadByIdAsync(UlidId threadId, CancellationToken cancellationToken);
     Task AddThreadAsync(AgentThread thread, CancellationToken cancellationToken);
+    Task DeleteThreadAsync(UlidId threadId, CancellationToken cancellationToken);
     Task UpdateThreadAsync(AgentThread thread, CancellationToken cancellationToken);
     Task AddTurnAsync(AgentTurn turn, CancellationToken cancellationToken);
     Task AddToolCallsAsync(IEnumerable<AgentToolCall> toolCalls, CancellationToken cancellationToken);

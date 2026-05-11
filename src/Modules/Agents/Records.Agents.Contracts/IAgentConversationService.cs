@@ -10,6 +10,11 @@ public interface IAgentConversationService
         CancellationToken cancellationToken
     );
 
+    Task<bool> DeleteThreadAsync(
+        string threadId,
+        CancellationToken cancellationToken
+    );
+
     Task<AgentThreadDto?> PostTurnAsync(
         string threadId,
         string message,

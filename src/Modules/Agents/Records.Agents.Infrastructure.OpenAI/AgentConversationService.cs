@@ -6,6 +6,7 @@ using Records.Agents.Domain;
 using Records.Agents.Infrastructure.Sql;
 using Records.Core.Contracts;
 using Records.Core.Domain.ValueObjects;
+using Microsoft.Extensions.Logging;
 
 namespace Records.Agents.Infrastructure.OpenAI;
 
@@ -18,7 +19,8 @@ internal sealed class AgentConversationService(
     IAgentThreadProjectionWriter threadProjectionWriter,
     ICurrentUserAccess currentUserAccess,
     ITenantContext tenantContext,
-    IAgentThreadStream threadStream
+    IAgentThreadStream threadStream,
+    ILogger<AgentConversationService> logger
 ) : IAgentConversationService
 {
     public async Task<AgentThreadSummaryDto> CreateThreadAsync(
@@ -48,6 +50,21 @@ internal sealed class AgentConversationService(
             Title = thread.Title,
             UpdatedAt = thread.UpdatedAt
         };
+    }
+
+    public async Task<bool> DeleteThreadAsync(string threadId, CancellationToken cancellationToken)
+    {
+        var thread = await RequireThreadAsync(threadId, cancellationToken);
+        if (thread is null)
+        {
+            return false;
+        }
+
+        await unitOfWork.DeleteThreadAsync(thread.Id, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+        await threadProjectionWriter.DeleteAsync(thread.Id.ToString(), cancellationToken);
+
+        return true;
     }
 
     public async Task<AgentThreadDto?> PostTurnAsync(
@@ -92,15 +109,19 @@ internal sealed class AgentConversationService(
             return null;
         }
 
-        var result = await agentProvider.ExecuteTurnAsync(new AgentProviderContextDto
-        {
-            ThreadId = threadId,
-            BackendId = thread.BackendId,
-            Message = message,
-            PastedText = pastedText,
-            CurrentArtifact = currentState.CurrentArtifact,
-            PendingProposal = currentState.PendingProposal
-        }, cancellationToken);
+        var result = await agentProvider.ExecuteTurnAsync(
+            new AgentProviderContextDto
+            {
+                ThreadId = threadId,
+                BackendId = thread.BackendId,
+                Message = message,
+                PastedText = pastedText,
+                CurrentArtifact = currentState.CurrentArtifact,
+                PendingProposal = currentState.PendingProposal
+            },
+            (streamEvent, progressCancellationToken) =>
+                threadStream.PublishAsync(threadId, streamEvent, progressCancellationToken).AsTask(),
+            cancellationToken);
 
         var assistantTurn = new AgentTurn(
             UlidId.NewUlid(),
@@ -126,6 +147,10 @@ internal sealed class AgentConversationService(
 
         if (result.Artifact is not null)
         {
+            logger.LogInformation(
+                "Replacing current artifact for thread {ThreadId} with kind {ArtifactKind}",
+                threadId,
+                result.Artifact.Kind);
             await unitOfWork.ReplaceCurrentArtifactAsync(new AgentArtifact(
                 UlidId.NewUlid(),
                 thread.Id,
@@ -149,25 +174,6 @@ internal sealed class AgentConversationService(
         await unitOfWork.UpdateThreadAsync(thread, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         await UpsertThreadProjectionAsync(thread, cancellationToken);
-
-        foreach (var toolCall in result.ToolCalls)
-        {
-            await threadStream.PublishAsync(threadId, new AgentStreamEventDto
-            {
-                Type = "tool_call_started",
-                OccurredAt = toolCall.StartedAt,
-                ToolCall = toolCall
-            }, cancellationToken);
-
-            await threadStream.PublishAsync(threadId, new AgentStreamEventDto
-            {
-                Type = toolCall.Status is "failed" or "rejected"
-                    ? "tool_call_failed"
-                    : "tool_call_completed",
-                OccurredAt = toolCall.CompletedAt ?? toolCall.StartedAt,
-                ToolCall = toolCall
-            }, cancellationToken);
-        }
 
         await threadStream.PublishAsync(threadId, new AgentStreamEventDto
         {
@@ -196,7 +202,14 @@ internal sealed class AgentConversationService(
             }, cancellationToken);
         }
 
-        return await threadQueries.GetByIdAsync(threadId, cancellationToken);
+        var updatedThread = await threadQueries.GetByIdAsync(threadId, cancellationToken);
+        logger.LogInformation(
+            "Thread {ThreadId} returned with currentArtifact={HasArtifact} pendingProposal={HasProposal}",
+            threadId,
+            updatedThread?.CurrentArtifact is not null,
+            updatedThread?.PendingProposal is not null);
+
+        return updatedThread;
     }
 
     public async Task<AgentThreadDto?> ConfirmProposalAsync(

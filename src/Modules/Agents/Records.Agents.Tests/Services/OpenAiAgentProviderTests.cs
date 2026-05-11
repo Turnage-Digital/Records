@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Records.Agents.Contracts.Dtos;
 using Records.Agents.Infrastructure.OpenAI;
@@ -36,7 +37,7 @@ public sealed class OpenAiAgentProviderTests
             ThreadId = UlidId.NewUlid().ToString(),
             BackendId = "records",
             Message = "show me orders"
-        }, CancellationToken.None);
+        }, null, CancellationToken.None);
 
         Assert.That(result.AssistantMessage, Is.EqualTo("I found 1 result in Orders."));
         Assert.That(result.Artifact?.Kind, Is.EqualTo("grid"));
@@ -70,7 +71,7 @@ public sealed class OpenAiAgentProviderTests
             ThreadId = UlidId.NewUlid().ToString(),
             BackendId = "records",
             Message = "update order 101 status to Complete"
-        }, CancellationToken.None);
+        }, null, CancellationToken.None);
 
         Assert.That(result.Proposal, Is.Not.Null);
         Assert.That(result.Proposal!.Kind, Is.EqualTo("update"));
@@ -104,7 +105,7 @@ public sealed class OpenAiAgentProviderTests
             ThreadId = UlidId.NewUlid().ToString(),
             BackendId = "records",
             Message = "just do it"
-        }, CancellationToken.None);
+        }, null, CancellationToken.None);
 
         Assert.That(result.AssistantMessage, Does.Contain("can't apply changes directly"));
         Assert.That(result.ToolCalls.Length, Is.EqualTo(1));
@@ -113,9 +114,168 @@ public sealed class OpenAiAgentProviderTests
         Assert.That(backendClient.CallCount, Is.Zero);
     }
 
+    [Test]
+    public async Task ExecuteTurnAsync_ShouldPublishTextAndToolProgress_WhenProviderStreamsWork()
+    {
+        var progressEvents = new List<AgentStreamEventDto>();
+        var provider = CreateProvider(
+            new FakeRecordsetsMcpClient(),
+            [
+                new AgentLlmResponse(
+                    "response-1",
+                    string.Empty,
+                    [new AgentFunctionCallRequest(
+                        "call-1",
+                        "search_records",
+                        $"{{\"collectionId\":\"{FakeRecordsetsMcpClient.RecordsetId}\",\"page\":0,\"pageSize\":20}}")]),
+                new AgentLlmResponse(
+                    "response-2",
+                    "I found 1 result in Orders.",
+                    [])
+            ],
+            ["I found 1 result in Orders."]);
+
+        await provider.ExecuteTurnAsync(
+            new AgentProviderContextDto
+            {
+                ThreadId = UlidId.NewUlid().ToString(),
+                BackendId = "records",
+                Message = "show me orders"
+            },
+            (streamEvent, _) =>
+            {
+                progressEvents.Add(streamEvent);
+                return Task.CompletedTask;
+            },
+            CancellationToken.None);
+
+        Assert.That(
+            progressEvents.Any(streamEvent =>
+                streamEvent.Type == "assistant_message_delta" &&
+                streamEvent.Message == "I found 1 result in Orders."),
+            Is.True);
+        Assert.That(
+            progressEvents.Any(streamEvent =>
+                streamEvent.Type == "tool_call_started" &&
+                streamEvent.ToolCall?.Status == "running"),
+            Is.True);
+        Assert.That(
+            progressEvents.Any(streamEvent =>
+                streamEvent.Type == "tool_call_completed" &&
+                streamEvent.ToolCall?.Status == "completed"),
+            Is.True);
+    }
+
+    [Test]
+    public async Task ExecuteTurnAsync_ShouldSendCompactGridReceiptToModel_WhenSearchToolCompletes()
+    {
+        var llmClient = new FakeAgentLlmClient(
+        [
+            new AgentLlmResponse(
+                "response-1",
+                string.Empty,
+                [new AgentFunctionCallRequest(
+                    "call-1",
+                    "search_records",
+                    $"{{\"collectionId\":\"{FakeRecordsetsMcpClient.RecordsetId}\",\"page\":0,\"pageSize\":20}}")]),
+            new AgentLlmResponse(
+                "response-2",
+                "Loaded Orders in the work surface.",
+                [])
+        ]);
+        var provider = CreateProvider(new FakeRecordsetsMcpClient(), llmClient);
+
+        await provider.ExecuteTurnAsync(new AgentProviderContextDto
+        {
+            ThreadId = UlidId.NewUlid().ToString(),
+            BackendId = "records",
+            Message = "show me orders"
+        }, null, CancellationToken.None);
+
+        Assert.That(llmClient.Requests, Has.Count.EqualTo(2));
+        var receiptJson = llmClient.Requests[1].ToolOutputs.Single().ReceiptJson;
+        Assert.That(receiptJson, Does.Contain("\"artifactKind\":\"grid\""));
+        Assert.That(receiptJson, Does.Contain("\"rowReferences\""));
+        Assert.That(receiptJson, Does.Not.Contain("\"attributes\""));
+    }
+
+    [Test]
+    public async Task ExecuteTurnAsync_ShouldSummarizeGridArtifactContext_WhenCurrentArtifactIsLarge()
+    {
+        var llmClient = new FakeAgentLlmClient(
+        [
+            new AgentLlmResponse(
+                "response-1",
+                "I can open one of those rows next.",
+                [])
+        ]);
+        var provider = CreateProvider(new FakeRecordsetsMcpClient(), llmClient);
+
+        await provider.ExecuteTurnAsync(new AgentProviderContextDto
+        {
+            ThreadId = UlidId.NewUlid().ToString(),
+            BackendId = "records",
+            Message = "open the first one",
+            CurrentArtifact = new WorkspaceArtifactDto
+            {
+                Kind = "grid",
+                Title = "Orders",
+                Grid = new WorkspaceGridDto
+                {
+                    CollectionId = FakeRecordsetsMcpClient.RecordsetId.ToString(),
+                    CollectionLabel = "Orders",
+                    Page = 0,
+                    PageSize = 20,
+                    TotalCount = 120,
+                    Columns =
+                    [
+                        new WorkspaceGridColumnDto { Key = "client", Label = "Client", Type = "text" },
+                        new WorkspaceGridColumnDto { Key = "status", Label = "Status", Type = "text" }
+                    ],
+                    Rows =
+                    [
+                        new WorkspaceGridRowDto
+                        {
+                            EntityId = "101",
+                            DisplayName = "Order 101",
+                            Attributes =
+                            [
+                                new WorkspaceAttributeDto
+                                {
+                                    Key = "client",
+                                    Label = "Client",
+                                    Type = "text",
+                                    Value = "Acme",
+                                    DisplayValue = "Acme"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }, null, CancellationToken.None);
+
+        var artifactContextJson = llmClient.Requests[0].Conversation?.CurrentArtifactJson;
+        Assert.That(artifactContextJson, Is.Not.Null);
+        Assert.That(artifactContextJson, Does.Contain("\"rowReferences\""));
+        Assert.That(artifactContextJson, Does.Contain("\"entityId\":\"101\""));
+        Assert.That(artifactContextJson, Does.Not.Contain("\"attributes\""));
+    }
+
     private static OpenAiAgentProvider CreateProvider(
         FakeRecordsetsMcpClient backendClient,
-        IEnumerable<AgentLlmResponse> responses
+        IEnumerable<AgentLlmResponse> responses,
+        IEnumerable<string>? streamedText = null
+    )
+    {
+        return CreateProvider(
+            backendClient,
+            new FakeAgentLlmClient(responses, streamedText));
+    }
+
+    private static OpenAiAgentProvider CreateProvider(
+        FakeRecordsetsMcpClient backendClient,
+        FakeAgentLlmClient llmClient
     )
     {
         var backendRegistry = new AgentBackendRegistry(
@@ -124,7 +284,7 @@ public sealed class OpenAiAgentProviderTests
         ]);
 
         return new OpenAiAgentProvider(
-            new FakeAgentLlmClient(responses),
+            llmClient,
             backendRegistry,
             Options.Create(new AgentLlmOptions
             {
@@ -132,16 +292,40 @@ public sealed class OpenAiAgentProviderTests
                 Model = "gpt-5-mini",
                 MaxToolCallsPerTurn = 4
             }),
-            new FakeTenantContext(UlidId.NewUlid().ToString(), UlidId.NewUlid().ToString()));
+            new FakeTenantContext(UlidId.NewUlid().ToString(), UlidId.NewUlid().ToString()),
+            NullLogger<OpenAiAgentProvider>.Instance);
     }
 
-    private sealed class FakeAgentLlmClient(IEnumerable<AgentLlmResponse> responses) : IAgentLlmClient
+    private sealed class FakeAgentLlmClient(
+        IEnumerable<AgentLlmResponse> responses,
+        IEnumerable<string>? streamedText = null) : IAgentLlmClient
     {
         private readonly Queue<AgentLlmResponse> _responses = new(responses);
+        private readonly Queue<string> _streamedText = new(streamedText ?? []);
+        public List<AgentLlmRequest> Requests { get; } = [];
 
-        public Task<AgentLlmResponse> CreateResponseAsync(AgentLlmRequest request, CancellationToken cancellationToken)
+        public Task<AgentLlmResponse> CreateResponseAsync(
+            AgentLlmRequest request,
+            Func<string, CancellationToken, Task>? onTextDelta,
+            CancellationToken cancellationToken)
         {
+            Requests.Add(request);
+
+            if (onTextDelta is not null && _streamedText.TryDequeue(out var nextDelta))
+            {
+                return PublishDeltaAndDequeueAsync(nextDelta, onTextDelta, cancellationToken);
+            }
+
             return Task.FromResult(_responses.Dequeue());
+        }
+
+        private async Task<AgentLlmResponse> PublishDeltaAndDequeueAsync(
+            string delta,
+            Func<string, CancellationToken, Task> onTextDelta,
+            CancellationToken cancellationToken)
+        {
+            await onTextDelta(delta, cancellationToken);
+            return _responses.Dequeue();
         }
     }
 

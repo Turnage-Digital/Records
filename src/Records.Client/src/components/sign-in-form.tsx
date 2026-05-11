@@ -28,7 +28,7 @@ const SignInForm = ({ onSignedIn }: SignInFormProps) => {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (emailErrorMessage || passwordErrorMessage) {
+    if (!validateInputs()) {
       return;
     }
 
@@ -59,23 +59,18 @@ const SignInForm = ({ onSignedIn }: SignInFormProps) => {
   };
 
   const validateInputs = () => {
-    let isValid = true;
+    const nextEmailErrorMessage =
+      email && /\S+@\S+\.\S+/.test(email)
+        ? null
+        : "Please enter a valid email address.";
+    const nextPasswordErrorMessage = password
+      ? null
+      : "Please enter a password.";
 
-    if (email && /\S+@\S+\.\S+/.test(email)) {
-      setEmailErrorMessage(null);
-    } else {
-      setEmailErrorMessage("Please enter a valid email address.");
-      isValid = false;
-    }
+    setEmailErrorMessage(nextEmailErrorMessage);
+    setPasswordErrorMessage(nextPasswordErrorMessage);
 
-    if (password) {
-      setPasswordErrorMessage(null);
-    } else {
-      setPasswordErrorMessage("Please enter a password.");
-      isValid = false;
-    }
-
-    return isValid;
+    return !nextEmailErrorMessage && !nextPasswordErrorMessage;
   };
 
   const emailErrorColor = emailErrorMessage ? "error" : "primary";
@@ -124,7 +119,6 @@ const SignInForm = ({ onSignedIn }: SignInFormProps) => {
         size="large"
         fullWidth
         loading={loading}
-        onClick={validateInputs}
       >
         Sign in
       </Button>

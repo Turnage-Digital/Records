@@ -1,8 +1,10 @@
+using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using ModelContextProtocol.Protocol;
 using Records.Agents.Infrastructure.OpenAI;
 
 namespace Records.Agents.Tests.Services;
@@ -43,6 +45,47 @@ public sealed class RecordsetsMcpClientTests
         Assert.That(options.Command, Is.EqualTo("dotnet"));
         Assert.That(options.Arguments, Is.EqualTo(new[] { "run", "--project", "../Modules/Recordsets/Records.Recordsets.McpServer/Records.Recordsets.McpServer.csproj" }));
         Assert.That(options.WorkingDirectory, Is.EqualTo("/repo/src/Records.App.Server"));
+    }
+
+    [Test]
+    public void SerializeToolResult_ShouldPreferNestedToolResultStructuredContent_WhenTopLevelStructuredContentIsMissing()
+    {
+        using var document = JsonDocument.Parse(
+            """
+            {
+              "schema": {
+                "id": "01KMREA1DX5PNV7KMZR54GH5K4",
+                "name": "Inventory",
+                "columns": [],
+                "statuses": []
+              },
+              "page": {
+                "recordsetId": "01KMREA1DX5PNV7KMZR54GH5K4",
+                "name": "Inventory",
+                "count": 120,
+                "items": []
+              }
+            }
+            """);
+
+        var result = new CallToolResult
+        {
+            Content =
+            [
+                new ToolResultContentBlock
+                {
+                    ToolUseId = "tool-search",
+                    Content = [],
+                    StructuredContent = document.RootElement.Clone()
+                }
+            ]
+        };
+
+        var serialized = RecordsetsMcpClient.SerializeToolResult(result);
+
+        Assert.That(serialized, Does.Contain("\"schema\""));
+        Assert.That(serialized, Does.Contain("\"page\""));
+        Assert.That(serialized, Does.Not.Contain("\"structuredContent\""));
     }
 
     private static RecordsetsMcpClient CreateClient(IConfiguration configuration, RecordsetsMcpOptions options)

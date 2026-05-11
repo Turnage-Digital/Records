@@ -23,6 +23,15 @@ export async function createAgentThread(
   return (await response.json()) as AgentThreadSummary;
 }
 
+export async function deleteAgentThread(threadId: string): Promise<void> {
+  const response = await fetch(`/api/agents/threads/${threadId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  await throwIfNotOk(response, "Failed to delete thread.");
+}
+
 export async function postAgentTurn(
   threadId: string,
   message: string,

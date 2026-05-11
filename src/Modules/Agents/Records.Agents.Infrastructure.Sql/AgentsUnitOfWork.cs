@@ -42,6 +42,50 @@ public sealed class AgentsUnitOfWork : UnitOfWork<AgentsDbContext>, IAgentsUnitO
         }, cancellationToken);
     }
 
+    public async Task DeleteThreadAsync(UlidId threadId, CancellationToken cancellationToken)
+    {
+        var threadKey = threadId.ToString();
+
+        var toolCalls = await _dbContext.AgentToolCalls
+            .Where(x => x.ThreadId == threadKey)
+            .ToListAsync(cancellationToken);
+        if (toolCalls.Count > 0)
+        {
+            _dbContext.AgentToolCalls.RemoveRange(toolCalls);
+        }
+
+        var turns = await _dbContext.AgentTurns
+            .Where(x => x.ThreadId == threadKey)
+            .ToListAsync(cancellationToken);
+        if (turns.Count > 0)
+        {
+            _dbContext.AgentTurns.RemoveRange(turns);
+        }
+
+        var artifacts = await _dbContext.AgentArtifacts
+            .Where(x => x.ThreadId == threadKey)
+            .ToListAsync(cancellationToken);
+        if (artifacts.Count > 0)
+        {
+            _dbContext.AgentArtifacts.RemoveRange(artifacts);
+        }
+
+        var proposals = await _dbContext.AgentProposals
+            .Where(x => x.ThreadId == threadKey)
+            .ToListAsync(cancellationToken);
+        if (proposals.Count > 0)
+        {
+            _dbContext.AgentProposals.RemoveRange(proposals);
+        }
+
+        var existingThread = await _dbContext.AgentThreads
+            .FirstOrDefaultAsync(x => x.Id == threadKey, cancellationToken);
+        if (existingThread is not null)
+        {
+            _dbContext.AgentThreads.Remove(existingThread);
+        }
+    }
+
     public Task UpdateThreadAsync(AgentThread thread, CancellationToken cancellationToken)
     {
         var key = thread.Id.ToString();

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Records.Core.Domain.ValueObjects;
 
 namespace Records.Core.Tests.ValueObjects;
@@ -19,5 +20,25 @@ public class UlidIdTests
     {
         var success = UlidId.TryParse("not-a-ulid", out _);
         Assert.That(success, Is.False);
+    }
+
+    [Test]
+    public void JsonSerializer_ShouldSerializeAsString_WhenUsingDefaultOptions()
+    {
+        var id = UlidId.NewUlid();
+
+        var json = JsonSerializer.Serialize(id);
+
+        Assert.That(json, Is.EqualTo($"\"{id}\""));
+    }
+
+    [Test]
+    public void JsonSerializer_ShouldDeserializeLegacyObjectShape_WhenValuePropertyIsPresent()
+    {
+        var id = UlidId.NewUlid();
+
+        var parsed = JsonSerializer.Deserialize<UlidId>($"{{\"value\":\"{id}\"}}");
+
+        Assert.That(parsed, Is.EqualTo(id));
     }
 }

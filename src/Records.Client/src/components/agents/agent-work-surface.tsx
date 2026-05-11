@@ -61,8 +61,66 @@ function attributeValue(attribute?: WorkspaceAttribute) {
   return attribute?.displayValue ?? attribute?.value;
 }
 
+function renderGridActionCell(
+  grid: WorkspaceGrid,
+  row: WorkspaceGrid["rows"][number],
+  showActions: boolean,
+) {
+  if (!showActions) {
+    return null;
+  }
+
+  if (!row.availableActions.includes("inspect")) {
+    return <TableCell align="right" />;
+  }
+
+  return (
+    <TableCell align="right">
+      <Button
+        component={RouterLink}
+        to={recordDetailsPath(grid.collectionId, row.entityId)}
+        size="small"
+        endIcon={<OpenInNewIcon fontSize="small" />}
+      >
+        Open
+      </Button>
+    </TableCell>
+  );
+}
+
+function renderGridRow(
+  grid: WorkspaceGrid,
+  row: WorkspaceGrid["rows"][number],
+  showActions: boolean,
+) {
+  const actionCell = renderGridActionCell(grid, row, showActions);
+
+  return (
+    <TableRow key={row.entityId} hover>
+      {grid.columns.map((column) => {
+        const attribute = row.attributes.find(
+          (item) => item.key === column.key,
+        );
+
+        return (
+          <TableCell key={`${row.entityId}-${column.key}`}>
+            {renderValue(attributeValue(attribute))}
+          </TableCell>
+        );
+      })}
+      {actionCell}
+    </TableRow>
+  );
+}
+
 function renderGridSection(grid: WorkspaceGrid) {
   const resultLabel = `${grid.totalCount} result${grid.totalCount === 1 ? "" : "s"}`;
+  const showActions = grid.rows.some((row) =>
+    row.availableActions.includes("inspect"),
+  );
+  const actionHeaderCell = showActions ? (
+    <TableCell align="right">Actions</TableCell>
+  ) : null;
   const filtersNode =
     grid.resolvedFilters.length === 0 ? null : (
       <Stack direction="row" flexWrap="wrap" gap={1}>
@@ -93,35 +151,11 @@ function renderGridSection(grid: WorkspaceGrid) {
                 {grid.columns.map((column) => (
                   <TableCell key={column.key}>{column.label}</TableCell>
                 ))}
-                <TableCell align="right">Actions</TableCell>
+                {actionHeaderCell}
               </TableRow>
             </TableHead>
             <TableBody>
-              {grid.rows.map((row) => (
-                <TableRow key={row.entityId} hover>
-                  {grid.columns.map((column) => {
-                    const attribute = row.attributes.find(
-                      (item) => item.key === column.key,
-                    );
-
-                    return (
-                      <TableCell key={`${row.entityId}-${column.key}`}>
-                        {renderValue(attributeValue(attribute))}
-                      </TableCell>
-                    );
-                  })}
-                  <TableCell align="right">
-                    <Button
-                      component={RouterLink}
-                      to={recordDetailsPath(grid.collectionId, row.entityId)}
-                      size="small"
-                      endIcon={<OpenInNewIcon fontSize="small" />}
-                    >
-                      Open
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {grid.rows.map((row) => renderGridRow(grid, row, showActions))}
             </TableBody>
           </Table>
         </TableContainer>
@@ -494,7 +528,8 @@ const AgentWorkSurface = ({
       sx={{
         display: "flex",
         flexDirection: "column",
-        minHeight: { xs: "auto", md: "calc(100vh - 220px)" },
+        minHeight: 0,
+        height: "100%",
       }}
     >
       <Box sx={{ px: 3, py: 2.5, borderBottom: 1, borderColor: "divider" }}>
@@ -513,7 +548,10 @@ const AgentWorkSurface = ({
         </Typography>
       </Box>
 
-      <Stack spacing={2.5} sx={{ flex: 1, overflow: "auto", px: 3, py: 3 }}>
+      <Stack
+        spacing={2.5}
+        sx={{ flex: 1, minHeight: 0, overflow: "auto", px: 3, py: 3 }}
+      >
         {gridSection}
         {detailSection}
         {editorSection}

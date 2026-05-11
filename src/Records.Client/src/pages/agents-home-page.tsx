@@ -32,31 +32,20 @@ const AgentsHomePage = () => {
   const threadsQuery = useQuery(agentThreadSummariesQueryOptions());
 
   const [message, setMessage] = React.useState("");
-  const [pastedText, setPastedText] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
 
   const startThreadMutation = useMutation({
     mutationFn: async ({
       message: nextMessage,
-      pastedText: nextPastedText,
       startEmpty,
     }: {
       message?: string;
-      pastedText?: string;
       startEmpty?: boolean;
     }) => {
       const thread = await createAgentThread();
 
       if (!startEmpty) {
-        const effectiveMessage = nextMessage?.trim().length
-          ? nextMessage.trim()
-          : "Create a draft from the pasted note.";
-
-        await postAgentTurn(
-          thread.id,
-          effectiveMessage,
-          nextPastedText?.trim().length ? nextPastedText.trim() : undefined,
-        );
+        await postAgentTurn(thread.id, nextMessage?.trim() ?? "");
       }
 
       return thread.id;
@@ -65,7 +54,6 @@ const AgentsHomePage = () => {
       await queryClient.invalidateQueries({ queryKey: ["agent-threads"] });
       setError(null);
       setMessage("");
-      setPastedText("");
       navigate(agentThreadPath(threadId));
     },
     onError: (nextError) => {
@@ -78,21 +66,33 @@ const AgentsHomePage = () => {
   });
 
   const handleStartConversation = () => {
-    if (message.trim().length === 0 && pastedText.trim().length === 0) {
+    if (message.trim().length === 0) {
       return;
     }
 
-    startThreadMutation.mutate({ message, pastedText });
+    startThreadMutation.mutate({ message });
   };
 
   const handleStartEmptyThread = () => {
     startThreadMutation.mutate({ startEmpty: true });
   };
 
+  const handleMessageKeyDown = (event: React.KeyboardEvent) => {
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey &&
+      !event.nativeEvent.isComposing
+    ) {
+      event.preventDefault();
+      if (!startButtonDisabled) {
+        handleStartConversation();
+      }
+    }
+  };
+
   const errorAlert = error ? <Alert severity="error">{error}</Alert> : null;
   const startButtonDisabled =
-    startThreadMutation.isPending ||
-    (message.trim().length === 0 && pastedText.trim().length === 0);
+    startThreadMutation.isPending || message.trim().length === 0;
   const startButtonLabel = startThreadMutation.isPending
     ? "Starting..."
     : "Start with this prompt";
@@ -194,20 +194,13 @@ const AgentsHomePage = () => {
                 <TextField
                   label="Start with a prompt"
                   multiline
-                  minRows={4}
+                  minRows={5}
+                  maxRows={12}
                   value={message}
                   onChange={(event) => setMessage(event.target.value)}
-                  placeholder="Show me all orders for a particular client yesterday."
-                  disabled={startThreadMutation.isPending}
-                />
-
-                <TextField
-                  label="Optional pasted email or note"
-                  multiline
-                  minRows={4}
-                  value={pastedText}
-                  onChange={(event) => setPastedText(event.target.value)}
-                  placeholder="Paste an email or note if you want the assistant to draft a create or update."
+                  onKeyDown={handleMessageKeyDown}
+                  placeholder="Ask for records, paste an email, or describe the change you want drafted."
+                  helperText="Press Enter to start. Use Shift+Enter for a new line."
                   disabled={startThreadMutation.isPending}
                 />
 

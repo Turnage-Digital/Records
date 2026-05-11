@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Records.Agents.Contracts;
@@ -59,6 +60,82 @@ public sealed class AgentsEndpointTests
         Assert.That(listB, Is.Not.Null);
         Assert.That(listA!.Select(x => x.Title), Is.EquivalentTo(new[] { "Tenant A thread" }));
         Assert.That(listB!.Select(x => x.Title), Is.EquivalentTo(new[] { "Tenant B thread" }));
+    }
+
+    [Test]
+    public async Task DeleteThread_ShouldRemoveThreadAndRelatedRows_WhenThreadBelongsToCurrentUser()
+    {
+        var llmClient = new FakeAgentLlmClient();
+        var mcpClient = new FakeRecordsetsMcpClient();
+        await using var rootFactory = new RecordsWebApplicationFactory();
+        await using var factory = CreateFactory(rootFactory, llmClient, mcpClient);
+
+        var userId = UlidId.NewUlid();
+        var tenantId = UlidId.NewUlid();
+
+        await factory.SeedRoleMembershipAsync(userId, UserRole.Operations, tenantId);
+
+        using var client = factory.CreateAuthenticatedClient(userId, "ops@records.test", tenantId: tenantId);
+
+        var createResponse = await client.PostAsJsonAsync("/api/agents/threads", new
+        {
+            title = "Disposable thread"
+        });
+        createResponse.EnsureSuccessStatusCode();
+
+        var createdThread = await createResponse.Content.ReadFromJsonAsync<AgentThreadSummaryDto>(
+            EndpointTestSupport.JsonOptions);
+        Assert.That(createdThread, Is.Not.Null);
+
+        var listRecordsetsResponse = await client.PostAsJsonAsync($"/api/agents/threads/{createdThread!.Id}/turns", new
+        {
+            message = "what recordsets do I have?"
+        });
+        listRecordsetsResponse.EnsureSuccessStatusCode();
+
+        var createProposalResponse = await client.PostAsJsonAsync($"/api/agents/threads/{createdThread.Id}/turns", new
+        {
+            message = "create an order for Acme with status Open"
+        });
+        createProposalResponse.EnsureSuccessStatusCode();
+
+        var proposalThread = await createProposalResponse.Content.ReadFromJsonAsync<AgentThreadDto>(
+            EndpointTestSupport.JsonOptions);
+        Assert.That(proposalThread, Is.Not.Null);
+        Assert.That(proposalThread!.CurrentArtifact?.Kind, Is.EqualTo("grid"));
+        Assert.That(proposalThread.PendingProposal, Is.Not.Null);
+
+        var deleteResponse = await client.DeleteAsync($"/api/agents/threads/{createdThread.Id}");
+        Assert.That(deleteResponse.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+
+        var list = await client.GetFromJsonAsync<IReadOnlyList<AgentThreadSummaryDto>>(
+            "/api/agents/threads",
+            EndpointTestSupport.JsonOptions);
+        Assert.That(list, Is.Not.Null);
+        Assert.That(list!, Is.Empty);
+
+        var getResponse = await client.GetAsync($"/api/agents/threads/{createdThread.Id}");
+        Assert.That(getResponse.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<AgentsDbContext>();
+        var threadId = createdThread.Id;
+        var threadCount = await db.AgentThreads.AsNoTracking().CountAsync(x => x.Id == threadId);
+        var projectionCount = await db.AgentThreadProjections.AsNoTracking().CountAsync(x => x.Id == threadId);
+        var turnCount = await db.AgentTurns.AsNoTracking().CountAsync(x => x.ThreadId == threadId);
+        var toolCallCount = await db.AgentToolCalls.AsNoTracking().CountAsync(x => x.ThreadId == threadId);
+        var artifactCount = await db.AgentArtifacts.AsNoTracking().CountAsync(x => x.ThreadId == threadId);
+        var proposalCount = await db.AgentProposals.AsNoTracking().CountAsync(x => x.ThreadId == threadId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(threadCount, Is.Zero);
+            Assert.That(projectionCount, Is.Zero);
+            Assert.That(turnCount, Is.Zero);
+            Assert.That(toolCallCount, Is.Zero);
+            Assert.That(artifactCount, Is.Zero);
+            Assert.That(proposalCount, Is.Zero);
+        });
     }
 
     [Test]
@@ -132,6 +209,117 @@ public sealed class AgentsEndpointTests
     }
 
     [Test]
+    public async Task PostTurn_ShouldReturnGridArtifact_WhenModelListsRecordsets()
+    {
+        var llmClient = new FakeAgentLlmClient();
+        var mcpClient = new FakeRecordsetsMcpClient();
+        await using var rootFactory = new RecordsWebApplicationFactory();
+        await using var factory = CreateFactory(rootFactory, llmClient, mcpClient);
+
+        var userId = UlidId.NewUlid();
+        var tenantId = UlidId.NewUlid();
+
+        await factory.SeedRoleMembershipAsync(userId, UserRole.Operations, tenantId);
+
+        using var client = factory.CreateAuthenticatedClient(userId, "ops@records.test", tenantId: tenantId);
+
+        var createResponse = await client.PostAsJsonAsync("/api/agents/threads", new
+        {
+            title = "Recordsets"
+        });
+        createResponse.EnsureSuccessStatusCode();
+
+        var createdThread = await createResponse.Content.ReadFromJsonAsync<AgentThreadSummaryDto>(
+            EndpointTestSupport.JsonOptions);
+
+        var threadResponse = await client.PostAsJsonAsync($"/api/agents/threads/{createdThread!.Id}/turns", new
+        {
+            message = "what recordsets do I have?"
+        });
+        threadResponse.EnsureSuccessStatusCode();
+
+        var thread = await threadResponse.Content.ReadFromJsonAsync<AgentThreadDto>(EndpointTestSupport.JsonOptions);
+        Assert.That(thread, Is.Not.Null);
+        Assert.That(thread!.CurrentArtifact?.Kind, Is.EqualTo("grid"));
+        Assert.That(thread.CurrentArtifact?.Grid?.CollectionLabel, Is.EqualTo("Recordsets"));
+        Assert.That(thread.CurrentArtifact?.Grid?.Rows.Length, Is.GreaterThanOrEqualTo(1));
+    }
+
+    [Test]
+    public async Task PostTurn_ShouldReturnEditorArtifact_WhenModelResolvesSchema()
+    {
+        var llmClient = new FakeAgentLlmClient();
+        var mcpClient = new FakeRecordsetsMcpClient();
+        await using var rootFactory = new RecordsWebApplicationFactory();
+        await using var factory = CreateFactory(rootFactory, llmClient, mcpClient);
+
+        var userId = UlidId.NewUlid();
+        var tenantId = UlidId.NewUlid();
+
+        await factory.SeedRoleMembershipAsync(userId, UserRole.Operations, tenantId);
+
+        using var client = factory.CreateAuthenticatedClient(userId, "ops@records.test", tenantId: tenantId);
+
+        var createResponse = await client.PostAsJsonAsync("/api/agents/threads", new
+        {
+            title = "Schema"
+        });
+        createResponse.EnsureSuccessStatusCode();
+
+        var createdThread = await createResponse.Content.ReadFromJsonAsync<AgentThreadSummaryDto>(
+            EndpointTestSupport.JsonOptions);
+
+        var threadResponse = await client.PostAsJsonAsync($"/api/agents/threads/{createdThread!.Id}/turns", new
+        {
+            message = "is client a string?"
+        });
+        threadResponse.EnsureSuccessStatusCode();
+
+        var thread = await threadResponse.Content.ReadFromJsonAsync<AgentThreadDto>(EndpointTestSupport.JsonOptions);
+        Assert.That(thread, Is.Not.Null);
+        Assert.That(thread!.CurrentArtifact?.Kind, Is.EqualTo("editor"));
+        Assert.That(thread.CurrentArtifact?.Editor?.CollectionLabel, Is.EqualTo("Orders"));
+        Assert.That(thread.CurrentArtifact?.Editor?.Fields.Any(field => field.Key == "client"), Is.True);
+    }
+
+    [Test]
+    public async Task PostTurn_ShouldReturnGridArtifact_WhenModelLoadsStudentsFirstPage()
+    {
+        var llmClient = new FakeAgentLlmClient();
+        var mcpClient = new FakeRecordsetsMcpClient();
+        await using var rootFactory = new RecordsWebApplicationFactory();
+        await using var factory = CreateFactory(rootFactory, llmClient, mcpClient);
+
+        var userId = UlidId.NewUlid();
+        var tenantId = UlidId.NewUlid();
+
+        await factory.SeedRoleMembershipAsync(userId, UserRole.Operations, tenantId);
+
+        using var client = factory.CreateAuthenticatedClient(userId, "ops@records.test", tenantId: tenantId);
+
+        var createResponse = await client.PostAsJsonAsync("/api/agents/threads", new
+        {
+            title = "Students"
+        });
+        createResponse.EnsureSuccessStatusCode();
+
+        var createdThread = await createResponse.Content.ReadFromJsonAsync<AgentThreadSummaryDto>(
+            EndpointTestSupport.JsonOptions);
+
+        var threadResponse = await client.PostAsJsonAsync($"/api/agents/threads/{createdThread!.Id}/turns", new
+        {
+            message = "show me the first 20 rows of Students"
+        });
+        threadResponse.EnsureSuccessStatusCode();
+
+        var thread = await threadResponse.Content.ReadFromJsonAsync<AgentThreadDto>(EndpointTestSupport.JsonOptions);
+        Assert.That(thread, Is.Not.Null);
+        Assert.That(thread!.CurrentArtifact?.Kind, Is.EqualTo("grid"));
+        Assert.That(thread.CurrentArtifact?.Grid?.CollectionLabel, Is.EqualTo("Students"));
+        Assert.That(thread.CurrentArtifact?.Grid?.Rows.Length, Is.EqualTo(20));
+    }
+
+    [Test]
     public async Task ConfirmCreateProposal_ShouldPersistOnlyAfterExplicitConfirmation()
     {
         var llmClient = new FakeAgentLlmClient();
@@ -191,8 +379,8 @@ public sealed class AgentsEndpointTests
 
     private static WebApplicationFactory<Program> CreateFactory(
         RecordsWebApplicationFactory rootFactory,
-        FakeAgentLlmClient llmClient,
-        FakeRecordsetsMcpClient mcpClient
+        IAgentLlmClient llmClient,
+        IRecordsetsMcpClient mcpClient
     )
     {
         return rootFactory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
@@ -206,7 +394,10 @@ public sealed class AgentsEndpointTests
 
     private sealed class FakeAgentLlmClient : IAgentLlmClient
     {
-        public Task<AgentLlmResponse> CreateResponseAsync(AgentLlmRequest request, CancellationToken cancellationToken)
+        public Task<AgentLlmResponse> CreateResponseAsync(
+            AgentLlmRequest request,
+            Func<string, CancellationToken, Task>? onTextDelta,
+            CancellationToken cancellationToken)
         {
             if (request.Conversation is not null)
             {
@@ -229,6 +420,47 @@ public sealed class AgentsEndpointTests
                                 {
                                     new { field = "client", @operator = "contains", value = "Acme" }
                                 }
+                            }))]));
+                }
+
+                if (message.Contains("recordsets", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Task.FromResult(new AgentLlmResponse(
+                        "recordsets-response",
+                        string.Empty,
+                        [new AgentFunctionCallRequest(
+                            "tool-recordsets",
+                            "list_recordsets",
+                            "{}")]));
+                }
+
+                if (message.Contains("client a string", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Task.FromResult(new AgentLlmResponse(
+                        "schema-response",
+                        string.Empty,
+                        [new AgentFunctionCallRequest(
+                            "tool-schema",
+                            "resolve_record_schema",
+                            JsonSerializer.Serialize(new
+                            {
+                                collectionId = FakeRecordsetsMcpClient.RecordsetId.ToString()
+                            }))]));
+                }
+
+                if (message.Contains("first 20 rows of students", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Task.FromResult(new AgentLlmResponse(
+                        "students-response",
+                        string.Empty,
+                        [new AgentFunctionCallRequest(
+                            "tool-students",
+                            "search_records",
+                            JsonSerializer.Serialize(new
+                            {
+                                collectionId = FakeRecordsetsMcpClient.StudentsRecordsetId.ToString(),
+                                page = 0,
+                                pageSize = 20
                             }))]));
                 }
 
@@ -272,6 +504,30 @@ public sealed class AgentsEndpointTests
                     []));
             }
 
+            if (request.PreviousResponseId == "recordsets-response")
+            {
+                return Task.FromResult(new AgentLlmResponse(
+                    "recordsets-final",
+                    "Here are your recordsets.",
+                    []));
+            }
+
+            if (request.PreviousResponseId == "schema-response")
+            {
+                return Task.FromResult(new AgentLlmResponse(
+                    "schema-final",
+                    "The client field is text.",
+                    []));
+            }
+
+            if (request.PreviousResponseId == "students-response")
+            {
+                return Task.FromResult(new AgentLlmResponse(
+                    "students-final",
+                    "Loaded the first 20 Students rows in the work surface.",
+                    []));
+            }
+
             if (request.PreviousResponseId == "update-response")
             {
                 return Task.FromResult(new AgentLlmResponse(
@@ -309,6 +565,7 @@ public sealed class AgentsEndpointTests
         private int _nextEntityId = 101;
 
         public static UlidId RecordsetId { get; } = UlidId.NewUlid();
+        public static UlidId StudentsRecordsetId { get; } = UlidId.NewUlid();
         public int ApplyCount { get; private set; }
         public int CreatedEntityCount => _entities.Count;
 
@@ -337,30 +594,79 @@ public sealed class AgentsEndpointTests
         {
             return Task.FromResult(toolName switch
             {
-                "search_records" => Success(new RecordsetSearchToolResultDto
-                {
-                    Schema = CreateSchema(),
-                    Page = new RecordsetPagedRecordsDto
+                "list_recordsets" => Success<IReadOnlyList<RecordsetNameDto>>(
+                [
+                    new RecordsetNameDto
                     {
-                        RecordsetId = RecordsetId,
+                        Id = RecordsetId,
                         Name = "Orders",
-                        Count = 1,
-                        Items =
-                        [
-                            new RecordListItemDto
-                            {
-                                Id = 101,
-                                RecordsetId = RecordsetId,
-                                Bag = _entities[101]
-                            }
-                        ]
+                        Count = _entities.Count
+                    },
+                    new RecordsetNameDto
+                    {
+                        Id = StudentsRecordsetId,
+                        Name = "Students",
+                        Count = 180
                     }
-                }),
+                ]),
+                "resolve_record_schema" => Success(CreateSchema()),
+                "search_records" => Search(arguments),
                 "validate_record_update" => Success(BuildUpdateProposal(arguments)),
                 "validate_record_create" => Success(BuildCreateProposal(arguments)),
                 "apply_record_update" => ApplyUpdate(arguments),
                 "apply_record_create" => ApplyCreate(arguments),
                 _ => new AgentMcpToolCallResult("{\"error\":\"Unsupported tool.\"}", true, "Unsupported tool.")
+            });
+        }
+
+        private AgentMcpToolCallResult Search(JsonObject arguments)
+        {
+            var collectionId = arguments["collectionId"]?.GetValue<string>();
+            if (string.Equals(collectionId, StudentsRecordsetId.ToString(), StringComparison.Ordinal))
+            {
+                return Success(new RecordsetSearchToolResultDto
+                {
+                    Schema = CreateStudentsSchema(),
+                    Page = new RecordsetPagedRecordsDto
+                    {
+                        RecordsetId = StudentsRecordsetId,
+                        Name = "Students",
+                        Count = 180,
+                        Items = Enumerable.Range(1, 20)
+                            .Select(index => new RecordListItemDto
+                            {
+                                Id = 200 - index,
+                                RecordsetId = StudentsRecordsetId,
+                                Bag = new Dictionary<string, object?>
+                                {
+                                    ["name"] = $"Student {index}",
+                                    ["status"] = index % 2 == 0 ? "Active" : "Probation",
+                                    ["gpa"] = 3.0m + (index / 100m)
+                                }
+                            })
+                            .ToArray()
+                    }
+                });
+            }
+
+            return Success(new RecordsetSearchToolResultDto
+            {
+                Schema = CreateSchema(),
+                Page = new RecordsetPagedRecordsDto
+                {
+                    RecordsetId = RecordsetId,
+                    Name = "Orders",
+                    Count = 1,
+                    Items =
+                    [
+                        new RecordListItemDto
+                        {
+                            Id = 101,
+                            RecordsetId = RecordsetId,
+                            Bag = _entities[101]
+                        }
+                    ]
+                }
             });
         }
 
@@ -520,6 +826,37 @@ public sealed class AgentsEndpointTests
                 [
                     new RecordsetStatusDto { Name = "Open", Color = "#ccc" },
                     new RecordsetStatusDto { Name = "Complete", Color = "#090" }
+                ]
+            };
+        }
+
+        private static RecordsetItemDefinitionDto CreateStudentsSchema()
+        {
+            return new RecordsetItemDefinitionDto
+            {
+                Id = StudentsRecordsetId,
+                Name = "Students",
+                Columns =
+                [
+                    new RecordsetColumnDto
+                    {
+                        Name = "Name",
+                        Property = "name",
+                        Type = Records.Recordsets.Domain.ColumnType.Text,
+                        Required = true
+                    },
+                    new RecordsetColumnDto
+                    {
+                        Name = "GPA",
+                        Property = "gpa",
+                        Type = Records.Recordsets.Domain.ColumnType.Number,
+                        Required = false
+                    }
+                ],
+                Statuses =
+                [
+                    new RecordsetStatusDto { Name = "Active", Color = "#090" },
+                    new RecordsetStatusDto { Name = "Probation", Color = "#c90" }
                 ]
             };
         }

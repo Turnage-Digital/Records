@@ -6,6 +6,20 @@ namespace Records.Agents.Infrastructure.Sql;
 
 public sealed class AgentThreadProjectionWriter(AgentsDbContext dbContext) : IAgentThreadProjectionWriter
 {
+    public async Task DeleteAsync(string threadId, CancellationToken cancellationToken)
+    {
+        var projection = await dbContext.AgentThreadProjections
+            .FirstOrDefaultAsync(x => x.Id == threadId, cancellationToken);
+
+        if (projection is null)
+        {
+            return;
+        }
+
+        dbContext.AgentThreadProjections.Remove(projection);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task UpsertAsync(AgentThreadProjectionModel model, CancellationToken cancellationToken)
     {
         var projection = await dbContext.AgentThreadProjections

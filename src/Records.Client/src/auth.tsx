@@ -49,14 +49,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = React.useCallback(async () => {
     await queryClient.cancelQueries();
-    queryClient.clear();
-    return queryClient.fetchQuery(sessionQueryOptions());
+    await queryClient.invalidateQueries({
+      predicate: (query) => query.queryKey[0] !== sessionQueryKey[0],
+      refetchType: "none",
+    });
+
+    return queryClient.fetchQuery({
+      ...sessionQueryOptions(),
+      staleTime: 0,
+    });
   }, [queryClient]);
 
   const logout = React.useCallback(async () => {
     await queryClient.cancelQueries();
-    queryClient.clear();
     queryClient.setQueryData(sessionQueryKey, null);
+    queryClient.removeQueries({
+      predicate: (query) => query.queryKey[0] !== sessionQueryKey[0],
+    });
   }, [queryClient]);
 
   const refresh = React.useCallback(() => {

@@ -2,6 +2,7 @@ namespace Records.Agents.Contracts.Projections;
 
 public interface IAgentThreadProjectionWriter
 {
+    Task DeleteAsync(string threadId, CancellationToken cancellationToken);
     Task UpsertAsync(AgentThreadProjectionModel model, CancellationToken cancellationToken);
 }
 

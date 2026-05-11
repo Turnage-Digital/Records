@@ -349,13 +349,15 @@ const Shell = () => {
   const canManageGlobalAdminAreas = auth.access.isGlobalAdmin;
   const sectionLabel = getSectionLabel(location.pathname);
   const pageLabel = getPageLabel(location.pathname);
+  const isAgentThreadPage = location.pathname.startsWith("/threads/");
 
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        height: "100dvh",
         display: "flex",
         backgroundColor: "background.default",
+        overflow: "hidden",
       }}
     >
       <AppSidebar
@@ -432,10 +434,24 @@ const Shell = () => {
         sx={{
           flex: 1,
           minWidth: 0,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
         }}
       >
         <Toolbar sx={{ minHeight: 72 }} />
-        <Container maxWidth="xl" sx={{ py: { xs: 3, md: 4 } }}>
+        <Container
+          maxWidth="xl"
+          sx={{
+            py: isAgentThreadPage ? { xs: 1.5, md: 2 } : { xs: 3, md: 4 },
+            flex: isAgentThreadPage ? 1 : "initial",
+            display: isAgentThreadPage ? "flex" : "block",
+            flexDirection: isAgentThreadPage ? "column" : undefined,
+            minHeight: isAgentThreadPage ? 0 : undefined,
+            overflow: isAgentThreadPage ? "hidden" : undefined,
+          }}
+        >
           <Outlet />
         </Container>
       </Box>

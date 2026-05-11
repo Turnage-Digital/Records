@@ -6,6 +6,7 @@ public interface IAgentProvider
 {
     Task<AgentTurnResultDto> ExecuteTurnAsync(
         AgentProviderContextDto context,
+        Func<AgentStreamEventDto, CancellationToken, Task>? onProgress,
         CancellationToken cancellationToken
     );
 }

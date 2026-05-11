@@ -34,6 +34,13 @@ public sealed class AgentsController(
         return thread is null ? NotFound() : Ok(thread);
     }
 
+    [HttpDelete("threads/{threadId}")]
+    public async Task<IActionResult> DeleteThread(string threadId, CancellationToken cancellationToken)
+    {
+        var deleted = await mediator.Send(new DeleteAgentThreadCommand(threadId), cancellationToken);
+        return deleted ? NoContent() : NotFound();
+    }
+
     [HttpPost("threads")]
     public async Task<ActionResult<AgentThreadSummaryDto>> CreateThread(
         CreateAgentThreadCommand command,

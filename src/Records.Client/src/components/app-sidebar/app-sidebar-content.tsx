@@ -5,6 +5,7 @@ import ApartmentOutlinedIcon from "@mui/icons-material/ApartmentOutlined";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import DatasetOutlinedIcon from "@mui/icons-material/DatasetOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import ForumOutlinedIcon from "@mui/icons-material/ForumOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import {
@@ -15,6 +16,7 @@ import {
   Divider,
   IconButton,
   List,
+  ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
@@ -25,13 +27,16 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useMatch, useNavigate } from "react-router-dom";
 
-import { createAgentThread } from "../../lib/agents";
+import { createAgentThread, deleteAgentThread } from "../../lib/agents";
 import {
   agentThreadPath,
   agentsHomePath,
   recordsetsPath,
 } from "../../lib/routes";
 import { agentThreadSummariesQueryOptions } from "../../query-options";
+import ConfirmDeleteDialog from "../confirm-delete-dialog";
+
+import type { AgentThreadSummary } from "../../models/agent";
 
 export interface AppSidebarContentProps {
   canManageGlobalAdminAreas: boolean;
@@ -60,12 +65,30 @@ const AppSidebarContent = ({
   const threadMatch = useMatch("/threads/:threadId");
   const queryClient = useQueryClient();
   const threadsQuery = useQuery(agentThreadSummariesQueryOptions());
+  const [threadToDelete, setThreadToDelete] =
+    React.useState<AgentThreadSummary | null>(null);
 
   const createThreadMutation = useMutation({
     mutationFn: async () => createAgentThread(),
     onSuccess: async (thread) => {
       await queryClient.invalidateQueries({ queryKey: ["agent-threads"] });
       navigate(agentThreadPath(thread.id));
+      onCloseMobile();
+    },
+  });
+  const deleteThreadMutation = useMutation({
+    mutationFn: async (threadId: string) => deleteAgentThread(threadId),
+    onSuccess: async (_result, deletedThreadId) => {
+      queryClient.removeQueries({
+        queryKey: ["agent-thread", deletedThreadId],
+        exact: true,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["agent-threads"] });
+
+      if (threadMatch?.params.threadId === deletedThreadId) {
+        navigate(agentsHomePath());
+      }
+
       onCloseMobile();
     },
   });
@@ -115,6 +138,26 @@ const AppSidebarContent = ({
 
   const handleCreateThread = () => {
     createThreadMutation.mutate();
+  };
+
+  const handleDeleteThreadClicked = (thread: AgentThreadSummary) => {
+    setThreadToDelete(thread);
+  };
+
+  const handleConfirmDeleteThread = async () => {
+    if (!threadToDelete) {
+      return;
+    }
+
+    try {
+      await deleteThreadMutation.mutateAsync(threadToDelete.id);
+    } finally {
+      setThreadToDelete(null);
+    }
+  };
+
+  const handleCancelDeleteThread = () => {
+    setThreadToDelete(null);
   };
 
   const renderNavigationItem = (item: AppSidebarNavigationItem) => {
@@ -169,46 +212,69 @@ const AppSidebarContent = ({
     );
   };
 
-  const renderThreadItem = (
-    threadId: string,
-    title: string,
-    updatedAt: string,
-  ) => {
-    const updatedAtLabel = new Date(updatedAt).toLocaleString();
+  const deleteThreadDialogMessage = threadToDelete
+    ? `Are you sure you want to delete "${threadToDelete.title}"? This action cannot be undone.`
+    : "Are you sure you want to delete this thread? This action cannot be undone.";
+
+  const renderThreadItem = (thread: AgentThreadSummary) => {
+    const updatedAtLabel = new Date(thread.updatedAt).toLocaleString();
 
     return (
-      <ListItemButton
-        key={threadId}
-        selected={threadMatch?.params.threadId === threadId}
-        onClick={() => handleNavigate(agentThreadPath(threadId))}
-        sx={{
-          borderRadius: 2,
-          alignItems: "flex-start",
-          px: 1.5,
-          py: 1.2,
-          "&.Mui-selected": {
-            backgroundColor: alpha("#ffffff", 0.12),
-          },
-          "&.Mui-selected:hover": {
-            backgroundColor: alpha("#ffffff", 0.18),
-          },
-        }}
+      <ListItem
+        key={thread.id}
+        disablePadding
+        secondaryAction={
+          <Tooltip title={`Delete ${thread.title}`}>
+            <Box component="span">
+              <IconButton
+                edge="end"
+                aria-label={`Delete ${thread.title}`}
+                onClick={() => handleDeleteThreadClicked(thread)}
+                disabled={deleteThreadMutation.isPending}
+                sx={{
+                  color: "rgba(255,255,255,0.66)",
+                  "&:hover": { color: "common.white" },
+                }}
+              >
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          </Tooltip>
+        }
       >
-        <ListItemText
-          primary={title}
-          secondary={updatedAtLabel}
-          primaryTypographyProps={{
-            fontWeight: 600,
-            noWrap: true,
-            color: "common.white",
+        <ListItemButton
+          selected={threadMatch?.params.threadId === thread.id}
+          onClick={() => handleNavigate(agentThreadPath(thread.id))}
+          sx={{
+            borderRadius: 2,
+            alignItems: "flex-start",
+            px: 1.5,
+            py: 1.2,
+            pr: 6.5,
+            "&.Mui-selected": {
+              backgroundColor: alpha("#ffffff", 0.12),
+            },
+            "&.Mui-selected:hover": {
+              backgroundColor: alpha("#ffffff", 0.18),
+            },
           }}
-          secondaryTypographyProps={{
-            color: "rgba(255,255,255,0.66)",
-            variant: "caption",
-            noWrap: true,
-          }}
-        />
-      </ListItemButton>
+        >
+          <ListItemText
+            primary={thread.title}
+            secondary={updatedAtLabel}
+            primaryTypographyProps={{
+              fontWeight: 600,
+              noWrap: true,
+              color: "common.white",
+            }}
+            secondaryTypographyProps={{
+              color: "rgba(255,255,255,0.66)",
+              variant: "caption",
+              noWrap: true,
+            }}
+          />
+        </ListItemButton>
+      </ListItem>
     );
   };
 
@@ -335,9 +401,7 @@ const AppSidebarContent = ({
           }}
         >
           {loadingThreadsNotice}
-          {threadsQuery.data?.map((thread) =>
-            renderThreadItem(thread.id, thread.title, thread.updatedAt),
-          )}
+          {threadsQuery.data?.map((thread) => renderThreadItem(thread))}
           {emptyThreadsNotice}
         </List>
 
@@ -394,6 +458,15 @@ const AppSidebarContent = ({
       </Box>
 
       {recentThreadsSection}
+
+      <ConfirmDeleteDialog
+        open={Boolean(threadToDelete)}
+        title="Delete thread"
+        description={deleteThreadDialogMessage}
+        confirmDisabled={deleteThreadMutation.isPending}
+        onCancel={handleCancelDeleteThread}
+        onConfirm={handleConfirmDeleteThread}
+      />
     </Box>
   );
 };

@@ -20,6 +20,7 @@ internal sealed record AgentMcpToolCallResult(
 
 internal sealed record AgentBackendToolExecutionResult(
     string OutputJson,
+    string ModelReceiptJson,
     string Status,
     string? Summary,
     string? Error,
@@ -38,7 +39,7 @@ internal sealed record AgentFunctionCallRequest(
 
 internal sealed record AgentFunctionCallOutput(
     string CallId,
-    string OutputJson);
+    string ReceiptJson);
 
 internal sealed record AgentLlmConversationContext(
     string BackendId,
@@ -61,7 +62,10 @@ internal sealed record AgentLlmResponse(
 
 internal interface IAgentLlmClient
 {
-    Task<AgentLlmResponse> CreateResponseAsync(AgentLlmRequest request, CancellationToken cancellationToken);
+    Task<AgentLlmResponse> CreateResponseAsync(
+        AgentLlmRequest request,
+        Func<string, CancellationToken, Task>? onTextDelta,
+        CancellationToken cancellationToken);
 }
 
 internal interface IRecordsetsMcpClient
@@ -86,6 +90,10 @@ internal interface IAgentBackend
         JsonObject arguments,
         AgentMcpCallContext callContext,
         CancellationToken cancellationToken);
+
+    string? CreatePromptArtifactJson(WorkspaceArtifactDto artifact);
+
+    string? CreatePromptProposalJson(WorkspaceProposalDto proposal);
 
     Task<WorkspaceEntityDto?> ApplyConfirmedProposalAsync(
         WorkspaceProposalDto proposal,

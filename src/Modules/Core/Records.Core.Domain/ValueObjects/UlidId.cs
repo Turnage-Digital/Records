@@ -1,5 +1,8 @@
+using System.Text.Json.Serialization;
+
 namespace Records.Core.Domain.ValueObjects;
 
+[JsonConverter(typeof(UlidIdJsonConverter))]
 public readonly record struct UlidId
 {
     private UlidId(Ulid value)
